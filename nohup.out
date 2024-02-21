@@ -1,0 +1,380 @@
+Average Flow Time: 1017664.49676
+Flow Time L2 Norm: 377265667.73446673
+FCFS flow time L2-norm: 175579808.41911176
+FCFS l2 Flow Time L2 Norm:, 175579808.41911176
+Rr average Flow Time: 793402.3259
+Rr flow time L2-norm: 288271937.655717
+Srpt Average Flow Time: 275014.62167
+Srpt Flow Time L2 Norm: 216555370.3004512
+FCFS flow time L2-norm: 144834736.31873122
+FCFS l2 Flow Time L2 Norm:, 144834736.31873122
+Rr average Flow Time: 236091.74652
+Rr flow time L2-norm: 122939790.2203163
+rmlfq Maximum Flow Time: 2223765
+rmlfq flow time L2-norm: 69449102.11834785
+Srpt Average Flow Time: 44594.39725
+Srpt Flow Time L2 Norm: 83991935.09340976
+Average Flow Time: 136824.96722
+Flow Time L2 Norm: 148302394.85700172
+SJF Average Flow Time: 44616.60912
+SJF Flow Time L2 Norm: 83991100.80201611
+FCFS flow time L2-norm: 136726373.0647916
+FCFS l2 Flow Time L2 Norm:, 136726373.0647916
+Rr average Flow Time: 68227.86025
+Rr flow time L2-norm: 54113298.6954873
+SJF Average Flow Time: 9009.48814
+SJF Flow Time L2 Norm: 36259925.36162539
+Average Flow Time: 26035.70416
+Flow Time L2 Norm: 62621844.47052977
+FCFS flow time L2-norm: 153267066.5315505
+FCFS l2 Flow Time L2 Norm:, 153267066.5315505
+FCFS flow time L2-norm: 139725290.75124016
+FCFS l2 Flow Time L2 Norm:, 139725290.75124016
+Rr average Flow Time: 632716.08202
+Rr flow time L2-norm: 233505959.74570936
+rmlfq Maximum Flow Time: 2460766
+rmlfq flow time L2-norm: 130234480.02999173
+Srpt Average Flow Time: 210559.30125
+Srpt Flow Time L2 Norm: 191121037.21286786
+Average Flow Time: 840473.96792
+Flow Time L2 Norm: 388660323.4497821
+SJF Average Flow Time: 210561.17431
+SJF Flow Time L2 Norm: 191120836.54030296
+FCFS flow time L2-norm: 101401869.90306075
+FCFS l2 Flow Time L2 Norm:, 101401869.90306075
+Rr average Flow Time: 161020.14154
+Rr flow time L2-norm: 90056890.1999697
+rmlfq Maximum Flow Time: 1812260
+rmlfq flow time L2-norm: 63354576.846444644
+Srpt Average Flow Time: 26089.06869
+Srpt Flow Time L2 Norm: 65136318.892440714
+Average Flow Time: 83517.31431
+Flow Time L2 Norm: 117935766.38870667
+SJF Average Flow Time: 26115.69005
+SJF Flow Time L2 Norm: 65135001.347456664
+FCFS flow time L2-norm: 97551283.58794059
+FCFS l2 Flow Time L2 Norm:, 97551283.58794059
+SJF Average Flow Time: 4751.26841
+SJF Flow Time L2 Norm: 26604860.2468056
+FCFS flow time L2-norm: 151095617.9430369
+FCFS l2 Flow Time L2 Norm:, 151095617.9430369
+Rr average Flow Time: 10783.95706
+Rr flow time L2-norm: 17335091.407659665
+SJF Average Flow Time: 1237.86269
+SJF Flow Time L2 Norm: 11481510.981576206
+rmlfq Maximum Flow Time: 1986517
+rmlfq flow time L2-norm: 31931461.449421275
+Srpt Average Flow Time: 932.52297
+Srpt Flow Time L2 Norm: 11551124.278553972
+Average Flow Time: 2506.02786
+Flow Time L2 Norm: 19208347.397888243
+FCFS flow time L2-norm: 101583127.91936961
+FCFS l2 Flow Time L2 Norm:, 101583127.91936961
+Rr average Flow Time: 462236.0987
+Rr flow time L2-norm: 173402378.72556558
+rmlfq Maximum Flow Time: 2191200
+rmlfq flow time L2-norm: 130276465.52243714
+Srpt Average Flow Time: 146115.69669
+Srpt Flow Time L2 Norm: 161194987.0798459
+Average Flow Time: 629502.81585
+Flow Time L2 Norm: 340688988.36892116
+SJF Average Flow Time: 146118.27811
+SJF Flow Time L2 Norm: 161194495.74452895
+FCFS flow time L2-norm: 67122877.33414888
+FCFS l2 Flow Time L2 Norm:, 67122877.33414888
+Rr average Flow Time: 101728.41816
+Rr flow time L2-norm: 62042608.629356004
+rmlfq Maximum Flow Time: 1352862
+rmlfq flow time L2-norm: 48579319.260257006
+Srpt Average Flow Time: 14229.07552
+Srpt Flow Time L2 Norm: 48602570.198427595
+Average Flow Time: 49314.1985
+Flow Time L2 Norm: 91478128.21337421
+FCFS flow time L2-norm: 56597562.38496738
+FCFS l2 Flow Time L2 Norm:, 56597562.38496738
+Rr average Flow Time: 21288.72643
+Rr flow time L2-norm: 23486753.750062417
+rmlfq Maximum Flow Time: 1216925
+rmlfq flow time L2-norm: 26022257.789844852
+Srpt Average Flow Time: 1893.54901
+Srpt Flow Time L2 Norm: 16740326.025690928
+SJF Average Flow Time: 2054.04517
+SJF Flow Time L2 Norm: 16727137.438101863
+FCFS flow time L2-norm: 56080400.6845527
+FCFS l2 Flow Time L2 Norm:, 56080400.6845527
+Rr average Flow Time: 3209.82577
+Rr flow time L2-norm: 7199812.167050818
+rmlfq Maximum Flow Time: 996822
+rmlfq flow time L2-norm: 17888707.114330146
+Srpt Average Flow Time: 249.28494
+Srpt Flow Time L2 Norm: 4665259.301122929
+SJF Average Flow Time: 1020.27419
+SJF Flow Time L2 Norm: 4599886.440636225
+Average Flow Time: 597.04252
+Flow Time L2 Norm: 8040922.20395932
+FCFS flow time L2-norm: 67302476.76750267
+FCFS l2 Flow Time L2 Norm:, 67302476.76750267
+Rr average Flow Time: 305905.49752
+Rr flow time L2-norm: 116997553.12814799
+rmlfq Maximum Flow Time: 1685968
+rmlfq flow time L2-norm: 105269402.28379129
+FCFS flow time L2-norm: 28736961.854484912
+FCFS l2 Flow Time L2 Norm:, 28736961.854484912
+rmlfq Maximum Flow Time: 638677
+rmlfq flow time L2-norm: 24384910.52159753
+Srpt Average Flow Time: 5056.03078
+Srpt Flow Time L2 Norm: 28490533.45448116
+Rr average Flow Time: 42447.88201
+Rr flow time L2-norm: 27970578.977124427
+Average Flow Time: 21014.35474
+Flow Time L2 Norm: 59698396.400629856
+SJF Average Flow Time: 5111.38599
+SJF Flow Time L2 Norm: 28486330.004992973
+FCFS flow time L2-norm: 21701710.31637023
+FCFS l2 Flow Time L2 Norm:, 21701710.31637023
+Rr average Flow Time: 7239.39936
+Rr flow time L2-norm: 9600129.364157444
+FCFS flow time L2-norm: 45436949.84104653
+FCFS l2 Flow Time L2 Norm:, 45436949.84104653
+Rr average Flow Time: 1258.99437
+Rr flow time L2-norm: 4082426.88317219
+Srpt Average Flow Time: 141.08839
+Srpt Flow Time L2 Norm: 2674893.8509980165
+SJF Average Flow Time: 2268.04362
+SJF Flow Time L2 Norm: 3879040.090152717
+rmlfq Maximum Flow Time: 795371
+rmlfq flow time L2-norm: 11284825.673073333
+Average Flow Time: 276.74529
+Flow Time L2 Norm: 4164980.8194858474
+FCFS flow time L2-norm: 34562579.909361914
+FCFS l2 Flow Time L2 Norm:, 34562579.909361914
+Rr average Flow Time: 157587.00178
+Rr flow time L2-norm: 61102509.34823327
+rmlfq Maximum Flow Time: 938000
+rmlfq flow time L2-norm: 64343236.97879631
+Average Flow Time: 274466.74385
+Flow Time L2 Norm: 228073901.35209534
+FCFS flow time L2-norm: 2278149.76170049
+FCFS l2 Flow Time L2 Norm:, 2278149.76170049
+Rr average Flow Time: 3095.88824
+Rr flow time L2-norm: 2305815.051679991
+SJF Average Flow Time: 474.0786
+SJF Flow Time L2 Norm: 4070414.5996571407
+Srpt Average Flow Time: 403.08677
+Srpt Flow Time L2 Norm: 4095123.472115462
+Average Flow Time: 2397.09446
+Flow Time L2 Norm: 13069399.820623593
+rmlfq Maximum Flow Time: 61865
+rmlfq flow time L2-norm: 2136986.16270485
+FCFS flow time L2-norm: 4357810.512881555
+FCFS l2 Flow Time L2 Norm:, 4357810.512881555
+Rr average Flow Time: 1297.97562
+Rr flow time L2-norm: 2044468.6314189318
+SJF Average Flow Time: 491.4831
+SJF Flow Time L2 Norm: 1654694.3285918399
+Srpt Average Flow Time: 154.47109
+Srpt Flow Time L2 Norm: 1728299.6486793023
+Average Flow Time: 407.07152
+Flow Time L2 Norm: 3752802.244402974
+FCFS flow time L2-norm: 46802803.22414398
+FCFS l2 Flow Time L2 Norm:, 46802803.22414398
+FCFS flow time L2-norm: 64087.45335087048
+FCFS l2 Flow Time L2 Norm:, 64087.45335087048
+Rr average Flow Time: 234.7098
+Rr flow time L2-norm: 110141.25020172959
+Srpt Average Flow Time: 96.04752
+Srpt Flow Time L2 Norm: 190629.1225652576
+SJF Average Flow Time: 100.36103
+SJF Flow Time L2 Norm: 186042.4248901309
+Average Flow Time: 506.49635
+Flow Time L2 Norm: 771049.7601393829
+rmlfq Maximum Flow Time: 3826
+rmlfq flow time L2-norm: 107313.31015768733
+FCFS flow time L2-norm: 198425.03840997486
+FCFS l2 Flow Time L2 Norm:, 198425.03840997486
+Rr average Flow Time: 217.18191
+Rr flow time L2-norm: 189096.6944475762
+SJF Average Flow Time: 125.05301
+SJF Flow Time L2 Norm: 140653.32654793488
+Srpt Average Flow Time: 69.30065
+Srpt Flow Time L2 Norm: 155602.74136723942
+Average Flow Time: 138.96311
+Flow Time L2 Norm: 334749.86947420903
+rmlfq Maximum Flow Time: 9298
+rmlfq flow time L2-norm: 181941.3795292319
+FCFS flow time L2-norm: 998142.9331443468
+FCFS l2 Flow Time L2 Norm:, 998142.9331443468
+Rr average Flow Time: 255.2313
+Rr flow time L2-norm: 423391.28129662754
+SJF Average Flow Time: 391.35082
+SJF Flow Time L2 Norm: 346501.98187312
+Srpt Average Flow Time: 72.30067
+Srpt Flow Time L2 Norm: 306776.7650735629
+Average Flow Time: 119.95614
+Flow Time L2 Norm: 610012.7881085773
+FCFS flow time L2-norm: 13980045.400646595
+FCFS l2 Flow Time L2 Norm:, 13980045.400646595
+Rr average Flow Time: 417.20608
+Rr flow time L2-norm: 1891414.8276562707
+Srpt Average Flow Time: 87.53697
+Srpt Flow Time L2 Norm: 1445226.5936554724
+FCFS flow time L2-norm: 23224.937567192726
+FCFS l2 Flow Time L2 Norm:, 23224.937567192726
+Average Flow Time: 128.37265
+Flow Time L2 Norm: 117269.65879118093
+FCFS flow time L2-norm: 117539.82131601188
+FCFS l2 Flow Time L2 Norm:, 117539.82131601188
+Rr average Flow Time: 138.50827
+Rr flow time L2-norm: 111477.24133203154
+SJF Average Flow Time: 106.45037
+SJF Flow Time L2 Norm: 77751.17998461502
+Srpt Average Flow Time: 56.81444
+Srpt Flow Time L2 Norm: 83612.35368054172
+Average Flow Time: 95.5145
+Flow Time L2 Norm: 163862.02651011004
+rmlfq Maximum Flow Time: 5839
+rmlfq flow time L2-norm: 109877.7544273635
+FCFS flow time L2-norm: 741302.5479910345
+FCFS l2 Flow Time L2 Norm:, 741302.5479910345
+Rr average Flow Time: 178.32233
+Rr flow time L2-norm: 294213.0716657572
+SJF Average Flow Time: 352.5474
+SJF Flow Time L2 Norm: 288282.5261856847
+Srpt Average Flow Time: 62.32503
+Srpt Flow Time L2 Norm: 210823.2982736965
+Average Flow Time: 95.30613
+Flow Time L2 Norm: 371740.245038118
+FCFS flow time L2-norm: 16885485.810102504
+FCFS l2 Flow Time L2 Norm:, 16885485.810102504
+SJF Average Flow Time: 4983.23032
+SJF Flow Time L2 Norm: 4914808.232172849
+Rr average Flow Time: 273.31569
+Rr flow time L2-norm: 1512272.5961733884
+Average Flow Time: 107.99139
+Flow Time L2 Norm: 1670861.920032592
+Srpt Average Flow Time: 78.08047
+Srpt Flow Time L2 Norm: 1190224.4800057677
+FCFS flow time L2-norm: 15219.560703252902
+FCFS l2 Flow Time L2 Norm:, 15219.560703252902
+Rr average Flow Time: 51.92282
+Rr flow time L2-norm: 20673.097832690677
+SJF Average Flow Time: 40.91699
+SJF Flow Time L2 Norm: 15933.664832674245
+Srpt Average Flow Time: 39.52481
+Srpt Flow Time L2 Norm: 17048.24058370834
+Average Flow Time: 67.90571
+Flow Time L2 Norm: 44154.07624444203
+FCFS flow time L2-norm: 86764.92452022304
+FCFS l2 Flow Time L2 Norm:, 86764.92452022304
+Srpt Average Flow Time: 48.38055
+Srpt Flow Time L2 Norm: 58986.76459172854
+Rr average Flow Time: 97.07848
+Rr flow time L2-norm: 79338.59403846278
+SJF Average Flow Time: 90.88868
+SJF Flow Time L2 Norm: 59486.1379986968
+Average Flow Time: 71.75695
+Flow Time L2 Norm: 106445.81468052184
+FCFS flow time L2-norm: 412886.1556870126
+FCFS l2 Flow Time L2 Norm:, 412886.1556870126
+Rr average Flow Time: 105.23261
+Rr flow time L2-norm: 164632.08609198875
+SJF Average Flow Time: 287.9814
+SJF Flow Time L2 Norm: 229251.4111494191
+Srpt Average Flow Time: 49.60277
+Srpt Flow Time L2 Norm: 129424.72666766579
+Average Flow Time: 65.71875
+Flow Time L2 Norm: 187642.0173122214
+FCFS flow time L2-norm: 8125272.224720289
+FCFS l2 Flow Time L2 Norm:, 8125272.224720289
+FCFS flow time L2-norm: 14034.991984322613
+FCFS l2 Flow Time L2 Norm:, 14034.991984322613
+FCFS flow time L2-norm: 70568.94654166236
+FCFS l2 Flow Time L2 Norm:, 70568.94654166236
+Rr average Flow Time: 80.05901
+Rr flow time L2-norm: 64146.13479392192
+rmlfq Maximum Flow Time: 3014
+rmlfq flow time L2-norm: 64589.84777811448
+SJF Average Flow Time: 82.54474
+SJF Flow Time L2 Norm: 51206.63529270401
+Srpt Average Flow Time: 44.43779
+Srpt Flow Time L2 Norm: 48931.317711666015
+Average Flow Time: 61.41243
+Flow Time L2 Norm: 80122.83600197887
+FCFS flow time L2-norm: 403399.3287847663
+FCFS l2 Flow Time L2 Norm:, 403399.3287847663
+Rr average Flow Time: 100.07778
+Rr flow time L2-norm: 160883.16679503795
+SJF Average Flow Time: 267.22344
+SJF Flow Time L2 Norm: 210320.2357453985
+Srpt Average Flow Time: 48.66787
+Srpt Flow Time L2 Norm: 125654.03701035633
+Average Flow Time: 64.58634
+Flow Time L2 Norm: 187915.65405787778
+FCFS flow time L2-norm: 4655718.075335425
+FCFS l2 Flow Time L2 Norm:, 4655718.075335425
+Rr average Flow Time: 118.59049
+Rr flow time L2-norm: 500134.3589506724
+SJF Average Flow Time: 2940.62181
+SJF Flow Time L2 Norm: 2786932.269156716
+FCFS flow time L2-norm: 12300.851677831093
+FCFS l2 Flow Time L2 Norm:, 12300.851677831093
+FCFS flow time L2-norm: 62491.434445050145
+FCFS l2 Flow Time L2 Norm:, 62491.434445050145
+Rr average Flow Time: 70.84064
+Rr flow time L2-norm: 56311.4997669215
+SJF Average Flow Time: 76.87952
+SJF Flow Time L2 Norm: 46681.6447653679
+Srpt Average Flow Time: 42.42498
+Srpt Flow Time L2 Norm: 43339.53158491679
+Average Flow Time: 56.28124
+Flow Time L2 Norm: 69988.44873263016
+FCFS flow time L2-norm: 427043.9024479802
+FCFS l2 Flow Time L2 Norm:, 427043.9024479802
+Rr average Flow Time: 87.38356
+Rr flow time L2-norm: 158278.66738761734
+SJF Average Flow Time: 273.243
+SJF Flow Time L2 Norm: 220287.36173008202
+Srpt Average Flow Time: 46.35714
+Srpt Flow Time L2 Norm: 124914.41045772101
+Average Flow Time: 59.59753
+Flow Time L2 Norm: 185624.5884978604
+FCFS flow time L2-norm: 15436373.470594186
+FCFS l2 Flow Time L2 Norm:, 15436373.470594186
+Srpt Average Flow Time: 54.01119
+Srpt Flow Time L2 Norm: 734064.9502823303
+SJF Average Flow Time: 6534.02954
+SJF Flow Time L2 Norm: 7122436.240933997
+Average Flow Time: 64.36781
+Flow Time L2 Norm: 872567.3966811962
+Rr average Flow Time: 116.56744
+Rr flow time L2-norm: 895141.7378147441
+FCFS flow time L2-norm: 11810.104148567023
+FCFS l2 Flow Time L2 Norm:, 11810.104148567023
+Average Flow Time: 43.2269
+Flow Time L2 Norm: 20595.565736342374
+SJF Average Flow Time: 33.97213
+SJF Flow Time L2 Norm: 11833.647239967904
+FCFS flow time L2-norm: 59201.74499961973
+FCFS l2 Flow Time L2 Norm:, 59201.74499961973
+Average Flow Time: 51.92445
+Flow Time L2 Norm: 61445.8644417995
+FCFS flow time L2-norm: 305374.19656545966
+FCFS l2 Flow Time L2 Norm:, 305374.19656545966
+Rr average Flow Time: 70.82816
+Rr flow time L2-norm: 114588.70510656798
+Average Flow Time: 50.94068
+Flow Time L2 Norm: 123516.8082246299
+SJF Average Flow Time: 232.11421
+SJF Flow Time L2 Norm: 190881.80865394167
+Srpt Average Flow Time: 41.95767
+Srpt Flow Time L2 Norm: 92052.62657306418
+FCFS flow time L2-norm: 2613052.2681808337
+FCFS l2 Flow Time L2 Norm:, 2613052.2681808337
+Rr average Flow Time: 66.66167
+Rr flow time L2-norm: 238455.72552362838
+Srpt Average Flow Time: 40.58931
+Srpt Flow Time L2 Norm: 220707.03125863482
+Average Flow Time: 46.30449
+Flow Time L2 Norm: 239220.3160206089
+SJF Average Flow Time: 1408.38905
+SJF Flow Time L2 Norm: 1949920.5817917304
