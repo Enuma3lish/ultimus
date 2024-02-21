@@ -20,6 +20,7 @@ def execute(Arrival_rate,bp_parameter):
     rmlfq_l2n_result =0
     setf_l2n_result = 0
     fcfs_l2n_result = 0
+    rmlfq_l2n_rr_l2n_result = 0
     for i in bp_parameter:
         job_list = Read_csv.Read_csv(str((Arrival_rate,i["L"]))+".csv")
         rr_list = job_list.copy()
@@ -86,6 +87,7 @@ def execute(Arrival_rate,bp_parameter):
             setf_l2n_fcfs = setf_l2n/fcfs_l2n
             srpt_l2n_fcfs = srpt_l2n/fcfs_l2n
             
+            rmlfq_l2n_rr_l2n_result = rmlfq_l2n/rr_l2n
             result.append({
                 "arrival_rate":Arrival_rate,
                 "bp_parameter":i,
@@ -113,6 +115,7 @@ def execute(Arrival_rate,bp_parameter):
                 "RMLFQ_L2_Norm/FCFS_L2_Norm":rmlfq_l2n_fcfs,
                 "SETF_L2_Norm/FCFS_L2_Norm":setf_l2n_fcfs,
                 "SRPT_L2_Norm/FCFS_L2_Norm":srpt_l2n_fcfs,
+                "Rmlfq_L2_Norm/RR_L2_Norm":rmlfq_l2n_rr_l2n_result,
                 "FCFS_average_flow_time":fcfs_avg,
                 "SJF_average_flow_time":sjf_avg,
                 "SRPT_average_flow_time":srpt_avg,
