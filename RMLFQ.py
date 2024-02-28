@@ -1,100 +1,76 @@
-import pandas as pd
 import numpy as np
-import random
+import pandas as pd
 def Read_csv(filename):
 # Read the CSV file into a DataFrame 
     data_frame = pd.read_csv(filename)
     data_list = data_frame.values.tolist()
     return data_list
-# Calculate average and maximum flow times without using heapq
-
-def Rmlfq(jobs):
-    # Constants
-    NUM_QUEUES = 100
-    MAX_TIME_LIMIT = 2**99  # Maximum time limit for the lowest priority queue
-
-    # Initialize queues and time limits
-    queues = [[] for _ in range(NUM_QUEUES)]
-    time_limits = [min(2**i, MAX_TIME_LIMIT) for i in range(NUM_QUEUES)]
-
-    # Sort jobs by arrival time
-    jobs.sort(key=lambda x: x[0])
-
-    # Metrics
-    total_flow_time = 0
-    max_flow_time = 0
-
-    # Simulation
+def Rmlfq(jobs, num_queues=100, base_quantum=30, quantum_multiplier=1.1):
+    queues = [[] for _ in range(num_queues)]
+    queue_time_quantums = [base_quantum * (pow(quantum_multiplier, i)) for i in range(num_queues)]
+    queue_priorities = [pow(5, -i) for i in range(num_queues)]
     current_time = 0
-    completed_jobs = 0
-    job_index = 0  # Index to keep track of the next job to be introduced
-    flow_arr = []
-    while completed_jobs < len(jobs) or any(queues):
-        # Add new jobs to the highest priority queue if they have arrived
-        while job_index < len(jobs) and jobs[job_index][0] <= current_time:
-            _, job_size = jobs[job_index]
-            queues[0].append((job_index, job_size))
+    job_completion_times = []
+
+    def add_job(arrival_time, job_size):
+        queues[0].append({'arrival_time': arrival_time, 'job_size': job_size, 'remaining_time': job_size})
+
+    def weighted_random_queue_selection():
+        nonlocal current_time  # Ensure current_time is treated as the enclosing scope's variable
+        normalized_priorities = np.array(queue_priorities) / np.sum(queue_priorities)
+        non_empty_queues = [i for i, q in enumerate(queues) if len(q) > 0]
+        if non_empty_queues:
+            non_empty_priorities = normalized_priorities[non_empty_queues]
+            non_empty_priorities /= non_empty_priorities.sum()
+            return np.random.choice(non_empty_queues, p=non_empty_priorities)
+        return None
+
+    def execute_job_from_queue(queue_index):
+        nonlocal current_time  # Ensure current_time is treated as the enclosing scope's variable
+        if queues[queue_index]:
+            job = queues[queue_index][0]
+            time_quantum = min(queue_time_quantums[queue_index], job['remaining_time'])
+            job['remaining_time'] -= time_quantum
+            current_time += time_quantum
+            
+            if job['remaining_time'] <= 0:
+                job_completion_times.append(current_time - job['arrival_time'])
+                queues[queue_index].pop(0)
+            elif queue_index < num_queues - 1:
+                queues[queue_index].pop(0)
+                queues[queue_index + 1].append(job)
+
+    # Sort jobs by arrival time to process in order
+    jobs.sort(key=lambda x: x[0])
+    job_index = 0
+    total_jobs = len(jobs)
+
+    while len(job_completion_times) < total_jobs:
+        while job_index < total_jobs and jobs[job_index][0] <= current_time:
+            add_job(jobs[job_index][0], jobs[job_index][1])
             job_index += 1
 
-        executed = False
-        for queue_index in range(NUM_QUEUES):
-            if queues[queue_index]:
-                # Execute jobs in the current queue based on its time limit
-                queue_time_limit = time_limits[queue_index]
-                new_queue = []
-                for job in queues[queue_index]:
-                    job_id, job_time = job
-                    execute_time = min(job_time, queue_time_limit)
-                    job_time -= execute_time
-                    current_time += execute_time
+        if queues[0]:
+            execute_job_from_queue(0)
+        else:
+            selected_queue = weighted_random_queue_selection()
+            if selected_queue is not None:
+                execute_job_from_queue(selected_queue)
 
-                    if job_time > 0:
-                        # Job not completed, move to the next lower priority queue
-                        next_queue_index = min(queue_index + 1, NUM_QUEUES - 1)
-                        queues[next_queue_index].append((job_id, job_time))
-                    else:
-                        # Job completed
-                        completed_jobs += 1
-                        flow_time = current_time - jobs[job_id][0]  # Subtract arrival time for flow time
-                        total_flow_time += flow_time
-                        max_flow_time = max(max_flow_time, flow_time)
+        if job_index < total_jobs and not any(queues):
+            current_time = jobs[job_index][0]
 
-                executed = True
-                queues[queue_index] = new_queue  # Update the current queue
+    average_flow_time = np.mean(job_completion_times) if job_completion_times else 0
+    l2_norm_flow_time = np.linalg.norm(job_completion_times)
 
-            # Weighted random selection of non-empty queues (excluding the current queue)
-            weights = [len(queue) * (NUM_QUEUES - i) for i, queue in enumerate(queues) if i != queue_index and queue]
-            if weights and executed:
-                weighted_queues = [(i, queue) for i, queue in enumerate(queues) if i != queue_index and queue]
-                selected_queue_index, selected_queue = random.choices(weighted_queues, weights=weights, k=1)[0]
+    return average_flow_time, l2_norm_flow_time
 
-                # Execute one job from the selected queue
-                job_id, job_time = selected_queue.pop(0)
-                execute_time = min(job_time, time_limits[selected_queue_index])
-                job_time -= execute_time
-                current_time += execute_time
 
-                if job_time > 0:
-                    # Job not completed, move to the next lower priority queue
-                    next_queue_index = min(selected_queue_index + 1, NUM_QUEUES - 1)
-                    queues[next_queue_index].append((job_id, job_time))
-                else:
-                    # Job completed
-                    completed_jobs += 1
-                    flow_time = current_time - jobs[job_id][0]  # Subtract arrival time for flow time
-                    flow_arr.append(flow_time)
-                    total_flow_time += flow_time
-                    max_flow_time = max(max_flow_time, flow_time)
+# Execute the fixed MLFQ System function
+# jobs = Read_csv('(0.025, 16.772).csv')
 
-            if executed:
-                break  # Move to the next time unit after executing jobs from a queue
+# # Run the preemptive SETF algorithm
+# average_flow_time, flow_time_l2_norm = Rmlfq(jobs)
 
-        # If no jobs were executed and there are still jobs pending, increment current time
-        if not executed and job_index < len(jobs):
-            current_time = max(current_time + 1, jobs[job_index][0])
-    flow_time_l2_norm = np.linalg.norm(flow_arr)
-    # Calculate average and maximum flow times
-    average_flow_time = total_flow_time / len(jobs)
-    print(f"rmlfq Maximum Flow Time: {max_flow_time}")
-    print(f"rmlfq flow time L2-norm: {flow_time_l2_norm}")
-    return average_flow_time,flow_time_l2_norm
+# print("Average Flow Time:", average_flow_time)
+# print("Flow Time L2 Norm:", flow_time_l2_norm)
