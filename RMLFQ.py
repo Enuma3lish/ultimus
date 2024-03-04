@@ -64,13 +64,3 @@ def Rmlfq(jobs, num_queues=100, base_quantum=30, quantum_multiplier=1.1):
     l2_norm_flow_time = np.linalg.norm(job_completion_times)
 
     return average_flow_time, l2_norm_flow_time
-
-
-# Execute the fixed MLFQ System function
-# jobs = Read_csv('(0.025, 16.772).csv')
-
-# # Run the preemptive SETF algorithm
-# average_flow_time, flow_time_l2_norm = Rmlfq(jobs)
-
-# print("Average Flow Time:", average_flow_time)
-# print("Flow Time L2 Norm:", flow_time_l2_norm)

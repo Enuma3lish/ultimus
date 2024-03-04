@@ -1,58 +1,67 @@
-import heapq
 import numpy as np
-import pandas as pd
-def Read_csv(filename):
-# Read the CSV file into a DataFrame 
-    data_frame = pd.read_csv(filename)
-    data_list = data_frame.values.tolist()
-    return data_list
-def Setf(jobs):
+
+def setf_scheduling(jobs):
+    """
+    Perform Shortest Elapsed Time First (SETF) scheduling on a list of jobs.
+
+    Parameters:
+    - jobs: List of [arrival_time, job_size] for each job.
+
+    Returns:
+    - average_flow_time: The average flow time of the jobs.
+    - l2_norm_flow_time: The L2-norm flow time of the jobs.
+    - job_logs: A list of dictionaries, each containing the log of a job.
+    """
     # Sort jobs by arrival time
     jobs.sort(key=lambda x: x[0])
-    
-    current_time = 0
-    flow_times = []
-    job_queue = []  # Priority queue for jobs, prioritized by elapsed execution time
-    current_job = None
-    jobs_in_progress = {}
 
-    while jobs or job_queue or current_job:
-        # Add newly arrived jobs to the queue
-        while jobs and jobs[0][0] <= current_time:
-            job = jobs.pop(0)
-            heapq.heappush(job_queue, (0, job))  # Initialize elapsed execution time as 0
-        
-        # Update current job's elapsed execution time
-        if current_job:
-            elapsed_time, job = current_job
-            elapsed_time += 1
-            remaining_time = job[1] - elapsed_time
-            if remaining_time > 0:
-                heapq.heappush(job_queue, (elapsed_time, job))  # Requeue with updated elapsed time
-            else:
-                flow_times.append(current_time - job[0])
-            current_job = None
-        
-        # Fetch the next job
-        if not current_job and job_queue:
-            elapsed_time, job = heapq.heappop(job_queue)
-            current_job = (elapsed_time, job)
-        
-        # Increment time
-        current_time += 1
+    # Initialize variables
+    time = 0
+    job_logs = []
+    total_flow_time = 0
+    flow_times_squared = []
 
-    # Calculate average flow time and flow time L2 norm
-    average_flow_time = np.mean(flow_times)
-    flow_time_l2_norm = np.linalg.norm(flow_times)
-    print("Average Flow Time:", average_flow_time)
-    print("Flow Time L2 Norm:", flow_time_l2_norm)
-    return average_flow_time, flow_time_l2_norm
+    while jobs:
+        # Filter jobs that have arrived
+        available_jobs = [job for job in jobs if job[0] <= time]
 
-# Example input
-# jobs = Read_csv('(0.05, 16.772).csv')
+        if available_jobs:
+            # Select the job with the shortest remaining time
+            shortest_job = min(available_jobs, key=lambda x: x[1])
+            jobs.remove(shortest_job)
+            
+            # Execute the job
+            start_time = max(shortest_job[0], time)
+            completion_time = start_time + shortest_job[1]
+            time = completion_time
 
-# # Run the preemptive SETF algorithm
-# average_flow_time, flow_time_l2_norm = Setf(jobs)
+            # Log job details
+            job_logs.append({
+                'arrival_time': shortest_job[0],
+                'first_executed_time': start_time,
+                'completion_time': completion_time,
+                'ifdone': True
+            })
 
-# print("Average Flow Time:", average_flow_time)
-# print("Flow Time L2 Norm:", flow_time_l2_norm)
+            # Update metrics
+            flow_time = completion_time - shortest_job[0]
+            total_flow_time += flow_time
+            flow_times_squared.append(flow_time**2)
+        else:
+            # If no jobs are available, advance time to the next job's arrival
+            time = min(jobs, key=lambda x: x[0])[0]
+
+    # Calculate metrics
+    average_flow_time = total_flow_time / len(job_logs)
+    l2_norm_flow_time = np.sqrt(sum(flow_times_squared))
+
+    return average_flow_time, l2_norm_flow_time, job_logs
+
+# Example usage
+jobs = [[0, 3], [2, 6], [4, 4], [6, 5]]
+average_flow_time, l2_norm_flow_time, job_logs = setf_scheduling(jobs)
+print(f"Average Flow Time: {average_flow_time}")
+print(f"L2-Norm Flow Time: {l2_norm_flow_time}")
+print(f"Job Logs:")
+for log in job_logs:
+    print(log)

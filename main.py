@@ -16,7 +16,7 @@ def main():
     for i in Arrival_rate:
         results = execute.execute(i,bp_parameter) 
         result.extend(results)
-    Write_csv.Write("/home/melowu/Work/expri/100000_data5.csv",result)
+    Write_csv.Write("/home/melowu/Work/expri/100000_data.csv",result)
 if __name__ == "__main__":
     main()
 

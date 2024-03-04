@@ -1,58 +1,56 @@
-from collections import deque
 import numpy as np
-import pandas as pd
-def Read_csv(filename):
-# Read the CSV file into a DataFrame 
-    data_frame = pd.read_csv(filename)
-    data_list = data_frame.values.tolist()
-    return data_list
-def Rr(jobs, time_quantum=1):
-    # Sort jobs by arrival time
-    jobs.sort(key=lambda x: x[0])
+
+def round_robin_scheduling(jobs_input, time_quantum=2):
+    # Initialize job details for logging and calculations
+    jobs = [{'arrival_time': job[0], 'job_size': job[1], 'start_time': None, 'completion_time': None, 'remaining_size': job[1]} for job in jobs_input]
     
+    # Simulation variables
     time = 0
-    queue = deque()  # Queue to manage the round-robin scheduling
-    job_index = 0
-    flow_times = []
-    
-    # Continue until all jobs are processed
-    while job_index < len(jobs) or queue:
-        # Add jobs to the queue that have arrived
-        while job_index < len(jobs) and jobs[job_index][0] <= time:
-            queue.append(jobs[job_index] + [time])  # Append arrival time for flow time calculation
-            job_index += 1
+    queue = []
+    completed_jobs = 0
 
+    # Function to add eligible jobs to the queue
+    def add_to_queue(time, jobs, queue):
+        for job in jobs:
+            if job['arrival_time'] <= time and job not in queue and job['remaining_size'] > 0:
+                queue.append(job)
+
+    # Round-Robin Scheduling
+    while completed_jobs < len(jobs):
+        add_to_queue(time, jobs, queue)
         if queue:
-            # Pop the next job in the queue
-            current_job = queue.popleft()
-            # Decrease job size by time quantum and increase current time
-            current_job[1] -= time_quantum
-            time += time_quantum
-            
-            # Check if the job is completed
-            if current_job[1] > 0:
-                # If not, add it back to the end of the queue
-                queue.append(current_job)
+            current_job = queue.pop(0)
+            if current_job['start_time'] is None:
+                current_job['start_time'] = time
+            execution_time = min(time_quantum, current_job['remaining_size'])
+            current_job['remaining_size'] -= execution_time
+            time += execution_time
+            if current_job['remaining_size'] == 0:
+                current_job['completion_time'] = time
+                completed_jobs += 1
             else:
-                # If completed, calculate the flow time and store it
-                flow_time = time - current_job[0]
-                flow_times.append(flow_time)
+                add_to_queue(time, jobs, queue)
+                queue.append(current_job)  # Re-add the job at the end of the queue if not completed
         else:
-            # If no jobs are in the queue, move to the next time where a job arrives
-            time = jobs[job_index][0] if job_index < len(jobs) else time + 1
+            time += 1  # Increment time if no jobs are ready to run
 
-    # Calculate average flow time and flow time L2 norm
-    average_flow_time = np.mean(flow_times)
-    flow_time_l2_norm = np.linalg.norm(flow_times)
-    print(f"Rr average Flow Time: {average_flow_time}")
-    print(f"Rr flow time L2-norm: {flow_time_l2_norm}")
-    return average_flow_time, flow_time_l2_norm
+    # Ensure all jobs have a completion time
+    for job in jobs:
+        if job['completion_time'] is None:
+            job['completion_time'] = time  # Safeguard, but investigate why this would happen
 
-# Example input
-# jobs = Read_csv('(0.025, 16.772).csv')
+    # Calculate metrics
+    average_flow_time = sum(job['completion_time'] - job['arrival_time'] for job in jobs) / len(jobs)
+    l2_norm_flow_time = np.sqrt(sum((job['completion_time'] - job['arrival_time'])**2 for job in jobs))
 
-# # Run the Round-Robin algorithm
-# average_flow_time, flow_time_l2_norm = Rr(jobs)
+    # Generate logs
+    job_logs = [{'arrival_time': job['arrival_time'], 'first_executed_time': job['start_time'], 'ifdone': job['completion_time'] is not None} for job in jobs]
 
-# print("Average Flow Time:", average_flow_time)
-# print("Flow Time L2 Norm:", flow_time_l2_norm)
+    return average_flow_time, l2_norm_flow_time, job_logs
+
+# Example usage
+jobs_input = [[0, 3], [2, 6], [4, 4], [6, 5], [8, 2]]
+average_flow_time, l2_norm_flow_time, job_logs = round_robin_scheduling(jobs_input)
+print("Average Flow Time:", average_flow_time)
+print("L2-norm Flow Time:", l2_norm_flow_time)
+print("Job Logs:", job_logs)
