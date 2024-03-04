@@ -25,6 +25,7 @@ for i in df['bp_parms'].unique():
     y_sjf = x['SJF/SRPT'].to_list()
     y_rr = x['RR/SRPT'].to_list()
     y_mlfq = x['MLFQ/SRPT'].tolist()
+    y_prmlfq = x ['PRMLFQ/SRPT'].tolist()
     y_setf = x['SETF/SRPT'].tolist()
     y_rmlfq = x['RMLFQ/SRPT'].tolist()
     y_fcfs = x['FCFS/SRPT'].tolist()
@@ -36,6 +37,7 @@ for i in df['bp_parms'].unique():
     plt.plot(x_label, y_mlfq,'-v', label='MLFQ/SRPT')
     plt.plot(x_label, y_setf,'-+', label='SETF/SRPT')
     plt.plot(x_label, y_rmlfq,'-^',label='RMLFQ/SRPT')
+    plt.plot(x_label,y_prmlfq,'-*',label='PRMLFQ/SRPT')
     plt.plot(x_label,y_fcfs,'-d',label='FCFS/SRPT')
 
     # Add labels and legend
@@ -52,8 +54,8 @@ for i in df['bp_parms'].unique():
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, img_name), bbox_inches="tight")
     plt.close()
-
-arithmetic_ls = ['SJF/SRPT', 'RR/SRPT', 'MLFQ/SRPT', 'SETF/SRPT', 'FCFS/SRPT','RMLFQ/SRPT']
+    
+arithmetic_ls = ['SJF/SRPT', 'RR/SRPT', 'MLFQ/SRPT', 'SETF/SRPT', 'FCFS/SRPT','RMLFQ/SRPT','PRMLFQ/SRPT']
 df_melt = df.melt(id_vars=['bp_parms', 'arrival_rate'], value_vars=arithmetic_ls, var_name='arithmetic', value_name='value')
 tmp = df_melt['bp_parms'].str.split('/', expand=True)
 tmp.columns = ['L', 'H']
@@ -61,16 +63,3 @@ tmp['L'] = tmp['L'].str[1:].astype(float)
 tmp['H'] = tmp['H'].str[1:].astype(float)
 df_melt = tmp.join(df_melt)
 df_melt.to_csv("avg_flow_time_compare_with_srpt.csv",index=False)
-# plt.clf()
-# sns.boxplot(data=df_melt, x='bp_parms', y='value', hue='arithmetic')
-# plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-# plt.tight_layout()
-# plt.savefig(os.path.join(output_dir, 'boxplot.png'), bbox_inches="tight")
-# plt.close()
-
-# plt.clf()
-# sns.boxplot(data=df_melt, x='arithmetic', y='value', hue='bp_parms')
-# plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-# plt.tight_layout()
-# plt.savefig(os.path.join(output_dir, 'boxplot2.png'), bbox_inches="tight")
-# plt.close()

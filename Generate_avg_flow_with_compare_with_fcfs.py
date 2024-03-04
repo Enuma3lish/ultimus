@@ -27,6 +27,7 @@ for i in df['bp_parms'].unique():
     y_mlfq = x['MLFQ/FCFS'].tolist()
     y_setf = x['SETF/FCFS'].tolist()
     y_rmlfq = x['RMLFQ/FCFS'].tolist()
+    y_prmlfq = x ['PRMLFQ/FCFS'].tolist()
     y_srpt = x['SPRT/FCFS'].tolist()
     plt.clf()
     plt.figure(figsize=(30,20))  # Adjust the figure size as needed
@@ -36,6 +37,7 @@ for i in df['bp_parms'].unique():
     plt.plot(x_label, y_mlfq,'-v',label='MLFQ/FCFS')
     plt.plot(x_label, y_setf,'-+',label='SETF/FCFS')
     plt.plot(x_label, y_rmlfq,'-^',label="RMLFQ/FCFS")
+    plt.plot(x_label,y_prmlfq,'-*',label='RMLFQ/FCFS')
     plt.plot(x_label, y_srpt,'-d',label="SRPT/FCFS")
 
     # Add labels and legend
@@ -53,7 +55,7 @@ for i in df['bp_parms'].unique():
     plt.savefig(os.path.join(output_dir, img_name), bbox_inches="tight")
     plt.close()
     
-arithmetic_ls = ['SJF/FCFS', 'RR/FCFS', 'MLFQ/FCFS', 'SETF/FCFS', 'SPRT/FCFS','RMLFQ/FCFS']
+arithmetic_ls = ['SJF/FCFS', 'RR/FCFS', 'MLFQ/FCFS', 'SETF/FCFS', 'SPRT/FCFS','RMLFQ/FCFS','PRMLFQ/FCFS']
 df_melt = df.melt(id_vars=['bp_parms', 'arrival_rate'], value_vars=arithmetic_ls, var_name='arithmetic', value_name='value')
 tmp = df_melt['bp_parms'].str.split('/', expand=True)
 tmp.columns = ['L', 'H']

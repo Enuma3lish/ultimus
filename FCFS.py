@@ -1,38 +1,34 @@
-import pandas as pd
 import numpy as np
-def Read_csv(filename):
-# Read the CSV file into a DataFrame 
-    data_frame = pd.read_csv(filename)
-    data_list = data_frame.values.tolist()
-    return data_list
-def Fcfs(processes):
-    # Sort processes by arrival time
-    processes.sort(key=lambda x: x[0])
 
-    n = len(processes)
-    current_time = 0
-    total_flow_time = 0
-    flow_time_arr = []
-    for process in processes:
-        arrival_time, job_size = process
+def simulate_fcfs(jobs):
+    time = 0  # Current time
+    job_logs = []  # Logs for each job
+    flow_times = []  # Store flow times for each job to calculate metrics
+    
+    for job in jobs:
+        arrival_time, job_size = job
+        if time < arrival_time:
+            time = arrival_time  # Wait for job to arrive if there is idle time
+        first_executed_time = time
+        time += job_size  # Update current time after job is done
+        flow_time = time - arrival_time
+        flow_times.append(flow_time)  # Add flow time for this job
+        
+        # Log for this job
+        job_logs.append({
+            'arrival_time': arrival_time,
+            'first_executed_time': first_executed_time,
+            'ifdone': True
+        })
+    
+    # Calculate average flow time and L2-norm flow time
+    avg_flow_time = np.mean(flow_times)
+    l2_norm_flow_time = np.linalg.norm(flow_times)
+    
+    return avg_flow_time, l2_norm_flow_time, job_logs
 
-        # If the current time is less than the arrival time, fast-forward the time
-        if current_time < arrival_time:
-            current_time = arrival_time
+# Example jobs input: [[arrival_time, job_size], ...]
+jobs = [[0, 3], [2, 6], [4, 4], [6, 5]]
 
-        # Calculate completion time for the process
-        completion_time = current_time + job_size
-
-        # Flow time is completion time minus arrival time
-        flow_time = completion_time - arrival_time
-        flow_time_arr.append(flow_time)
-        total_flow_time += flow_time
-
-        # Update the current time for the next process
-        current_time = completion_time
-    flow_time_l2_norm = np.linalg.norm(flow_time_arr)
-    # Calculate average flow time
-    print(f"FCFS flow time L2-norm: {flow_time_l2_norm}")
-    print(f"FCFS l2 Flow Time L2 Norm:, {flow_time_l2_norm}")
-    average_flow_time = total_flow_time / n
-    return average_flow_time,flow_time_l2_norm
+avg_flow_time, l2_norm_flow_time, job_logs = simulate_fcfs(jobs)
+print(avg_flow_time,l2_norm_flow_time,job_logs)

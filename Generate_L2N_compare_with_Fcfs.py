@@ -29,6 +29,7 @@ for i in df['bp_parms'].unique():
     y_mlfq = x['MLFQ_L2_Norm/FCFS_L2_Norm'].tolist()
     y_setf = x['SETF_L2_Norm/FCFS_L2_Norm'].tolist()
     y_rmlfq = x['RMLFQ_L2_Norm/FCFS_L2_Norm'].tolist()
+    y_prmlfq = x['PRMLFQ_L2_Norm/FCFS_L2_Norm'].tolist()
     y_fcfs = x['SRPT_L2_Norm/FCFS_L2_Norm'].tolist()
     plt.clf()
     plt.figure(figsize=(30,20))  # Adjust the figure size as needed
@@ -38,6 +39,7 @@ for i in df['bp_parms'].unique():
     plt.plot(x_label, y_mlfq,'-v',label='MLFQ_L2_Norm/FCFS_L2_Normm')
     plt.plot(x_label, y_setf,'-+',label='SETF_L2_Norm/FCFS_L2_Norm')
     plt.plot(x_label, y_rmlfq,'-^',label="RMLFQ_L2_Norm/FCFS_L2_Norm")
+    plt.plot(x_label, y_prmlfq,'-*',label="PRMLFQ_L2_Norm/FCFS_L2_Norm")
     plt.plot(x_label,y_fcfs,'-d',label="SRPT_L2_Norm/FCFS_L2_Norm")
 
     # Add labels and legend
@@ -55,7 +57,7 @@ for i in df['bp_parms'].unique():
     plt.savefig(os.path.join(output_dir, img_name), bbox_inches="tight")
     plt.close()
 
-arithmetic_ls = ['SJF_L2_Norm/FCFS_L2_Norm', 'RR_L2_Norm/FCFS_L2_Norm', 'MLFQ_L2_Norm/FCFS_L2_Norm', 'SETF_L2_Norm/FCFS_L2_Norm', 'SRPT_L2_Norm/FCFS_L2_Norm','RMLFQ_L2_Norm/FCFS_L2_Norm']
+arithmetic_ls = ['SJF_L2_Norm/FCFS_L2_Norm', 'RR_L2_Norm/FCFS_L2_Norm', 'MLFQ_L2_Norm/FCFS_L2_Norm', 'SETF_L2_Norm/FCFS_L2_Norm', 'SRPT_L2_Norm/FCFS_L2_Norm','RMLFQ_L2_Norm/FCFS_L2_Norm','PRMLFQ_L2_Norm/FCFS_L2_Norm']
 df_melt = df.melt(id_vars=['bp_parms', 'arrival_rate'], value_vars=arithmetic_ls, var_name='arithmetic', value_name='value')
 tmp = df_melt['bp_parms'].str.split('/', expand=True)
 tmp.columns = ['L', 'H']
