@@ -9,7 +9,7 @@ import matplotlib.ticker as ticker
 output_dir = './img'
 os.makedirs(output_dir, exist_ok=True)
 # Step 1: Read the CSV file into a DataFrame
-df = pd.read_csv('100000_data.csv')
+df = pd.read_csv('100000_data_pow_2.csv')
 
 x_label = [ceil(1/0.05), ceil(1/0.04545), ceil(1/0.0416), ceil(1/0.0385), ceil(1/0.036), ceil(1/0.033), ceil(1/0.03123), ceil(1/0.029), ceil(1/0.028), ceil(1/0.026), ceil(1/0.025)]
 

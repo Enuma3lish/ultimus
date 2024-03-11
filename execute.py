@@ -1,6 +1,6 @@
 import multiprocessing
 import Read_csv
-import RMLFQ,RR,SJF,SRPT,SETF,FCFS,MLFQ,PRMLFQ
+import RMLFQ,RR,SJF,SRPT,SETF,FCFS,MLFQ,PRMLFQ,algo_checker,Rmlfq_dy
 #Arrival_rate=[0.05,0.04545,0.0416,0.0385,0.036,0.033,0.3123,0.029,0.028,0.026,0.025]
 def process_scheduler(func, data):
     return func(data)
@@ -24,7 +24,7 @@ def execute(Arrival_rate,bp_parameter):
     fcfs_l2n_result = 0
     rmlfq_l2n_rr_l2n_result = 0
     for i in bp_parameter:
-        job_list = Read_csv.Read_csv(str((Arrival_rate,i["L"]))+".csv")
+        job_list = Read_csv.Read_csv('data/'+str((Arrival_rate,i["L"]))+".csv")
         rr_list = job_list.copy()
         sjf_list = job_list.copy()
         srpt_list = job_list.copy()
@@ -53,18 +53,25 @@ def execute(Arrival_rate,bp_parameter):
         # Use starmap to run the functions in parallel
             results = pool.starmap(
                 process_scheduler,
-                    [(RMLFQ.Rmlfq, job_list),(MLFQ.Mlfq,rmlfq_list),(RR.Rr, rr_list), (SRPT.Srpt, srpt_list), (SJF.Sjf, sjf_list),(SETF.Setf,setf_list),(FCFS.Fcfs,fcfs_list),(PRMLFQ.Prmlfq,prmlfq_list)]
+                    [(Rmlfq_dy.Rmlfq, job_list),(MLFQ.Mlfq,rmlfq_list),(RR.Rr, rr_list), (SRPT.Srpt, srpt_list), (SJF.Sjf, sjf_list),(SETF.Setf,setf_list),(FCFS.Fcfs,fcfs_list),(PRMLFQ.Prmlfq,prmlfq_list)]
                 )
             rmlfq,mlfq,rr,srpt,sjf,setf,fcfs,prmlfq = results
-            rmlfq_avg,rmlfq_l2n = rmlfq
-            mlfq_avg,mlfq_l2n = mlfq
-            prmlfq_avg,prmlfq_l2n = prmlfq
-            rr_avg,rr_l2n = rr
-            srpt_avg,srpt_l2n = srpt
-            sjf_avg,sjf_l2n = sjf
-            setf_avg,setf_l2n = setf
-            fcfs_avg,fcfs_l2n = fcfs
-            
+            rmlfq_avg,rmlfq_l2n,rmlfq_log = rmlfq
+            mlfq_avg,mlfq_l2n,mlfq_log = mlfq
+            prmlfq_avg,prmlfq_l2n,prmlfq_log = prmlfq
+            rr_avg,rr_l2n,rr_log = rr
+            srpt_avg,srpt_l2n,srpt_log = srpt
+            sjf_avg,sjf_l2n,sjf_log = sjf
+            setf_avg,setf_l2n,setf_log = setf
+            fcfs_avg,fcfs_l2n,fcfs_log = fcfs
+            collect = {"rmlfq":rmlfq_log,"mlfq":mlfq_log,"prmlfq":prmlfq_log,"rr":rr_log,"srpt":srpt_log,"sjf":sjf_log,"setf":setf_log,"fcfs":fcfs_log}
+            for key,value in collect.items():
+                r = algo_checker.check_logs(key,value)
+                if r != True:
+                    #print(str(r))
+                    print(str(i)+" "+str(Arrival_rate)+" "+key+" "+str(r))
+                    # print()
+                    # print(value)
             sjf_result = sjf_avg/srpt_avg 
             rr_result = rr_avg/srpt_avg
             mlfq_result = mlfq_avg/srpt_avg

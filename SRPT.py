@@ -1,5 +1,11 @@
 import numpy as np
-def SRPT(jobs_input):
+import pandas as pd
+def Read_csv(filename):
+# Read the CSV file into a DataFrame 
+    data_frame = pd.read_csv(filename)
+    data_list = data_frame.values.tolist()
+    return data_list
+def Srpt(jobs_input):
     """
     Simulates the Shortest Remaining Processing Time (SRPT) scheduling algorithm.
     
@@ -47,8 +53,8 @@ def SRPT(jobs_input):
     logs = [{'arrival_time': job['arrival_time'], 'first_executed_time': job['start_time'], 'ifdone': job['completed']} for job in completed_jobs]
 
     return average_flow_time, l2_norm_flow_time, logs
-
-# Example usage:
-jobs_input = [[0, 3], [2, 6], [4, 4], [6, 5], [8, 2]]
-average_flow_time, l2_norm_flow_time, logs = SRPT(jobs_input)
-print(average_flow_time,l2_norm_flow_time,logs)
+jobs = Read_csv("data/(40, 4.073).csv")
+avg,l2,logs=Srpt(jobs)
+print(avg)
+print(l2)
+# print(logs)

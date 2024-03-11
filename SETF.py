@@ -1,6 +1,11 @@
 import numpy as np
-
-def setf_scheduling(jobs):
+import pandas as pd
+def Read_csv(filename):
+# Read the CSV file into a DataFrame 
+    data_frame = pd.read_csv(filename)
+    data_list = data_frame.values.tolist()
+    return data_list
+def Setf(jobs):
     """
     Perform Shortest Elapsed Time First (SETF) scheduling on a list of jobs.
 
@@ -56,12 +61,8 @@ def setf_scheduling(jobs):
     l2_norm_flow_time = np.sqrt(sum(flow_times_squared))
 
     return average_flow_time, l2_norm_flow_time, job_logs
-
-# Example usage
-jobs = [[0, 3], [2, 6], [4, 4], [6, 5]]
-average_flow_time, l2_norm_flow_time, job_logs = setf_scheduling(jobs)
-print(f"Average Flow Time: {average_flow_time}")
-print(f"L2-Norm Flow Time: {l2_norm_flow_time}")
-print(f"Job Logs:")
-for log in job_logs:
-    print(log)
+# jobs = Read_csv("data/(20, 4.073).csv")
+# avg,l2,logs=Setf(jobs)
+# print(avg)
+# print(l2)
+# print(logs)
