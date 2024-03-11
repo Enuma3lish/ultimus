@@ -7,59 +7,58 @@ def Read_csv(filename):
     data_list = data_frame.values.tolist()
     return data_list
 def Mlfq(jobs, num_queues=100):
-    # Initialize queues and time quanta
     queues = [deque() for _ in range(num_queues)]
     time_quanta = [2 ** i for i in range(num_queues)]
     
     current_time = 0
     flow_times = []
     jobs_in_system = len(jobs)
+    logs = []  # Initialize logs list
     
-    # Sort jobs by arrival time
+    # Convert job tuples to lists to allow modification
+    jobs = [[job[0], job[1]] for job in jobs]  # Format: [arrival_time, job_size]
     jobs.sort(key=lambda x: x[0])
     job_index = 0
 
     while jobs_in_system > 0:
-        # Enqueue newly arrived jobs in the top-level queue
         while job_index < len(jobs) and jobs[job_index][0] <= current_time:
-            queues[0].append([jobs[job_index], current_time, 0])  # Job, start time, current queue level
+            queues[0].append([jobs[job_index], current_time, 0, None, False])  # Include job as list
             job_index += 1
 
-        # Find the highest-priority non-empty queue
         for i, queue in enumerate(queues):
             if queue:
-                job, start_time, _ = queue.popleft()
+                job, start_time, _, first_executed_time, _ = queue.popleft()
                 quantum = min(time_quanta[i], job[1])
+                
+                if first_executed_time is None:
+                    first_executed_time = current_time
+                
                 job[1] -= quantum
                 current_time += quantum
                 
-                if job[1] == 0:  # Job completed
+                if job[1] == 0:
                     flow_times.append(current_time - job[0])
                     jobs_in_system -= 1
-                elif i < num_queues - 1:  # Move to next lower-priority queue
-                    queues[i + 1].append([job, start_time, i + 1])
-                else:  # Last queue is round-robin
-                    queues[i].append([job, start_time, i])
+                    logs.append({'arrival_time': job[0], 'first_executed_time': first_executed_time, 'ifdone': True})
+                elif i < num_queues - 1:
+                    queues[i + 1].append([job, start_time, i + 1, first_executed_time, False])
+                else:
+                    queues[i].append([job, start_time, i, first_executed_time, False])
                 
-                break  # Process one job at a time
+                break
         else:
-            # If no jobs are available, advance time
             if job_index < len(jobs):
                 current_time = jobs[job_index][0]
             else:
-                current_time += 1  # Idle time
+                current_time += 1
 
-    # Calculate average flow time and flow time L2 norm
     average_flow_time = np.mean(flow_times)
     flow_time_l2_norm = np.linalg.norm(flow_times)
 
-    return average_flow_time, flow_time_l2_norm
+    return average_flow_time, flow_time_l2_norm, logs
 
-# Example input
-jobs = Read_csv('(0.05, 16.772).csv')
-
-# Run the MLFQ algorithm
-average_flow_time, flow_time_l2_norm = Mlfq(jobs)
-
-print("Average Flow Time:", average_flow_time)
-print("Flow Time L2 Norm:", flow_time_l2_norm)
+jobs = Read_csv("data/(40, 4.073).csv")
+avg,l2,logs=Mlfq(jobs)
+print(avg)
+print(l2)
+# print(logs)

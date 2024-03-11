@@ -1,5 +1,10 @@
 import numpy as np
-
+import pandas as pd
+def Read_csv(filename):
+# Read the CSV file into a DataFrame 
+    data_frame = pd.read_csv(filename)
+    data_list = data_frame.values.tolist()
+    return data_list
 def Sjf(jobs):
     # Sort jobs by arrival time
     jobs.sort(key=lambda x: x[0])
@@ -29,9 +34,8 @@ def Sjf(jobs):
     l2_norm_flow_time = np.linalg.norm(waiting_time)
     
     return avg_flow_time, l2_norm_flow_time, job_logs
-
-# Example input
-jobs = [[0, 3], [2, 6], [4, 1], [6, 5]]
-
-avg_flow_time, l2_norm_flow_time, job_logs = Sjf(jobs)
-print(avg_flow_time, l2_norm_flow_time, job_logs)
+# jobs = Read_csv("data/(20, 4.073).csv")
+# avg,l2,logs=Sjf(jobs)
+# print(avg)
+# print(l2)
+# print(logs)

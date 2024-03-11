@@ -1,6 +1,11 @@
 import numpy as np
-
-def simulate_fcfs(jobs):
+import pandas as pd
+def Read_csv(filename):
+# Read the CSV file into a DataFrame 
+    data_frame = pd.read_csv(filename)
+    data_list = data_frame.values.tolist()
+    return data_list
+def Fcfs(jobs):
     time = 0  # Current time
     job_logs = []  # Logs for each job
     flow_times = []  # Store flow times for each job to calculate metrics
@@ -26,9 +31,8 @@ def simulate_fcfs(jobs):
     l2_norm_flow_time = np.linalg.norm(flow_times)
     
     return avg_flow_time, l2_norm_flow_time, job_logs
-
-# Example jobs input: [[arrival_time, job_size], ...]
-jobs = [[0, 3], [2, 6], [4, 4], [6, 5]]
-
-avg_flow_time, l2_norm_flow_time, job_logs = simulate_fcfs(jobs)
-print(avg_flow_time,l2_norm_flow_time,job_logs)
+jobs = Read_csv("data/(40, 16.772).csv")
+avg,l2,logs=Fcfs(jobs)
+print(avg)
+print(l2)
+# print(logs)
