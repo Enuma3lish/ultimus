@@ -41,4 +41,11 @@ for i in df['bp_parms'].unique():
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, img_name), bbox_inches="tight")
     plt.close()
-    
+arithmetic_ls = ['Rmlfq_L2_Norm/Rmlfq_Dy_L2_norm']
+df_melt = df.melt(id_vars=['bp_parms', 'arrival_rate'], value_vars=arithmetic_ls, var_name='arithmetic', value_name='value')
+tmp = df_melt['bp_parms'].str.split('/', expand=True)
+tmp.columns = ['L', 'H']
+tmp['L'] = tmp['L'].str[1:].astype(float)
+tmp['H'] = tmp['H'].str[1:].astype(float)
+df_melt = tmp.join(df_melt)
+df_melt.to_csv("avg_flow_time_compare_with_customize.csv",index=False)
