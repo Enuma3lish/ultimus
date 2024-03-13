@@ -6,7 +6,7 @@ def Read_csv(filename):
     data_frame = pd.read_csv(filename)
     data_list = data_frame.values.tolist()
     return data_list
-def Rmlfq(jobs, num_queues=100, base_quantum=30, quantum_multiplier=2):
+def Rmlfq(jobs, num_queues=100, base_quantum=30, quantum_multiplier=1.1):
     queues = [[] for _ in range(num_queues)]
     queue_time_quantums = [base_quantum * (pow(quantum_multiplier, i)) for i in range(num_queues)]
     current_time = 0
@@ -77,9 +77,9 @@ def Rmlfq(jobs, num_queues=100, base_quantum=30, quantum_multiplier=2):
     l2_norm_flow_time = np.linalg.norm(job_completion_times)
     return average_flow_time, l2_norm_flow_time, job_logs
 
-#Example call with the job list
-jobs = Read_csv("data/(40, 4.073).csv")
+# #Example call with the job list
+jobs = Read_csv("data/(28, 16.772).csv")
 average_flow_time, l2_norm_flow_time, job_logs = Rmlfq(jobs)
-print(average_flow_time)
-print(l2_norm_flow_time)
-# print(job_logs)
+# print(average_flow_time)
+# print(l2_norm_flow_time)
+# # print(job_logs)

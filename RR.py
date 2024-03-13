@@ -56,8 +56,8 @@ def Rr(jobs, time_quantum=4):
     
     return average_flow_time, l2_norm_flow_time,formatted_job_logs
 
-jobs = Read_csv("data/(20, 4.073).csv")
-avg,l2,logs=Rr(jobs)
-print(avg)
-print(l2)
-print(logs)
+# jobs = Read_csv("data/(20, 4.073).csv")
+# avg,l2,logs=Rr(jobs)
+# print(avg)
+# print(l2)
+# print(logs)

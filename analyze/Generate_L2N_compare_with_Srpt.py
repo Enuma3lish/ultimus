@@ -9,10 +9,9 @@ import matplotlib.ticker as ticker
 output_dir = './plots'
 os.makedirs(output_dir, exist_ok=True)
 # Step 1: Read the CSV file into a DataFrame
-df = pd.read_csv('100000_data.csv')
+df = pd.read_csv('analyze/100000_data.csv')
 
-x_label = [ceil(1/0.05), ceil(1/0.04545), ceil(1/0.0416), ceil(1/0.0385), ceil(1/0.036), ceil(1/0.033), ceil(1/0.03123), ceil(1/0.029), ceil(1/0.028), ceil(1/0.026), ceil(1/0.025)]
-
+x_label = [i for i in range(20, 41, 2)]
 def parms_parser(parms):
     bp_parms_dt = json.loads(parms.replace("\'", "\"")) # 雙引號才能轉換
     name = '/'.join([f'{k}{v}' for k,v  in bp_parms_dt.items()])
@@ -28,6 +27,7 @@ for i in df['bp_parms'].unique():
     y_mlfq = x['MLFQ_L2_Norm/SRPT_L2_Norm'].tolist()
     y_setf = x['SETF_L2_Norm/SRPT_L2_Norm'].tolist()
     y_rmlfq = x['RMLFQ_L2_Norm/SRPT_L2_Norm'].tolist()
+    y_rmlfq_dy = x['RMLFQ_Dy_L2_Norm/SRPT_L2_Norm'].tolist()
     y_prmlfq = x['PRMLFQ_L2_Norm/SRPT_L2_Norm'].tolist()
     y_fcfs = x['FCFS_L2_Norm/SRPT_L2_Norm'].tolist()
     plt.clf()
@@ -38,12 +38,13 @@ for i in df['bp_parms'].unique():
     plt.plot(x_label, y_mlfq,'-v',label='MLFQ_L2_Norm/SRPT_L2_Norm')
     plt.plot(x_label, y_setf,'-+',label='SETF_L2_Norm/SRPT_L2_Norm')
     plt.plot(x_label, y_rmlfq,'-^',label="RMLFQ_L2_Norm/SRPT_L2_Norm")
+    plt.plot(x_label, y_rmlfq_dy,'-<',label="RMLFQ_Dy_L2_Norm/SRPT_L2_Norm")
     plt.plot(x_label, y_prmlfq,'-*',label="PRMLFQ_L2_Norm/SRPT_L2_Norm")
     plt.plot(x_label,y_fcfs,'-d',label="FCFS_L2_Norm/SRPT_L2_Norm")
 
     # Add labels and legend
     plt.xticks(x_label, rotation=35, fontsize='14')
-    plt.xlabel('arrival_rate', font={'size': 18})
+    plt.xlabel('inter arrival ratee', font={'size': 18})
     plt.ylabel('Compare', font={'size': 18})
     plt.legend()
     plt.title(f"bp parameter experimental results({i}) compare L2-norm with SRPT", font={'size': 18, 'weight': 'bold'})
@@ -51,12 +52,12 @@ for i in df['bp_parms'].unique():
     plt.gca().xaxis.set_minor_locator(ticker.MultipleLocator(0.5))  # Minor ticks every 0.5 unit
     plt.grid(True)
     # # Optionally, customize the title and save the figure
-    img_name = i.replace("/","_") + "_l2_norm_compare_with_srpt.jpg"
+    img_name = i.replace("/","_") + "_l2_norm_compare_with_srpt.pdf"
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, img_name), bbox_inches="tight")
     plt.close()
 
-arithmetic_ls = ['SJF_L2_Norm/SRPT_L2_Norm', 'RR_L2_Norm/SRPT_L2_Norm', 'MLFQ_L2_Norm/SRPT_L2_Norm', 'SETF_L2_Norm/SRPT_L2_Norm', 'FCFS_L2_Norm/SRPT_L2_Norm','RMLFQ_L2_Norm/SRPT_L2_Norm','PRMLFQ_L2_Norm/SRPT_L2_Norm']
+arithmetic_ls = ['SJF_L2_Norm/SRPT_L2_Norm', 'RR_L2_Norm/SRPT_L2_Norm', 'MLFQ_L2_Norm/SRPT_L2_Norm', 'SETF_L2_Norm/SRPT_L2_Norm', 'FCFS_L2_Norm/SRPT_L2_Norm','RMLFQ_L2_Norm/SRPT_L2_Norm','PRMLFQ_L2_Norm/SRPT_L2_Norm','RMLFQ_Dy_L2_Norm/SRPT_L2_Norm']
 df_melt = df.melt(id_vars=['bp_parms', 'arrival_rate'], value_vars=arithmetic_ls, var_name='arithmetic', value_name='value')
 tmp = df_melt['bp_parms'].str.split('/', expand=True)
 tmp.columns = ['L', 'H']
