@@ -9,10 +9,8 @@ import matplotlib.ticker as ticker
 output_dir = './img'
 os.makedirs(output_dir, exist_ok=True)
 # Step 1: Read the CSV file into a DataFrame
-df = pd.read_csv('100000_data_pow_2.csv')
-
-x_label = [ceil(1/0.05), ceil(1/0.04545), ceil(1/0.0416), ceil(1/0.0385), ceil(1/0.036), ceil(1/0.033), ceil(1/0.03123), ceil(1/0.029), ceil(1/0.028), ceil(1/0.026), ceil(1/0.025)]
-
+df = pd.read_csv('analyze/100000_data.csv')
+x_label = [i for i in range(20, 41, 2)]
 def parms_parser(parms):
     bp_parms_dt = json.loads(parms.replace("\'", "\"")) # 雙引號才能轉換
     name = '/'.join([f'{k}{v}' for k,v  in bp_parms_dt.items()])
@@ -30,13 +28,13 @@ for i in df['bp_parms'].unique():
     plt.clf()
     plt.figure(figsize=(30,20))  # Adjust the figure size as needed
     plt.axhline(y=1, color='r', linestyle='--', label='Y=1')
-    plt.plot(x_label, y_srpt,'-v',label='RMLFQ_L2_Norm/FCFS_L2_Normm')
+    plt.plot(x_label, y_srpt,'-v',label='RMLFQ_L2_Norm/SRPT_L2_Normm')
     plt.plot(x_label, y_fcfs,'-^',label="RMLFQ_L2_Norm/FCFS_L2_Norm")
     plt.plot(x_label,y_rr,'-d',label='RMLFQ_L2_Norm/RR_L2_Norm')
 
     # Add labels and legend
     plt.xticks(x_label, rotation=35, fontsize='14')
-    plt.xlabel('arrival_rate', font={'size': 18})
+    plt.xlabel('inter arrival rate', font={'size': 18})
     plt.ylabel('Compare', font={'size': 18})
     plt.legend()
     plt.title(f"bp parameter experimental results({i}) and compare FCFS with SRPT and Round-Ronbin L2-Norm", font={'size': 18, 'weight': 'bold'})

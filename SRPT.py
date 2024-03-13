@@ -53,8 +53,8 @@ def Srpt(jobs_input):
     logs = [{'arrival_time': job['arrival_time'], 'first_executed_time': job['start_time'], 'ifdone': job['completed']} for job in completed_jobs]
 
     return average_flow_time, l2_norm_flow_time, logs
-jobs = Read_csv("data/(40, 4.073).csv")
-avg,l2,logs=Srpt(jobs)
-print(avg)
-print(l2)
-# print(logs)
+# jobs = Read_csv("data/(40, 4.073).csv")
+# avg,l2,logs=Srpt(jobs)
+# print(avg)
+# print(l2)
+# # print(logs)
