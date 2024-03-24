@@ -1,60 +1,46 @@
 import numpy as np
+from heapq import heappush, heappop
 import pandas as pd
 def Read_csv(filename):
 # Read the CSV file into a DataFrame 
     data_frame = pd.read_csv(filename)
     data_list = data_frame.values.tolist()
     return data_list
-def Srpt(jobs_input):
-    """
-    Simulates the Shortest Remaining Processing Time (SRPT) scheduling algorithm.
-    
-    Args:
-    - jobs_input: A list of [arrival_time, job_size] for each job.
-    
-    Returns:
-    - average_flow_time: The average flow time of all jobs.
-    - l2_norm_flow_time: The L2-norm flow time of all jobs.
-    - logs: A list of logs for each job, including arrival time, first executed time, and completion status.
-    """
-    # Initialize variables
+def Srpt(jobs):
+    # Sort jobs by arrival time
+    jobs.sort(key=lambda x: x[0])
+    n = len(jobs)
     current_time = 0
-    jobs = sorted(jobs_input, key=lambda x: x[0])  # Sort jobs by arrival time
-    job_queue = []
-    completed_jobs = []
-
-    while jobs or job_queue or any(not job['completed'] for job in job_queue):
-        # Add arriving jobs to the queue
-        while jobs and jobs[0][0] <= current_time:
-            job = jobs.pop(0)
-            job_queue.append({'arrival_time': job[0], 'job_size': job[1], 'remaining_time': job[1], 'start_time': None, 'completed': False})
+    queue = []  # Priority queue for (remaining_time, arrival_time, job_index)
+    job_index = 0
+    flow_times = [0] * n  # Completion time - Arrival time for each job
+    
+    while job_index < n or queue:
+        if not queue:  # If queue is empty, jump to the next job arrival
+            current_time = max(current_time, jobs[job_index][0])
         
-        if job_queue:
-            # Select the job with the shortest remaining time
-            job_queue.sort(key=lambda x: x['remaining_time'])
-            current_job = job_queue[0]
+        # Add all jobs that have arrived by the current time
+        while job_index < n and jobs[job_index][0] <= current_time:
+            heappush(queue, (jobs[job_index][1], jobs[job_index][0], job_index))
+            job_index += 1
+        
+        if queue:
+            remaining_time, arrival_time, index = heappop(queue)
+            current_time += remaining_time  # Execute the job
+            flow_times[index] = current_time - arrival_time  # Calculate flow time for the job
             
-            # Execute job
-            if current_job['start_time'] is None:
-                current_job['start_time'] = current_time
-            current_job['remaining_time'] -= 1
-            
-            # Check if job is completed
-            if current_job['remaining_time'] <= 0:
-                current_job['completed'] = True
-                completed_jobs.append(job_queue.pop(0))  # Remove completed job from queue
-
-        current_time += 1  # Increment time
-
-    # Calculate metrics and generate logs
-    average_flow_time = sum(job['start_time'] - job['arrival_time'] + job['job_size'] for job in completed_jobs) / len(completed_jobs)
-    flow_times = [job['start_time'] - job['arrival_time'] + job['job_size'] for job in completed_jobs]
-    l2_norm_flow_time = np.linalg.norm(flow_times, 2)
-    logs = [{'arrival_time': job['arrival_time'], 'first_executed_time': job['start_time'], 'ifdone': job['completed']} for job in completed_jobs]
-
-    return average_flow_time, l2_norm_flow_time, logs
-# jobs = Read_csv("data/(40, 4.073).csv")
-# avg,l2,logs=Srpt(jobs)
-# print(avg)
-# print(l2)
+            # Update remaining times in queue (if needed)
+            new_queue = []
+            for rem_time, arr_time, idx in queue:
+                heappush(new_queue, (rem_time, arr_time, idx))
+            queue = new_queue
+    
+    average_flow_time = sum(flow_times) / n
+    l2_norm_flow_time = np.sqrt(np.sum(np.square(flow_times)))
+    
+    return average_flow_time, l2_norm_flow_time
+jobs = Read_csv("data/(26, 16.772).csv")
+avg,l2=Srpt(jobs)
+print(avg)
+print(l2)
 # # print(logs)

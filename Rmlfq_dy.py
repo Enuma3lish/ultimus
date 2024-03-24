@@ -78,8 +78,8 @@ def Rmlfq(jobs, num_queues=100, base_quantum=30, quantum_multiplier=1.1):
     return average_flow_time, l2_norm_flow_time, job_logs
 
 # #Example call with the job list
-jobs = Read_csv("data/(28, 16.772).csv")
-average_flow_time, l2_norm_flow_time, job_logs = Rmlfq(jobs)
+# jobs = Read_csv("data/(28, 16.772).csv")
+# average_flow_time, l2_norm_flow_time, job_logs = Rmlfq(jobs)
 # print(average_flow_time)
 # print(l2_norm_flow_time)
 # # print(job_logs)
