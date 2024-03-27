@@ -58,7 +58,7 @@ def Bal(jobs_input):
     return average_flow_time, l2_norm_flow_time
 
 # Example input and running the function
-jobs = Read_csv("data/(26, 16.772).csv")
+jobs = Read_csv("data/(28, 16.772).csv")
 average_flow_time, l2_norm_flow_time= Bal(jobs)
 
 print(average_flow_time)
