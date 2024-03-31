@@ -5,7 +5,7 @@ def Read_csv(filename):
     data_frame = pd.read_csv(filename)
     data_list = data_frame.values.tolist()
     return data_list
-def Rmlfq(jobs, num_queues=100, base_quantum=10, quantum_multiplier=1.5):
+def Rmlfq(jobs, base_quantum, quantum_multiplier,num_queues=100):
     queues = [[] for _ in range(num_queues)]
     queue_time_quantums = [base_quantum * (pow(quantum_multiplier, i)) for i in range(num_queues)]
     queue_priorities = [pow(2, -i) for i in range(num_queues)]

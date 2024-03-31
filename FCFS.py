@@ -32,7 +32,7 @@ def Fcfs(jobs):
     
     return avg_flow_time, l2_norm_flow_time, job_logs
 jobs = Read_csv("data/(26, 16.772).csv")
-avg,l2,logs=Fcfs(jobs)
-print(avg)
-print(l2)
+# avg,l2,logs=Fcfs(jobs)
+# print(avg)
+# print(l2)
 # print(logs)

@@ -1,66 +1,71 @@
 import numpy as np
 import pandas as pd
+from heapq import heapify, heappush, heappop
 def Read_csv(filename):
 # Read the CSV file into a DataFrame 
     data_frame = pd.read_csv(filename)
     data_list = data_frame.values.tolist()
     return data_list
-def Bal(jobs_input):
-    jobs = [(job[0], job[1], i) for i, job in enumerate(jobs_input)]  # Include original index
-    jobs.sort(key=lambda x: x[0])  # Sort by arrival time
-    
+def Bal(jobs):
+    jobs.sort(key=lambda x: x[0])
     n = len(jobs)
-    completion_times = [0] * n
     current_time = 0
-    job_queue = []
-    executed_jobs = 0
+    queue = []
+    job_index = 0
+    flow_times = [0] * n
+    logs = [{} for _ in range(n)]  # Initialize logs for each job
+    starvation_threshold = n ** (2/3)
     
-    while executed_jobs < n or job_queue:
-        # Add jobs to the queue that have arrived
-        while jobs and jobs[0][0] <= current_time:
-            job_queue.append(jobs.pop(0))
+    while job_index < n or queue:
+        if not queue:
+            current_time = max(current_time, jobs[job_index][0])
         
-        # Check for starvation
+        while job_index < n and jobs[job_index][0] <= current_time:
+            heappush(queue, (jobs[job_index][1], jobs[job_index][0], job_index, 0))
+            if job_index not in logs:  # Initialize log if not already done
+                logs[job_index] = {'arrival_time': jobs[job_index][0], 'first_executed_time': None, 'ifdone': False}
+            job_index += 1
+
+        new_queue = []
+        for remaining_time, arrival_time, index, _ in queue:
+            waiting_time_ratio = (current_time - arrival_time) / max(1, remaining_time)
+            heappush(new_queue, (remaining_time, arrival_time, index, waiting_time_ratio))
+        queue = new_queue
+        
         starving_job = None
-        for job in job_queue:
-            waiting_time = current_time - job[0]
-            if waiting_time > (n ** (2 / 3)):
+        for job in queue:
+            if job[3] > starvation_threshold:
                 starving_job = job
                 break
         
         if starving_job:
-            # Handle the starving job first
-            job_to_execute = starving_job
-            job_queue.remove(starving_job)
-        elif job_queue:
-            # Proceed with SRPT for non-starving jobs
-            job_queue.sort(key=lambda x: x[1])  # Sort by job size
-            job_to_execute = job_queue.pop(0)
+            queue.remove(starving_job)
+            selected_job = starving_job
         else:
-            job_to_execute = None
+            queue.sort(key=lambda x: (x[0], x[3]))
+            selected_job = queue.pop(0)
         
-        if job_to_execute:
-            # Execute the job
-            idx = job_to_execute[2]
-            execution_time = job_to_execute[1]
-            completion_times[idx] = current_time + execution_time
-            current_time += execution_time
-            executed_jobs += 1
-        else:
-            # Increment time if no jobs are ready
-            current_time += 1
+        remaining_time, arrival_time, index, _ = selected_job
+        # Log first execution time
+        if logs[index]['first_executed_time'] is None:
+            logs[index]['first_executed_time'] = current_time
+        current_time += remaining_time
+        flow_times[index] = current_time - arrival_time
+        logs[index]['ifdone'] = True  # Mark job as done
+        
+        queue = [(rem_time, arr_time, idx, wtr) for rem_time, arr_time, idx, wtr in queue]
+        heapify(queue)
     
-    # Calculate metrics
-    flow_times = [completion_times[i] - jobs_input[i][0] for i in range(n)]
     average_flow_time = sum(flow_times) / n
-    l2_norm_flow_time = np.linalg.norm(flow_times, 2)
+    l2_norm_flow_time = (sum(x**2 for x in flow_times) ** 0.5)  # np.sqrt(np.sum(np.square(flow_times))) simplified
     
-    return average_flow_time, l2_norm_flow_time
+    return average_flow_time, l2_norm_flow_time, logs
+
 
 # Example input and running the function
-jobs = Read_csv("data/(28, 16.772).csv")
-average_flow_time, l2_norm_flow_time= Bal(jobs)
+# jobs = Read_csv("data/(40, 16.772).csv")
+# average_flow_time, l2_norm_flow_time,logs= Bal(jobs)
 
-print(average_flow_time)
-print(l2_norm_flow_time)
-# print(max_flow_time, min_flow_time)
+# print(average_flow_time)
+# print(l2_norm_flow_time)
+# print(logs)
