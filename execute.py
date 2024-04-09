@@ -6,7 +6,7 @@ def process_scheduler(func, *args):
     if len(args) == 1 and isinstance(args[0], list):
         return func(args[0])
     return func(*args)
-def execute(Arrival_rate,bp_parameter,base_quantum,quantum_multiplier):
+def execute(Arrival_rate,bp_parameter,quantum_multiplier,quantum_decrease):
     results = []
     result =[]
     job_list =[]
@@ -66,7 +66,7 @@ def execute(Arrival_rate,bp_parameter,base_quantum,quantum_multiplier):
         # Use starmap to run the functions in parallel
             results = pool.starmap(
                 process_scheduler,
-                    [(RMLFQ.Rmlfq,job_list,base_quantum,quantum_multiplier),(Rmlfq_dy.Rmlfq, job_list),(MLFQ.Mlfq,rmlfq_list),(RR.Rr, rr_list), (SRPT.Srpt, srpt_list), 
+                    [(RMLFQ.Rmlfq,job_list,quantum_multiplier,quantum_decrease),(Rmlfq_dy.Rmlfq, job_list),(MLFQ.Mlfq,rmlfq_list),(RR.Rr, rr_list), (SRPT.Srpt, srpt_list), 
                      (SJF.Sjf, sjf_list),(SETF.Setf,setf_list),(FCFS.Fcfs,fcfs_list),(PRMLFQ.Prmlfq,prmlfq_list)])
             rmlfq,rmlfq_dy,mlfq,rr,srpt,sjf,setf,fcfs,prmlfq= results
             rmlfq_avg,rmlfq_l2n,rmlfq_log = rmlfq
@@ -134,6 +134,8 @@ def execute(Arrival_rate,bp_parameter,base_quantum,quantum_multiplier):
             #rmlfq_comp_bal_avg = rmlfq_avg/bal_avg
             result.append({
                 "arrival_rate":Arrival_rate,
+                "quantum_multiplier":quantum_multiplier,
+                "quantum_decrease":quantum_decrease,
                 "bp_parameter":i,
                 "SJF/SRPT":sjf_result,
                 "RR/SRPT":rr_result,
