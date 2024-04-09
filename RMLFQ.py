@@ -5,76 +5,68 @@ def Read_csv(filename):
     data_frame = pd.read_csv(filename)
     data_list = data_frame.values.tolist()
     return data_list
-def Rmlfq(jobs, base_quantum, quantum_multiplier,num_queues=100):
+
+def Rmlfq(jobs):
+    """
+    Simulate a Modified Multilevel Feedback Queue (MLFQ) with 100 queues, where at each execution cycle,
+    the system calculates the total service time for each job within each queue. The job from the queue with the smallest
+    total service time is executed. If the job in this period is not finished, it will be placed into the next level of the queue.
+    
+    Parameters:
+    - jobs: A list of [arrival_time, job_size] for each job.
+    
+    Returns:
+    - average_flow_time: The average flow time of the jobs.
+    - l2_norm_flow_time: The L2-norm flow time of the jobs.
+    """
+    num_queues = 100
     queues = [[] for _ in range(num_queues)]
-    queue_time_quantums = [base_quantum * (pow(quantum_multiplier, i)) for i in range(num_queues)]
-    queue_priorities = [pow(2, -i) for i in range(num_queues)]
-    current_time = 0
-    job_completion_times = []
-    job_logs = {}
+    time = 0
+    completed_jobs = []
+    job_service_times = [0] * len(jobs)
+    job_remaining_times = [job[1] for job in jobs]  # Time remaining for job completion
 
-    def add_job(arrival_time, job_size):
-        job_id = len(job_logs) + 1
-        job_logs[job_id] = {'arrival_time': arrival_time, 'first_executed_time': None, 'ifdone': False}
-        queues[0].append({'job_id': job_id, 'arrival_time': arrival_time, 'job_size': job_size, 'remaining_time': job_size})
+    while len(completed_jobs) < len(jobs) or any(queue for queue in queues if queue):
+        # Add arriving jobs to the highest priority queue
+        for job_id, job in enumerate(jobs):
+            if job[0] == time and job_id not in sum(queues, []):  # Prevent re-queuing jobs
+                queues[0].append(job_id)
+        
+        # Calculate total service time for each queue
+        queue_service_times = [sum(job_remaining_times[job_id] for job_id in queue) for queue in queues]
+        
+        # Find the queue with the smallest total service time that is not empty
+        queue_indices = [i for i, queue in enumerate(queues) if queue]
+        if not queue_indices:  # Skip if all queues are empty
+            time += 1
+            continue
 
-    def weighted_random_queue_selection():
-        non_empty_queues = [i for i, q in enumerate(queues) if len(q) > 0]
-        if non_empty_queues:
-            normalized_priorities = np.array([queue_priorities[i] for i in non_empty_queues])
-            normalized_priorities /= normalized_priorities.sum()
-            return np.random.choice(non_empty_queues, p=normalized_priorities)
-        return None
+        selected_queue_index = min(queue_indices, key=lambda i: queue_service_times[i])
+        job_id = queues[selected_queue_index][0]  # Always pick the first job in the queue
+        
+        job_remaining_times[job_id] -= 1
+        job_service_times[job_id] += 1
 
-    def execute_job_from_queue(queue_index):
-        nonlocal current_time
-        if queues[queue_index]:
-            job = queues[queue_index][0]
-            job_id = job['job_id']
-            time_quantum = min(queue_time_quantums[queue_index], job['remaining_time'])
-            job['remaining_time'] -= time_quantum
-            current_time += time_quantum
-            
-            if job_logs[job_id]['first_executed_time'] is None:
-                job_logs[job_id]['first_executed_time'] = current_time
-            
-            if job['remaining_time'] <= 0:
-                job_completion_times.append(current_time - job['arrival_time'])
-                job_logs[job_id]['ifdone'] = True
-                queues[queue_index].pop(0)
-            elif queue_index < num_queues - 1:
-                queues[queue_index].pop(0)
-                queues[queue_index + 1].append(job)
-
-    jobs.sort(key=lambda x: x[0])
-    job_index = 0
-    total_jobs = len(jobs)
-
-    while len(job_completion_times) < total_jobs:
-        while job_index < total_jobs and jobs[job_index][0] <= current_time:
-            add_job(jobs[job_index][0], jobs[job_index][1])
-            job_index += 1
-
-        if queues[0]:
-            execute_job_from_queue(0)
+        if job_remaining_times[job_id] == 0:
+            # Job completed
+            completed_jobs.append((job_id, time + 1))
+            queues[selected_queue_index].pop(0)  # Remove completed job from queue
         else:
-            selected_queue = weighted_random_queue_selection()
-            if selected_queue is not None:
-                execute_job_from_queue(selected_queue)
+            # Move the job to the next level if not completed
+            queues[selected_queue_index].pop(0)  # Remove from current queue
+            next_level = min(selected_queue_index + 1, num_queues - 1)  # Ensure it doesn't exceed the max queue level
+            queues[next_level].append(job_id)
+        
+        time += 1
 
-        if job_index < total_jobs and not any(queues):
-            current_time = jobs[job_index][0]
+    # Calculate metrics
+    flow_times = [completion - jobs[job_id][0] for job_id, completion in completed_jobs]
+    average_flow_time = np.mean(flow_times)
+    l2_norm_flow_time = np.linalg.norm(flow_times)
 
-    average_flow_time = np.mean(job_completion_times) if job_completion_times else 0
-    l2_norm_flow_time = np.linalg.norm(job_completion_times)
-
-    # Return or display job_logs in a different format if needed
-    # Example: Convert job_logs to a list of job details without showing job ID as a key
-    job_details_list = list(job_logs.values())  # Convert to list for different presentation
-
-    return average_flow_time, l2_norm_flow_time, job_details_list
-# jobs = Read_csv("data/(38, 16.772).csv")
-# avg,l2,logs=Rmlfq(jobs)
-# print(avg)
-# print(l2)
+    return average_flow_time, l2_norm_flow_time
+jobs = Read_csv("data/(40, 16.772).csv")
+avg,l2=Rmlfq(jobs)
+print(avg)
+print(l2)
 #print(logs)

@@ -57,8 +57,8 @@ def Mlfq(jobs, num_queues=100):
 
     return average_flow_time, flow_time_l2_norm, logs
 
-jobs = Read_csv("data/(28, 16.772).csv")
-avg,l2,logs=Mlfq(jobs)
-print(avg)
-print(l2)
-print(logs)
+# jobs = Read_csv("data/(28, 16.772).csv")
+# avg,l2,logs=Mlfq(jobs)
+# print(avg)
+# print(l2)
+# print(logs)
