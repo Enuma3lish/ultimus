@@ -1,3 +1,5 @@
+from collections import deque
+import math
 import numpy as np
 import pandas as pd
 def Read_csv(filename):
@@ -6,67 +8,90 @@ def Read_csv(filename):
     data_list = data_frame.values.tolist()
     return data_list
 
-def Rmlfq(jobs):
-    """
-    Simulate a Modified Multilevel Feedback Queue (MLFQ) with 100 queues, where at each execution cycle,
-    the system calculates the total service time for each job within each queue. The job from the queue with the smallest
-    total service time is executed. If the job in this period is not finished, it will be placed into the next level of the queue.
-    
-    Parameters:
-    - jobs: A list of [arrival_time, job_size] for each job.
-    
-    Returns:
-    - average_flow_time: The average flow time of the jobs.
-    - l2_norm_flow_time: The L2-norm flow time of the jobs.
-    """
-    num_queues = 100
-    queues = [[] for _ in range(num_queues)]
-    time = 0
-    completed_jobs = []
-    job_service_times = [0] * len(jobs)
-    job_remaining_times = [job[1] for job in jobs]  # Time remaining for job completion
+def Rmlfq(job_list):
+    class Job:
+        def __init__(self, arrival_time, job_size):
+            self.arrival_time = arrival_time
+            self.job_size = job_size
+            self.remaining_time = job_size
+            self.first_executed_time = None
+            self.completion_time = None
+            self.queue_level = 0
+            self.beta = None
+            self.target = None
 
-    while len(completed_jobs) < len(jobs) or any(queue for queue in queues if queue):
-        # Add arriving jobs to the highest priority queue
-        for job_id, job in enumerate(jobs):
-            if job[0] == time and job_id not in sum(queues, []):  # Prevent re-queuing jobs
-                queues[0].append(job_id)
-        
-        # Calculate total service time for each queue
-        queue_service_times = [sum(job_remaining_times[job_id] for job_id in queue) for queue in queues]
-        
-        # Find the queue with the smallest total service time that is not empty
-        queue_indices = [i for i, queue in enumerate(queues) if queue]
-        if not queue_indices:  # Skip if all queues are empty
-            time += 1
-            continue
+        def update_target(self, tau, i, n):
+            if self.beta is None:
+                self.beta = np.random.exponential(scale=1/(tau * math.log(n)))
+            self.target = 2 ** i * max(1, 2 - self.beta)
 
-        selected_queue_index = min(queue_indices, key=lambda i: queue_service_times[i])
-        job_id = queues[selected_queue_index][0]  # Always pick the first job in the queue
-        
-        job_remaining_times[job_id] -= 1
-        job_service_times[job_id] += 1
+    class RMLFScheduler:
+        def __init__(self, num_queues=100, tau=12):
+            self.queues = [deque() for _ in range(num_queues)]
+            self.current_time = 0
+            self.tau = tau
+            self.job_logs = []
 
-        if job_remaining_times[job_id] == 0:
-            # Job completed
-            completed_jobs.append((job_id, time + 1))
-            queues[selected_queue_index].pop(0)  # Remove completed job from queue
-        else:
-            # Move the job to the next level if not completed
-            queues[selected_queue_index].pop(0)  # Remove from current queue
-            next_level = min(selected_queue_index + 1, num_queues - 1)  # Ensure it doesn't exceed the max queue level
-            queues[next_level].append(job_id)
-        
-        time += 1
+        def add_job(self, job):
+            job.update_target(self.tau, 0, len(self.queues))  # Initial target for Q0
+            self.queues[0].append(job)
+
+        def simulate(self, jobs):
+            sorted_jobs = sorted(jobs, key=lambda x: x.arrival_time)
+            
+            while sorted_jobs or any(self.queues):
+                if sorted_jobs and (not any(self.queues) or sorted_jobs[0].arrival_time <= self.current_time):
+                    job = sorted_jobs.pop(0)
+                    self.current_time = max(self.current_time, job.arrival_time)
+                    self.add_job(job)
+                
+                for i, queue in enumerate(self.queues):
+                    if queue:
+                        job = queue[0]
+                        if job.first_executed_time is None:
+                            job.first_executed_time = self.current_time
+                        execution_time = min(job.remaining_time, job.target)
+                        job.remaining_time -= execution_time
+                        self.current_time += execution_time
+                        if job.remaining_time <= 0:
+                            job.completion_time = self.current_time
+                            self.job_logs.append({
+                                'arrival_time': job.arrival_time,
+                                'first_executed_time': job.first_executed_time,
+                                'completion_time': job.completion_time,
+                                'ifdone': True
+                            })
+                            queue.popleft()
+                        else:
+                            job.queue_level += 1
+                            job.update_target(self.tau, job.queue_level, len(self.queues))
+                            queue.popleft()
+                            if job.queue_level < len(self.queues):
+                                self.queues[job.queue_level].append(job)
+                        break
+
+        def calculate_metrics(self):
+            total_flow_time = sum(log['completion_time'] - log['arrival_time'] for log in self.job_logs)
+            average_flow_time = total_flow_time / len(self.job_logs)
+            l2_norm_flow_time = math.sqrt(sum((log['completion_time'] - log['arrival_time'])**2 for log in self.job_logs))
+            return average_flow_time, l2_norm_flow_time
+
+    # Initialize jobs from the input list
+    jobs = [Job(arrival_time, job_size) for arrival_time, job_size in job_list]
+
+    # Initialize the RMLF Scheduler
+    scheduler = RMLFScheduler()
+
+    # Simulate the scheduling of jobs
+    scheduler.simulate(jobs)
 
     # Calculate metrics
-    flow_times = [completion - jobs[job_id][0] for job_id, completion in completed_jobs]
-    average_flow_time = np.mean(flow_times)
-    l2_norm_flow_time = np.linalg.norm(flow_times)
+    average_flow_time, l2_norm_flow_time = scheduler.calculate_metrics()
 
-    return average_flow_time, l2_norm_flow_time
-jobs = Read_csv("data/(40, 16.772).csv")
-avg,l2=Rmlfq(jobs)
-print(avg)
-print(l2)
-#print(logs)
+    return average_flow_time, l2_norm_flow_time, scheduler.job_logs
+
+# Example call with the job list
+# jobs = Read_csv("data/(40, 4.073).csv")
+# average_flow_time, l2_norm_flow_time, job_logs = Prmlfq(jobs)
+# print(average_flow_time)
+# print(l2_norm_flow_time)

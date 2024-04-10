@@ -60,8 +60,8 @@ def Setf(tasks):
 
     return average_flow_time, l2_norm_flow_time, job_logs
 
-jobs = Read_csv("data/(32, 16.772).csv")
-avg,l2,logs=Setf(jobs)
-print(avg)
-print(l2)
+# jobs = Read_csv("data/(32, 16.772).csv")
+# avg,l2,logs=Setf(jobs)
+# print(avg)
+# print(l2)
 # print(logs)
