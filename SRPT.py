@@ -54,8 +54,8 @@ def Srpt(jobs):
     l2_norm_flow_time = (sum(x**2 for x in flow_times) ** 0.5)
     
     return average_flow_time, l2_norm_flow_time, logs
-jobs = Read_csv("data/(32, 16.772).csv")
-avg,l2,logs=Srpt(jobs)
-print(avg)
-print(l2)
+# jobs = Read_csv("data/(32, 16.772).csv")
+# avg,l2,logs=Srpt(jobs)
+# print(avg)
+# print(l2)
 # print(logs)
