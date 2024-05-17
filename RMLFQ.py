@@ -1,97 +1,69 @@
-from collections import deque
 import math
 import numpy as np
 import pandas as pd
+import random
 def Read_csv(filename):
 # Read the CSV file into a DataFrame 
     data_frame = pd.read_csv(filename)
     data_list = data_frame.values.tolist()
     return data_list
+def calculate_Bj(j):
+    """ Calculate Bj based on the number of jobs (j). """
+    if j >= 3:
+        return 1 - j**-12
+    else:
+        return 1
 
-def Rmlfq(job_list):
-    class Job:
-        def __init__(self, arrival_time, job_size):
-            self.arrival_time = arrival_time
-            self.job_size = job_size
-            self.remaining_time = job_size
-            self.first_executed_time = None
-            self.completion_time = None
-            self.queue_level = 0
-            self.beta = None
-            self.target = None
+def get_execution_time(i, Bj):
+    """ Determine execution time at level i given Bj. """
+    return 2**i * max(1, 2 - Bj)
 
-        def update_target(self, tau, i, n):
-            if self.beta is None:
-                self.beta = np.random.exponential(scale=1/(tau * math.log(n)))
-            self.target = 2 ** i * max(1, 2 - self.beta)
+def Rmlfq(jobs):
+    """ Simulate RMLF algorithm with updated conditions. """
+    time = 0
+    jobs = sorted(jobs, key=lambda x: x[0])  # Sort by arrival time
+    num_jobs = len(jobs)
+    levels = 100  # Fixed number of queues
+    queues = [[] for _ in range(levels)]
+    flow_times = []
+    job_index = 0  # To track which job we are on for Bj calculations
 
-    class RMLFScheduler:
-        def __init__(self, num_queues=100, tau=12):
-            self.queues = [deque() for _ in range(num_queues)]
-            self.current_time = 0
-            self.tau = tau
-            self.job_logs = []
+    while jobs or any(queues):
+        # Load new jobs into the system if it's time or queue is empty
+        while jobs and (jobs[0][0] <= time or not any(queues)):
+            arrival_time, job_size = jobs.pop(0)
+            if time < arrival_time:
+                time = arrival_time  # Adjust time to avoid idling
+            Bj = calculate_Bj(job_index + 1)
+            queues[0].append([job_size, time, Bj])  # Add job to first level
+            job_index += 1
 
-        def add_job(self, job):
-            job.update_target(self.tau, 0, len(self.queues))  # Initial target for Q0
-            self.queues[0].append(job)
+        # Process jobs in queues starting from the first level
+        for i in range(levels):
+            if queues[i]:
+                job_size, start_time, Bj = queues[i].pop(0)
+                exec_time = get_execution_time(i, Bj)
+                if job_size > exec_time:
+                    # Not completed, move to next level
+                    next_level = min(i + 1, levels - 1)
+                    queues[next_level].append([job_size - exec_time, start_time, Bj])
+                else:
+                    # Job completed
+                    flow_times.append(time - start_time + exec_time)
+                time += exec_time
+                break
+        else:
+            # If all queues are empty and jobs remain, adjust time to next job's arrival
+            if jobs:
+                time = max(time, jobs[0][0])
 
-        def simulate(self, jobs):
-            sorted_jobs = sorted(jobs, key=lambda x: x.arrival_time)
-            
-            while sorted_jobs or any(self.queues):
-                if sorted_jobs and (not any(self.queues) or sorted_jobs[0].arrival_time <= self.current_time):
-                    job = sorted_jobs.pop(0)
-                    self.current_time = max(self.current_time, job.arrival_time)
-                    self.add_job(job)
-                
-                for i, queue in enumerate(self.queues):
-                    if queue:
-                        job = queue[0]
-                        if job.first_executed_time is None:
-                            job.first_executed_time = self.current_time
-                        execution_time = min(job.remaining_time, job.target)
-                        job.remaining_time -= execution_time
-                        self.current_time += execution_time
-                        if job.remaining_time <= 0:
-                            job.completion_time = self.current_time
-                            self.job_logs.append({
-                                'arrival_time': job.arrival_time,
-                                'first_executed_time': job.first_executed_time,
-                                'completion_time': job.completion_time,
-                                'ifdone': True
-                            })
-                            queue.popleft()
-                        else:
-                            job.queue_level += 1
-                            job.update_target(self.tau, job.queue_level, len(self.queues))
-                            queue.popleft()
-                            if job.queue_level < len(self.queues):
-                                self.queues[job.queue_level].append(job)
-                        break
+    # Calculate average and L2-norm flow times
+    average_flow_time = sum(flow_times) / num_jobs
+    l2_norm_flow_time = sum(ft**2 for ft in flow_times)**0.5
 
-        def calculate_metrics(self):
-            total_flow_time = sum(log['completion_time'] - log['arrival_time'] for log in self.job_logs)
-            average_flow_time = total_flow_time / len(self.job_logs)
-            l2_norm_flow_time = math.sqrt(sum((log['completion_time'] - log['arrival_time'])**2 for log in self.job_logs))
-            return average_flow_time, l2_norm_flow_time
-
-    # Initialize jobs from the input list
-    jobs = [Job(arrival_time, job_size) for arrival_time, job_size in job_list]
-
-    # Initialize the RMLF Scheduler
-    scheduler = RMLFScheduler()
-
-    # Simulate the scheduling of jobs
-    scheduler.simulate(jobs)
-
-    # Calculate metrics
-    average_flow_time, l2_norm_flow_time = scheduler.calculate_metrics()
-
-    return average_flow_time, l2_norm_flow_time, scheduler.job_logs
-
+    return average_flow_time, l2_norm_flow_time
 # Example call with the job list
-# jobs = Read_csv("data/(40, 4.073).csv")
-# average_flow_time, l2_norm_flow_time, job_logs = Prmlfq(jobs)
-# print(average_flow_time)
-# print(l2_norm_flow_time)
+jobs = Read_csv("data/(20, 4.073).csv")
+average_flow_time, l2_norm_flow_time= Rmlfq(jobs)
+print(average_flow_time)
+print(l2_norm_flow_time)

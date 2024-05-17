@@ -20,20 +20,21 @@ def job_init(num_jobs,arrival_rate,xmin,xmax):
         samples.append({"arrival_time":arrival_times[k],"job_size":jb[k]})
     return samples
 
-def Save_file(num_jobs,num):
+def Save_file(num_jobs):
     for a in Arrival_rate:
         for b in tqdm.tqdm(bp_parameter):
             #put bp_paremeter in avg_job_flow because each turn
             job_list =job_init(num_jobs,a,b["L"],b["H"])
             bl = b["L"]
-            Write_csv.Write_raw(f"/home/melowu/Work/expri/data/{a,bl,num}.csv",job_list)
-Save_file(100000,1)
-Save_file(100000,2)
-Save_file(100000,3)
-Save_file(100000,4)
-Save_file(100000,5)
-Save_file(100000,6)
-Save_file(100000,7)
-Save_file(100000,8)
-Save_file(100000,9)
-Save_file(100000,10)
+            Write_csv.Write_raw(f"/home/melowu/Work/expri/data/{a,bl}.csv",job_list)
+Save_file(100000)
+# Save_file(100000,1)
+# Save_file(100000,2)
+# Save_file(100000,3)
+# Save_file(100000,4)
+# Save_file(100000,5)
+# Save_file(100000,6)
+# Save_file(100000,7)
+# Save_file(100000,8)
+# Save_file(100000,9)
+# Save_file(100000,10)
