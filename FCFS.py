@@ -31,7 +31,7 @@ def Fcfs(jobs):
     l2_norm_flow_time = np.linalg.norm(flow_times)
     
     return avg_flow_time, l2_norm_flow_time, job_logs
-jobs = Read_csv("data/(20, 4.073).csv")
+jobs = Read_csv("data/(40, 4.073).csv")
 avg,l2,logs=Fcfs(jobs)
 print(avg)
 print(l2)

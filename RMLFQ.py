@@ -10,7 +10,8 @@ def Read_csv(filename):
 def calculate_Bj(j):
     """ Calculate Bj based on the number of jobs (j). """
     if j >= 3:
-        return 1 - j**-12
+        U = random.uniform(0, 1)
+        return U / j**-12
     else:
         return 1
 
@@ -63,7 +64,7 @@ def Rmlfq(jobs):
 
     return average_flow_time, l2_norm_flow_time
 # Example call with the job list
-jobs = Read_csv("data/(20, 4.073).csv")
+jobs = Read_csv("data/(40, 4.073).csv")
 average_flow_time, l2_norm_flow_time= Rmlfq(jobs)
 print(average_flow_time)
 print(l2_norm_flow_time)
