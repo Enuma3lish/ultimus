@@ -59,7 +59,7 @@ def Rr(jobs):
     l2_norm_flow_time = (sum(x**2 for x in flow_times) ** 0.5)  # Square root of sum of squares
 
     return average_flow_time, l2_norm_flow_time, job_logs
-jobs = Read_csv("data/(20, 4.073).csv")
+jobs = Read_csv("data/(30, 4.073).csv")
 avg,l2,logs=Rr(jobs)
 print(avg)
 print(l2)
