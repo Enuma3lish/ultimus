@@ -15,17 +15,15 @@ def main():
     bp_parameter=[{"L":16.772,"H":pow(2,6)},{"L":7.918,"H":pow(2,9)},{"L":5.649,"H":pow(2,12)},{"L":4.639,"H":pow(2,15)},{"L":4.073,"H":pow(2,18)}]
     #for i in Arrival_rate:
     results = []
-    progress = tqdm.tqdm(total=len(Arrival_rate)*len(possibility))
+    progress = tqdm.tqdm(total=len(possibility))
 
-    for i in Arrival_rate:
-        for j in possibility:
-            # print(i,j,k)
-            result = execute.execute(i,bp_parameter,j)
+    for i in possibility:
+        for j in Arrival_rate:
+            result = execute.execute(j,bp_parameter,i)
             results.extend(result)
-            progress.update(1)
-    results = pd.DataFrame(results)
-    results.to_csv(f"/home/melowu/Work/expri/DataSet/result3.csv", index=False)
-
+        mresults = pd.DataFrame(results)
+        mresults.to_csv(f"/home/melowu/Work/expri/DataSet/result{i}.csv", index=False)
+        progress.update(1)
     # Write_csv.Write("/home/melowu/Work/expri/DataSet/result"+str(i)+".csv",results)
 if __name__ == "__main__":
     main()

@@ -55,7 +55,7 @@ def Mlfq(jobs, num_queues=100):
     average_flow_time = np.mean(flow_times)
     flow_time_l2_norm = np.linalg.norm(flow_times)
 
-    return average_flow_time, flow_time_l2_norm, logs
+    return average_flow_time, flow_time_l2_norm
 
 # jobs = Read_csv("data/(28, 16.772).csv")
 # avg,l2,logs=Mlfq(jobs)
