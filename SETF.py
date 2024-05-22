@@ -6,58 +6,69 @@ def Read_csv(filename):
     data_list = data_frame.values.tolist()
     return data_list
 def Setf(jobs):
-    """
-    Implements the Shortest Elapsed Time First scheduling algorithm.
+    # Convert jobs to tuples for immutability and use as dictionary keys
+    jobs = [(arrival_time, job_size) for arrival_time, job_size in jobs]
 
-    Parameters:
-    jobs (list of list): A list of [arrival_time, job_size] pairs for each job.
-
-    Returns:
-    float: The average flow time.
-    float: The L2 norm of flow time.
-    """
-
-    # Sort jobs by arrival time initially
-    jobs.sort(key=lambda x: x[0])
-
-    # Initialize variables
     time = 0
+    total_flow_time = 0
+    squared_flow_time = 0
     completed_jobs = 0
-    flow_times = []
-    elapsed_time = []
-    
-    while jobs or elapsed_time:
-        # Add new jobs to the elapsed_time list
+    current_job = None
+    remaining_jobs = []
+    job_execution_start_times = {}
+    job_execution_times = {job: 0 for job in jobs}  # Track the elapsed time for each job
+
+    while jobs or current_job or remaining_jobs:
+        # Move newly arrived jobs to the remaining jobs list
         while jobs and jobs[0][0] <= time:
-            job = jobs.pop(0)
-            elapsed_time.append(job)
-        
-        if elapsed_time:
-            # Sort the elapsed_time list by job size (shortest job first)
-            elapsed_time.sort(key=lambda x: x[1])
-            
-            # Process the job with the shortest job size
-            job = elapsed_time.pop(0)
-            arrival_time, job_size = job
-            start_time = max(time, arrival_time)
-            finish_time = start_time + job_size
-            flow_time = finish_time - arrival_time
-            
-            flow_times.append(flow_time)
-            time = finish_time
-            completed_jobs += 1
+            remaining_jobs.append(jobs.pop(0))
+            if not jobs:
+                break
+
+        # Sort remaining jobs by elapsed time (job size - time run)
+        if current_job:
+            remaining_jobs.append(current_job)
+        remaining_jobs.sort(key=lambda job: job_execution_times[job])
+
+        if remaining_jobs:
+            current_job = remaining_jobs.pop(0)
+            arrival_time, job_size = current_job
+
+            if current_job not in job_execution_start_times:
+                job_execution_start_times[current_job] = time
+
+            if jobs and jobs[0][0] < time + job_size - job_execution_times[current_job]:
+                next_arrival_time = jobs[0][0]
+                run_time = next_arrival_time - time
+                job_execution_times[current_job] += run_time
+                current_job = (arrival_time, job_size)
+                time = next_arrival_time
+            else:
+                run_time = job_size - job_execution_times[current_job]
+                job_execution_times[current_job] += run_time
+                time += run_time
+                flow_time = time - arrival_time
+                total_flow_time += flow_time
+                squared_flow_time += flow_time ** 2
+                completed_jobs += 1
+                current_job = None
         else:
-            # If no jobs are ready, move time forward to the arrival time of the next job
             if jobs:
                 time = jobs[0][0]
 
-    average_flow_time = sum(flow_times) / completed_jobs
-    l2_norm_flow_time = np.sqrt(sum([ft**2 for ft in flow_times]))
-    
+    average_flow_time = total_flow_time / completed_jobs
+    l2_norm_flow_time = squared_flow_time ** 0.5
+
+    # Ensure each job was first executed at or after its arrival time
+    for job, start_time in job_execution_start_times.items():
+        arrival_time, _ = job
+        if start_time < arrival_time:
+            raise ValueError(f"Job with arrival time {arrival_time} was first executed at {start_time}")
+
     return average_flow_time, l2_norm_flow_time
 
-jobs = Read_csv("data/(40, 4.073).csv")
-avg,l2=Setf(jobs)
-print(avg)
-print(l2)
+# jobs = Read_csv("data/(28, 4.073).csv")
+# avg,l2=Setf(jobs)
+# print(avg)
+# print(l2)
 # print(logs)

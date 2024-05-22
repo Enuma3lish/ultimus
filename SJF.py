@@ -33,7 +33,7 @@ def Sjf(jobs):
     avg_flow_time = np.mean(waiting_time)
     l2_norm_flow_time = np.linalg.norm(waiting_time)
     
-    return avg_flow_time, l2_norm_flow_time, job_logs
+    return avg_flow_time, l2_norm_flow_time
 # jobs = Read_csv("data/(20, 4.073).csv")
 # avg,l2,logs=Sjf(jobs)
 # print(avg)

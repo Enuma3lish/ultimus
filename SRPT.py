@@ -1,67 +1,66 @@
-import numpy as np
-from heapq import heappush, heappop
+import heapq
 import pandas as pd
+import numpy as np
 def Read_csv(filename):
 # Read the CSV file into a DataFrame 
     data_frame = pd.read_csv(filename)
     data_list = data_frame.values.tolist()
     return data_list
+
 def Srpt(jobs):
-    jobs.sort(key=lambda x: x[0])  # Sort jobs based on arrival time
-    n = len(jobs)
+    # Sort jobs by arrival time
+    jobs.sort(key=lambda x: x[0])
+    
     current_time = 0
-    queue = []  # Priority queue for (remaining_time, arrival_time, job_index)
-    job_index = 0
-    flow_times = [0] * n
-    execution_times = [0] * n  # Track execution time for preemption
-    logs = [{'arrival_time': job[0], 'first_executed_time': None, 'ifdone': False} for job in jobs]
-    
-    while job_index < n or queue:
-        # If no jobs in the queue, move current time to the arrival of the next job
-        if not queue and job_index < n:
-            current_time = max(current_time, jobs[job_index][0])
-        
-        # Push all jobs that have arrived by the current time into the queue
-        while job_index < n and jobs[job_index][0] <= current_time:
-            remaining_time = jobs[job_index][1] - execution_times[job_index]
-            heappush(queue, (remaining_time, jobs[job_index][0], job_index))
-            job_index += 1
-        
-        # Process the job with the shortest remaining time
-        if queue:
-            remaining_time, arrival_time, index = heappop(queue)
-            next_job_time = jobs[job_index][0] if job_index < n else float('inf')
-            time_to_next_job = next_job_time - current_time
+    total_flow_time = 0
+    total_flow_time_squared = 0
+    n = len(jobs)
+    job_queue = []
+    index = 0
+    first_executed = [False] * n
+    flow_times = []
+
+    while index < n or job_queue:
+        # Add all jobs that have arrived by current_time to the priority queue
+        while index < n and jobs[index][0] <= current_time:
+            heapq.heappush(job_queue, (jobs[index][1], index))
+            index += 1
+
+        if job_queue:
+            # Get the job with the shortest remaining processing time
+            remaining_time, job_index = heapq.heappop(job_queue)
             
-            # Determine if current job can be completed before next job arrives
-            if remaining_time <= time_to_next_job:
-                execution_slice = remaining_time
+            if not first_executed[job_index]:
+                first_executed[job_index] = True
+                current_time = max(current_time, jobs[job_index][0])
+
+            # Process the job
+            current_time += 1
+            remaining_time -= 1
+            
+            if remaining_time > 0:
+                heapq.heappush(job_queue, (remaining_time, job_index))
             else:
-                execution_slice = time_to_next_job
-                heappush(queue, (remaining_time - execution_slice, arrival_time, index))  # Reinsert with updated remaining time
-            
-            # Update current time and execution times
-            current_time += execution_slice
-            execution_times[index] += execution_slice
-            
-            # Log the first execution time if not already logged
-            if logs[index]['first_executed_time'] is None:
-                logs[index]['first_executed_time'] = current_time - execution_slice
-            
-            # Check if the job is completed
-            if execution_times[index] == jobs[index][1]:
-                flow_times[index] = current_time - arrival_time
-                logs[index]['ifdone'] = True  # Mark job as done
+                # Job is finished
+                flow_time = current_time - jobs[job_index][0]
+                flow_times.append(flow_time)
+                total_flow_time += flow_time
+                total_flow_time_squared += flow_time ** 2
+        else:
+            # If no jobs are ready to execute, move time forward
+            if index < n:
+                current_time = jobs[index][0]
     
-    # Calculate norms and average flow time
-    average_flow_time = sum(flow_times) / n
-    # l1_norm_flow_time = sum(flow_times)  # Sum of absolute flow times
-    l2_norm_flow_time = (sum(x**2 for x in flow_times) ** 0.5)
+    # Calculate average flow time
+    average_flow_time = total_flow_time / n
     
-    return average_flow_time,l2_norm_flow_time, logs
+    # Calculate L2 norm of the flow time
+    l2_norm_flow_time = total_flow_time_squared ** 0.5
+    
+    return average_flow_time, l2_norm_flow_time
 
 jobs = Read_csv("data/(40, 4.073).csv")
-avg_flow_time, l2_norm, logs = Srpt(jobs)
+avg_flow_time,l2_norm = Srpt(jobs)
 print(f"Average Flow Time: {avg_flow_time}")
 print(f"L2-Norm of Flow Times: {l2_norm}")
 # print("Logs:")

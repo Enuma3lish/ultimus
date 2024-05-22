@@ -63,7 +63,7 @@ def execute(Arrival_rate,bp_parameter,possibility):
             results = pool.starmap(
                 process_scheduler,
                     [(RMLFQ.Rmlfq, rmlfq_list),(MLFQ.Mlfq,mlfq_list),(RR.Rr, rr_list), (SRPT.Srpt, srpt_list),
-                     (Mlfq_dy.Mlfq_dy,mlfq_dy_list),(RMLFQ_SM.Rmlfq_sm,rmlfq_sm_list,possibility),
+                     (RMLFQ_SM.Rmlfq_sm,rmlfq_sm_list,possibility),
                      (SJF.Sjf, sjf_list),(SETF.Setf,setf_list),(FCFS.Fcfs,fcfs_list)])
             rmlfq,mlfq,rr,srpt,rmlfq_sm,sjf,setf,fcfs= results
             mlfq_avg,mlfq_l2n = mlfq
