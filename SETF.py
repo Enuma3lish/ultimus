@@ -1,10 +1,12 @@
 import numpy as np
 import pandas as pd
+from math import sqrt
 def Read_csv(filename):
 # Read the CSV file into a DataFrame 
     data_frame = pd.read_csv(filename)
     data_list = data_frame.values.tolist()
     return data_list
+
 def Setf(jobs):
     # Convert jobs to tuples for immutability and use as dictionary keys
     jobs = [(arrival_time, job_size) for arrival_time, job_size in jobs]
@@ -66,9 +68,7 @@ def Setf(jobs):
             raise ValueError(f"Job with arrival time {arrival_time} was first executed at {start_time}")
 
     return average_flow_time, l2_norm_flow_time
-
-# jobs = Read_csv("data/(28, 4.073).csv")
+# jobs = Read_csv("data/(30, 16.772).csv")
 # avg,l2=Setf(jobs)
 # print(avg)
 # print(l2)
-# print(logs)

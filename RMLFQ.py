@@ -1,5 +1,5 @@
 import math
-import numpy as np
+
 import pandas as pd
 import random
 def Read_csv(filename):
@@ -58,8 +58,8 @@ def Rmlfq(jobs, num_queues=100):
     return average_flow_time, l2_norm_flow_time
 
 
-# Example call with the job list
-jobs = Read_csv("data/(28, 4.073).csv")
+# # Example call with the job list
+jobs = Read_csv("data/(20, 4.073).csv")
 average_flow_time, l2_norm_flow_time= Rmlfq(jobs)
 print(average_flow_time)
 print(l2_norm_flow_time)

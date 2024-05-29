@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 def Read_csv(filename):
 # Read the CSV file into a DataFrame 
@@ -24,18 +23,23 @@ def Sjf(jobs):
         if jobs_queue:
             job = jobs_queue.pop(0)
             time += job[1]  # Execute the job
-            waiting_time.append(time - job[0])
+            flow_time = time - job[0]
+            waiting_time.append(flow_time)
             job_logs.append({"arrival_time": job[0], "first_executed_time": job[2], "ifdone": True})
         else:
             time += 1  # If no jobs are ready to be executed, increment time
-
-    # Calculate average and L2-norm of flow time
-    avg_flow_time = np.mean(waiting_time)
-    l2_norm_flow_time = np.linalg.norm(waiting_time)
+    
+    # Calculate average flow time
+    total_flow_time = sum(waiting_time)
+    avg_flow_time = total_flow_time / len(waiting_time) if waiting_time else 0
+    
+    # Calculate L2 norm of flow time
+    l2_norm_flow_time = (sum(f ** 2 for f in waiting_time)) ** 0.5
     
     return avg_flow_time, l2_norm_flow_time
-# jobs = Read_csv("data/(20, 4.073).csv")
-# avg,l2,logs=Sjf(jobs)
-# print(avg)
-# print(l2)
+
+jobs = Read_csv("data/(20, 16.772).csv")
+avg,l2=Sjf(jobs)
+print(avg)
+print(l2)
 # print(logs)
