@@ -1,19 +1,20 @@
 import multiprocessing
 import Read_csv
-import SMLFQ,RR,SJF,SRPT,SETF,FCFS,MLFQ,RMLFQ,Mlfq_dy,RMLFQ_SM,algo_checker
+import RR,SJF,SRPT,SETF,FCFS,MLFQ,RMLFQ,RMLFQ_SM,RMlFQ_FCFS,algo_checker
 
 def process_scheduler(func, *args):
     if len(args) == 1 and isinstance(args[0], list):
         return func(args[0])
     return func(*args)
 def execute(Arrival_rate,bp_parameter,possibility):
+    print(Arrival_rate,bp_parameter,possibility)
     results = []
     result =[]
     job_list =[]
     sjf_result = 0
     rr_result = 0
     mlfq_result = 0
-    mmlfq_result = 0
+    rmlfq_ff_result = 0
     rmlfq_result =0
     setf_result = 0
     fcfs_result = 0
@@ -25,6 +26,7 @@ def execute(Arrival_rate,bp_parameter,possibility):
     rr_l2n_result = 0
     mlfq_l2n_result = 0
     rmlfq_l2n_result =0
+    rmlfq_ff_l2n_result = 0
     setf_l2n_result = 0
     fcfs_l2n_result = 0
     for i in bp_parameter:
@@ -37,8 +39,8 @@ def execute(Arrival_rate,bp_parameter,possibility):
         fcfs_list = job_list.copy()
         mlfq_list = job_list.copy()
         rmlfq_sm_list = job_list.copy()
+        rmlfq_ff_list = job_list.copy()
         rmlfq_list = job_list.copy()
-        mlfq_dy_list = job_list.copy()
         rmlfq_avg=0
         rmlfq_l2n=0
         mlfq_avg = 0
@@ -57,23 +59,25 @@ def execute(Arrival_rate,bp_parameter,possibility):
         setf_l2n = 0
         fcfs_avg =0
         fcfs_l2n = 0
-        num_processes = 8
+        num_processes = 7
         with multiprocessing.Pool(processes=num_processes) as pool:
         # Use starmap to run the functions in parallel
             results = pool.starmap(
                 process_scheduler,
                     [(RMLFQ.Rmlfq, rmlfq_list),(MLFQ.Mlfq,mlfq_list),(RR.Rr, rr_list), (SRPT.Srpt, srpt_list),
                      (RMLFQ_SM.Rmlfq_sm,rmlfq_sm_list,possibility),
-                     (SJF.Sjf, sjf_list),(SETF.Setf,setf_list),(FCFS.Fcfs,fcfs_list)])
-            rmlfq,mlfq,rr,srpt,rmlfq_sm,sjf,setf,fcfs= results
+                     (SJF.Sjf, sjf_list),(SETF.Setf,setf_list),(FCFS.Fcfs,fcfs_list),(RMlFQ_FCFS.Rmlfq_ff,rmlfq_ff_list,possibility)])
+            rmlfq,mlfq,rr,srpt,rmlfq_sm,sjf,setf,fcfs,rmlfq_ff= results
             mlfq_avg,mlfq_l2n = mlfq
             rmlfq_sm_avg,rmlfq_sm_l2n = rmlfq_sm
+            rmlfq_ff_avg,rmlfq_ff_l2n = rmlfq_ff
             rmlfq_avg,rmlfq_l2n = rmlfq
             rr_avg,rr_l2n= rr
             srpt_avg,srpt_l2n= srpt
             sjf_avg,sjf_l2n,= sjf
             setf_avg,setf_l2n= setf
             fcfs_avg,fcfs_l2n= fcfs
+            
             #bal_avg,bal_l2n,bal_log=bal
             # collect = {"mlfq_dy":mlfq_dy_log,"rmlfq":rmlfq_log,"mlfq":mlfq_log,"rr":rr_log,"srpt":srpt_log,"sjf":sjf_log,"setf":setf_log,"fcfs":fcfs_log,"mmlfq":mmlfq_log}
             # for key,value in collect.items():
@@ -87,6 +91,7 @@ def execute(Arrival_rate,bp_parameter,possibility):
             rr_result = rr_avg/srpt_avg
             mlfq_result = mlfq_avg/srpt_avg
             rmlfq_sm_result = rmlfq_sm_avg/srpt_avg
+            rmlfq_ff_result = rmlfq_ff_avg/srpt_avg
             rmlfq_result = rmlfq_avg/srpt_avg
             setf_result = setf_avg/srpt_avg
             fcfs_result = fcfs_avg/srpt_avg
@@ -97,6 +102,7 @@ def execute(Arrival_rate,bp_parameter,possibility):
             mlfq_fcfs = mlfq_avg/fcfs_avg
             rmlfq_fcfs = rmlfq_avg/fcfs_avg
             rmlfq_sm_fcfs = rmlfq_sm_avg/fcfs_avg
+            rmlfq_ff_fcfs = rmlfq_ff_avg/fcfs_avg
             setf_fcfs = setf_avg/fcfs_avg
             srpt_fcfs = srpt_avg/fcfs_avg
             #bal_fcfs = bal_avg/fcfs_avg
@@ -108,6 +114,7 @@ def execute(Arrival_rate,bp_parameter,possibility):
             rmlfq_sm_l2n_result = rmlfq_sm_l2n/srpt_l2n
             #smlfq_l2n_result = smlfq_l2n/srpt_l2n
             rmlfq_l2n_result = rmlfq_l2n/srpt_l2n
+            rmlfq_ff_l2n_result = rmlfq_ff_l2n/srpt_l2n
             setf_l2n_result = setf_l2n/srpt_l2n
             fcfs_l2n_result = fcfs_l2n/srpt_l2n
             #bal_l2n_result = bal_l2n/srpt_l2n
@@ -119,6 +126,14 @@ def execute(Arrival_rate,bp_parameter,possibility):
             rmlfq_sm_comp_fcfs = rmlfq_sm_l2n/fcfs_l2n
             rmlfq_sm_comp_rr = rmlfq_sm_l2n/rr_l2n
             rmlfq_sm_comp_setf = rmlfq_sm_l2n/setf_l2n
+            rmlfq_sm_comp_mlfq_l2 = rmlfq_sm_l2n/mlfq_l2n
+            rmlfq_sm_comp_rmlfq_l2 = rmlfq_sm_l2n/rmlfq_l2n
+            rmlfq_ff_comp_fcfs = rmlfq_ff_l2n/fcfs_l2n
+            rmlfq_ff_comp_rr = rmlfq_ff_l2n/rr_l2n
+            rmlfq_ff_comp_setf = rmlfq_ff_l2n/setf_l2n
+            rmlfq_ff_comp_mlfq_l2 = rmlfq_ff_l2n/mlfq_l2n
+            rmlfq_ff_comp_rmlfq_l2 = rmlfq_ff_l2n/rmlfq_l2n
+            rmlfq_ff_comp_rmlfq_sm = rmlfq_ff_l2n/rmlfq_l2n
             result.append({
                 "arrival_rate":Arrival_rate,
                 "possibility":possibility,
@@ -141,7 +156,6 @@ def execute(Arrival_rate,bp_parameter,possibility):
                 "SJF_L2_Norm/SRPT_L2_Norm":sjf_l2n_result,
                 "RR_L2_Norm/SRPT_L2_Norm":rr_l2n_result,
                 "MLFQ_L2_Norm/SRPT_L2_Norm":mlfq_l2n_result,
-                "RMLFQ_SM_L2_Norm/SRPT_L2_Norm":rmlfq_sm_l2n_result,
                 "RMLFQ_L2_Norm/SRPT_L2_Norm":rmlfq_l2n_result,
                 "SETF_L2_Norm/SRPT_L2_Norm":setf_l2n_result,
                 "FCFS_L2_Norm/SRPT_L2_Norm":fcfs_l2n_result,
@@ -151,7 +165,18 @@ def execute(Arrival_rate,bp_parameter,possibility):
                 "RMLFQ_L2_Norm/FCFS_L2_Norm":rmlfq_l2n_fcfs,
                 "RMLFQ_SM_L2_Norm/FCFS_L2_Norm":rmlfq_sm_comp_fcfs,
                 "RMLFQ_SM_L2_Norm/RR_L2_Norm":rmlfq_sm_comp_rr,
-                "RMLFQ_SM_L2_Norm/SETF_L2_Norm":rmlfq_sm_comp_setf
+                "RMLFQ_SM_L2_Norm/SETF_L2_Norm":rmlfq_sm_comp_setf,
+                "RMLFQ_SM_L2_Norm/RMLFQ_L2_Norm":rmlfq_sm_comp_rmlfq_l2,
+                "RMLFQ_SM_L2_Norm/MLFQ_L2_Norm":rmlfq_sm_comp_mlfq_l2,
+                "RMLFQ_SM_L2_Norm/SRPT_L2_Norm":rmlfq_sm_l2n_result,             
+                "RMLFQ_FF_L2_Norm/FCFS_L2_Norm":rmlfq_sm_comp_fcfs,
+                "RMLFQ_FF_L2_Norm/RR_L2_Norm":rmlfq_ff_comp_rr,
+                "RMLFQ_FF_L2_Norm/SETF_L2_Norm":rmlfq_ff_comp_setf,
+                "RMLFQ_FF_L2_Norm/RMLFQ_L2_Norm":rmlfq_ff_comp_rmlfq_l2,
+                "RMLFQ_FF_L2_Norm/MLFQ_L2_Norm":rmlfq_ff_comp_mlfq_l2,
+                "RMLFQ_FF_L2_Norm/SRPT_L2_Norm":rmlfq_ff_l2n_result,
+                "RMLFQ_FF_L2_Norm/RMLFQ_SM_L2_Norm":rmlfq_ff_comp_rmlfq_sm
+                
             })
         pool.close()
         pool.join()

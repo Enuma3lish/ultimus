@@ -59,7 +59,7 @@ def Srpt(jobs):
     
     return average_flow_time, l2_norm_flow_time
 
-jobs = Read_csv("data/(40, 4.073).csv")
+jobs = Read_csv("data/(20, 4.073).csv")
 avg_flow_time,l2_norm = Srpt(jobs)
 print(f"Average Flow Time: {avg_flow_time}")
 print(f"L2-Norm of Flow Times: {l2_norm}")

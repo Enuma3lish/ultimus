@@ -3,22 +3,27 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Load the data
-data = pd.read_csv('/home/melowu/Work/expri/DataSet/result3.csv')  # Adjust this to the path of your CSV file
+data = pd.read_csv('/home/melowu/Work/expri/DataSet/result0.00625.csv')  # Adjust this to the path of your CSV file
 
 # Specify the specific values for quantum_multiplier and quantum_increase
-quantum_multiplier = [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0]
-quantum_increase = [0, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
+# quantum_multiplier = [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0]
+# quantum_increase = [0, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
 
 # Define the metrics you're interested in
 metrics = [
-    'MMLFQ_L2_Norm/SRPT_L2_Norm',
-    'MMLFQ_L2_Norm/FCFS_L2_Norm',
-    'MMLFQ_L2_Norm/RR_L2_Norm',
-    'MMLFQ_L2_Norm/SETF_L2_Norm'
+    'RMLFQ_SM_L2_Norm/SRPT_L2_Norm',
+    'RMLFQ_SM_L2_Norm/FCFS_L2_Norm',
+    'RMLFQ_SML2_Norm/RR_L2_Norm',
+    'RMLFQ_SM_L2_Norm/SETF_L2_Norm',
+    'RMLFQ_SM_L2_Norm/RR_L2_Norm',
+    'RMLFQ_SM_L2_Norm/MLFQ_L2_Norm',
+    'RMLFQ_SM_L2_Norm/RMLFQ_L2_Norm',
+    'RMLFQ_SM_L2_Norm/MLFQ_L2_Norm'
+    
 ]
 
 # Ensure directory for plots exists or is created
-plots_dir = "img/result3"
+plots_dir = "img/total"
 os.makedirs(plots_dir, exist_ok=True)
 
 for i in quantum_multiplier:

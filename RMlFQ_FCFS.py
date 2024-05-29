@@ -16,9 +16,8 @@ def get_execution_time(i, Bj):
     """ Determine execution time at level i given Bj. """
     return 2**i * max(1, 2 - Bj)
 
-def Rmlfq_sm(jobs, quantum_decrease):
+def Rmlfq_ff(jobs, quantum_decrease, num_queues=100):
     # Initialize data structures
-    num_queues=100
     queues = [[] for _ in range(num_queues)]
     job_logs = {i: {'arrival_time': job[0], 'first_executed_time': None, 'ifdone': False} for i, job in enumerate(jobs)}
     flow_times = []
@@ -47,23 +46,28 @@ def Rmlfq_sm(jobs, quantum_decrease):
         job_executed = False
         for i in range(num_queues):
             if queues[i]:
-                job_id, remaining_size, arrival_time = queues[i].pop(0)
-                if job_logs[job_id]['first_executed_time'] is None:
-                    job_logs[job_id]['first_executed_time'] = current_time
-                # Execute job
-                executed_time = min(remaining_size, quantum[i])
-                remaining_size -= executed_time
-                current_time += executed_time
-                if remaining_size <= 0:
-                    job_logs[job_id]['ifdone'] = True
-                    flow_times.append(current_time - arrival_time)
-                else:
-                    # Decide if job should be demoted
-                    if quantum_decrease > 0:
-                        next_queue = min(i + 1, num_queues - 1) if random.random() < quantum_decrease else i
+                temp_queue = []
+                while queues[i]:
+                    job_id, remaining_size, arrival_time = queues[i].pop(0)
+                    if job_logs[job_id]['first_executed_time'] is None:
+                        job_logs[job_id]['first_executed_time'] = current_time
+                    # Execute job
+                    executed_time = min(remaining_size, quantum[i])
+                    remaining_size -= executed_time
+                    current_time += executed_time
+                    if remaining_size <= 0:
+                        job_logs[job_id]['ifdone'] = True
+                        flow_times.append(current_time - arrival_time)
                     else:
-                        next_queue = i + 1 if i + 1 < num_queues else i
-                    queues[next_queue].append((job_id, remaining_size, arrival_time))
+                        # Decide if job should be demoted
+                        next_queue = min(i + 1, num_queues - 1)
+                        temp_queue.append((job_id, remaining_size, arrival_time))
+                # Move unfinished jobs to the next queue
+                for job in temp_queue:
+                    if random.random() < quantum_decrease:
+                        queues[next_queue].append(job)
+                    else:
+                        queues[i].append(job)
                 job_executed = True
                 break
 
@@ -79,9 +83,11 @@ def Rmlfq_sm(jobs, quantum_decrease):
     squared_flow_times = [ft ** 2 for ft in flow_times]
     l2_norm_flow_time = (sum(squared_flow_times)) ** 0.5
 
-    return average_flow_time, l2_norm_flow_time #,job_logs
-jobs = Read_csv("data/(20, 4.073).csv")
-avg,l2=Rmlfq_sm(jobs,0.03)
-print(avg)
-print(l2)
+    return average_flow_time, l2_norm_flow_time#, job_logs
+
+# jobs = Read_csv("data/(20, 4.073).csv")
+# avg,l2,logs=Rmlfq_ff(jobs,0.03)
+# print("Average Flow Time:", avg)
+# print("L2 Norm Flow Time:", l2)
+#print("Job Logs:", logs)
 #print(logs)

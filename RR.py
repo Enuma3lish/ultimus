@@ -46,8 +46,7 @@ def Rr(jobs, time_quantum=1):
     l2_norm = l2_norm_sum ** 0.5
 
     return average_flow_time, l2_norm
-
-jobs = Read_csv("data/(28, 4.073).csv")
+jobs = Read_csv("data/(20, 16.772).csv")
 avg,l2=Rr(jobs)
 print(avg)
 print(l2)
