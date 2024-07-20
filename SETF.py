@@ -68,7 +68,7 @@ def Setf(jobs):
             raise ValueError(f"Job with arrival time {arrival_time} was first executed at {start_time}")
 
     return average_flow_time, l2_norm_flow_time
-# jobs = Read_csv("data/(30, 16.772).csv")
-# avg,l2=Setf(jobs)
-# print(avg)
-# print(l2)
+jobs = Read_csv("data/(20, 16.772).csv")
+avg,l2=Setf(jobs)
+print(avg)
+print(l2)

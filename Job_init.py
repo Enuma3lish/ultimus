@@ -27,7 +27,7 @@ def Save_file(num_jobs):
             job_list =job_init(num_jobs,a,b["L"],b["H"])
             bl = b["L"]
             Write_csv.Write_raw(f"/home/melowu/Work/expri/data/{a,bl}.csv",job_list)
-Save_file(250000)
+Save_file(10000)
 # Save_file(100000,1)
 # Save_file(100000,2)
 # Save_file(100000,3)
