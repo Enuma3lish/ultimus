@@ -1,8 +1,9 @@
 import heapq
 import pandas as pd
 import numpy as np
+
 def Read_csv(filename):
-# Read the CSV file into a DataFrame 
+    # Read the CSV file into a DataFrame 
     data_frame = pd.read_csv(filename)
     data_list = data_frame.values.tolist()
     return data_list
@@ -19,6 +20,7 @@ def Srpt(jobs):
     index = 0
     first_executed = [False] * n
     flow_times = []
+    logs = []
 
     while index < n or job_queue:
         # Add all jobs that have arrived by current_time to the priority queue
@@ -37,6 +39,7 @@ def Srpt(jobs):
             # Process the job
             current_time += 1
             remaining_time -= 1
+            logs.append([current_time, job_index, remaining_time])
             
             if remaining_time > 0:
                 heapq.heappush(job_queue, (remaining_time, job_index))
@@ -57,13 +60,16 @@ def Srpt(jobs):
     # Calculate L2 norm of the flow time
     l2_norm_flow_time = total_flow_time_squared ** 0.5
     
-    return average_flow_time, l2_norm_flow_time
+    return average_flow_time, l2_norm_flow_time, logs
 
-jobs = Read_csv("data/(20, 4.073).csv")
-avg_flow_time,l2_norm = Srpt(jobs)
-print(f"Average Flow Time: {avg_flow_time}")
-print(f"L2-Norm of Flow Times: {l2_norm}")
-# print("Logs:")
-# for log in logs:
-#     print(log)
-# print(logs)
+def Save_logs_to_csv(logs, filename):
+    # Convert logs to a DataFrame
+    log_df = pd.DataFrame(logs, columns=["Current Time", "Job Index", "Remaining Time"])
+    # Save DataFrame to a CSV file
+    log_df.to_csv(filename, index=False)
+
+jobs = Read_csv("data/(32, 4.073).csv")
+#jobs = Read_csv("data/(30, 16.772).csv")
+avg_flow_time, l2_norm,logs = Srpt(jobs)
+print(avg_flow_time)
+print(l2_norm)
