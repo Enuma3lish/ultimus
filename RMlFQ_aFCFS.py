@@ -1,6 +1,8 @@
 import random
 import pandas as pd
 from collections import deque
+import csv
+import math
 
 def Read_csv(filename):
     """Read the CSV file into a DataFrame and convert it to a list of lists."""
@@ -10,21 +12,30 @@ def Read_csv(filename):
 
 def calculate_Bj(j):
     """Calculate Bj based on the index of the job (j)."""
-    if j >= 3:
-        return 1 - j**-12
-    else:
+    if j < 3:
         return 1
+    else:
+        return 1 - random.expovariate(12 * math.log(j))
 
-def get_execution_time(i, Bj):
-    """Determine execution time at level i given Bj."""
-    return 2**i * max(1, 2 - Bj)
+def get_execution_time(i, met):
+    """Determine execution time at level i given the median execution time (met)."""
+    return (i + 1) * met
 
 def calculate_starvation_threshold(level, quantum, r):
     """Calculate the starvation threshold for a job in queue level."""
-    if level <= 2:
-        return quantum[level]**0.5
-    else:
-        return (r**level) * quantum[level]
+    try:
+        if level <= 3:
+            result = quantum[level]**0.5
+        else:
+            result = (r*level) * quantum[level]
+            
+        
+        # Cap the result to avoid overflow
+        result = min(result, 1e12)
+        
+        return result
+    except OverflowError as e:
+        return 1e12  # Return a large but safe value in case of overflow
 
 def detect_starvation(job_logs, queues, current_time):
     """Detect starvation based on waiting time threshold."""
@@ -43,19 +54,42 @@ def calculate_r(job_sizes):
     sorted_sizes = sorted(job_sizes)
     median_size = sorted_sizes[len(sorted_sizes) // 2]
     mfj = max(job_sizes)  # Maximum job size of finished jobs
-    return median_size
+    return mfj / median_size
+
+def calculate_met(finished_job_sizes, met):
+    """Calculate the median execution time (met) based on the finished job sizes."""
+    if len(finished_job_sizes) < 2:
+        return met
+    sorted_sizes = sorted(finished_job_sizes)
+    median_size = sorted_sizes[len(sorted_sizes) // 2]
+    average_size = sum(finished_job_sizes) / len(finished_job_sizes)
+
+    #print(f"Initial met: {met}, Median size: {median_size}, Average size: {average_size}")
+    met = median_size
+    if average_size >= 1.1 * median_size:
+        met *= 3
+    # elif average_size >= 1.2 * median_size:
+    #     median_size *= 1.5
+    return met
+
+
 
 def Rmlfq_aFCFS(jobs, num_queues=100):
     # Initialize data structures
     queues = [deque() for _ in range(num_queues)]
-    job_logs = {i: {'arrival_time': job[0], 'first_executed_time': None, 'ifdone': False, 'waiting_time': 0, 'starvation_threshold': 30, 'final_threshold': None, 'finished_time': None, 'finished_queue': None} for i, job in enumerate(jobs)}
+    job_logs = {i: {'arrival_time': job[0], 'first_executed_time': None, 'ifdone': False, 'waiting_time': 0, 'starvation_threshold': 30, 'final_threshold': None, 'finished_time': None, 'finished_queue': None, 'scheduling_queue': None, 'job_size': job[1]} for i, job in enumerate(jobs)}
     flow_times = []
     finished_job_sizes = []
     current_time = 0
 
+    # Track the execution order of jobs larger than 30
+    large_jobs_execution_order = []
+
     # Sort jobs by arrival time and enqueue in the first queue
     jobs = sorted(jobs, key=lambda x: x[0])
     next_job_index = 0
+    job_completion_order = []
+    met = 2  # Initial maximum execution time
 
     while next_job_index < len(jobs) or any(queues):
         # Enqueue jobs that have now arrived
@@ -64,7 +98,7 @@ def Rmlfq_aFCFS(jobs, num_queues=100):
             job_size = jobs[next_job_index][1]
             arrival_time = jobs[next_job_index][0]
             Bj = calculate_Bj(job_id)
-            quantum = [get_execution_time(i, Bj) *15 for i in range(num_queues)]
+            quantum = [get_execution_time(i, met) for i in range(num_queues)]
             job_logs[job_id]['starvation_threshold'] = 30  # Initial threshold
             queues[0].append((job_id, job_size, arrival_time, 0))
             next_job_index += 1
@@ -79,6 +113,7 @@ def Rmlfq_aFCFS(jobs, num_queues=100):
 
             while queues[starvation_level]:
                 job_id, remaining_size, arrival_time, waiting_time = queues[starvation_level].popleft()
+                job_logs[job_id]['scheduling_queue'] = starvation_level
                 if job_logs[job_id]['first_executed_time'] is None:
                     job_logs[job_id]['first_executed_time'] = current_time
                 executed_time = min(remaining_size, quantum[starvation_level])
@@ -92,17 +127,20 @@ def Rmlfq_aFCFS(jobs, num_queues=100):
                     job_logs[job_id]['final_threshold'] = job_logs[job_id]['starvation_threshold']
                     flow_times.append(current_time - arrival_time)
                     finished_job_sizes.append(jobs[job_id][1])
+                    job_completion_order.append(job_id)
+                    if jobs[job_id][1] > 30:
+                        large_jobs_execution_order.append(job_id)
                     if len(finished_job_sizes) > 1:
                         r = calculate_r(finished_job_sizes)
-                        print(f"Calculated r after job completion: {r}")  # Debugging statement
+                        met = calculate_met(finished_job_sizes, met)
                 else:
                     next_queue = min(starvation_level + 1, num_queues - 1)
                     if len(finished_job_sizes) > 1:
                         r = calculate_r(finished_job_sizes)
+                        met = calculate_met(finished_job_sizes, met)
                     else:
                         r = 2  # Default to 2 if not enough data points
                     new_threshold = calculate_starvation_threshold(next_queue, quantum, r)
-                    print(f"New threshold for job {job_id} in queue {next_queue}: {new_threshold}")  # Debugging statement
                     job_logs[job_id]['starvation_threshold'] = new_threshold
                     queues[next_queue].append((job_id, remaining_size, arrival_time, waiting_time + executed_time))
 
@@ -122,6 +160,7 @@ def Rmlfq_aFCFS(jobs, num_queues=100):
         # Process jobs from the first queue or next available queue
         if queues[i]:
             job_id, remaining_size, arrival_time, waiting_time = queues[i].popleft()
+            job_logs[job_id]['scheduling_queue'] = i
             if job_logs[job_id]['first_executed_time'] is None:
                 job_logs[job_id]['first_executed_time'] = current_time
             # Execute job
@@ -136,9 +175,12 @@ def Rmlfq_aFCFS(jobs, num_queues=100):
                 job_logs[job_id]['final_threshold'] = job_logs[job_id]['starvation_threshold']
                 flow_times.append(current_time - arrival_time)
                 finished_job_sizes.append(jobs[job_id][1])
+                job_completion_order.append(job_id)
+                if jobs[job_id][1] > 30:
+                    large_jobs_execution_order.append(job_id)
                 if len(finished_job_sizes) > 1:
                     r = calculate_r(finished_job_sizes)
-                    print(f"Calculated r after job completion: {r}")  # Debugging statement
+                    met = calculate_met(finished_job_sizes, met)
             else:
                 # Check for new arrivals in the first queue
                 if queues[0]:
@@ -147,6 +189,7 @@ def Rmlfq_aFCFS(jobs, num_queues=100):
                     # Handle jobs in the first queue
                     while queues[0]:
                         job_id, remaining_size, arrival_time, waiting_time = queues[0].popleft()
+                        job_logs[job_id]['scheduling_queue'] = 0
                         if job_logs[job_id]['first_executed_time'] is None:
                             job_logs[job_id]['first_executed_time'] = current_time
                         executed_time = min(remaining_size, quantum[0])
@@ -160,9 +203,12 @@ def Rmlfq_aFCFS(jobs, num_queues=100):
                             job_logs[job_id]['final_threshold'] = job_logs[job_id]['starvation_threshold']
                             flow_times.append(current_time - arrival_time)
                             finished_job_sizes.append(jobs[job_id][1])
+                            job_completion_order.append(job_id)
+                            if jobs[job_id][1] > 30:
+                                large_jobs_execution_order.append(job_id)
                             if len(finished_job_sizes) > 1:
                                 r = calculate_r(finished_job_sizes)
-                                print(f"Calculated r after job completion: {r}")  # Debugging statement
+                                met = calculate_met(finished_job_sizes, met)
                         else:
                             queues[1].append((job_id, remaining_size, arrival_time, waiting_time + executed_time))
                     # After handling first queue, go back to the original queue
@@ -171,10 +217,10 @@ def Rmlfq_aFCFS(jobs, num_queues=100):
                 next_queue = min(i + 1, num_queues - 1)
                 if len(finished_job_sizes) > 1:
                     r = calculate_r(finished_job_sizes)
+                    met = calculate_met(finished_job_sizes, met)
                 else:
                     r = 2  # Default to 2 if not enough data points
                 job_logs[job_id]['starvation_threshold'] = calculate_starvation_threshold(next_queue, quantum, r)
-                print(f"New threshold for job {job_id} in queue {next_queue}: {job_logs[job_id]['starvation_threshold']}")  # Debugging statement
                 queues[next_queue].append((job_id, remaining_size, arrival_time, waiting_time + executed_time))
 
         # Increment waiting time for all jobs in the queues
@@ -194,7 +240,7 @@ def Rmlfq_aFCFS(jobs, num_queues=100):
     return average_flow_time, l2_norm_flow_time
 
 # Example usage:
-jobs = Read_csv("data/(32, 4.073).csv")
+jobs = Read_csv("data/(20, 4.073).csv")  
 avg_flow_time, l2_norm = Rmlfq_aFCFS(jobs, num_queues=100)
 print(f"Average Flow Time: {avg_flow_time}")
 print(f"L2-Norm of Flow Times: {l2_norm}")

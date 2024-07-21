@@ -1,0 +1,18 @@
+def calculate_met(finished_job_sizes, met):
+    """Calculate the median execution time (met) based on the finished job sizes."""
+    if len(finished_job_sizes) < 2:
+        return met
+    sorted_sizes = sorted(finished_job_sizes)
+    median_size = sorted_sizes[len(sorted_sizes) // 2]
+    average_size = sum(finished_job_sizes) / len(finished_job_sizes)
+
+    #print(f"Initial met: {met}, Median size: {median_size}, Average size: {average_size}")
+    met = median_size
+    if average_size >= 1.1 * median_size:
+        met *= 3
+    # elif average_size >= 1.2 * median_size:
+    #     median_size *= 1.5
+    return met
+
+the Fcfs has best result.
+
