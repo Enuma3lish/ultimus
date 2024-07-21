@@ -1,14 +1,88 @@
-793087.17953
-288304084.386756
-275395.58088
-216558942.29194343
-Average Flow Time: 70.95839
-L2-Norm of Flow Times: 940549.3803054681
-1029648.2459
-423658395.7711355
-Average Flow Time: 31549.56741
-L2 Norm Flow Time: 14487576.154652752
-44994.00177
-76545122.81628431
-Average Flow Time: 1059.2403000000295
-L2-Norm of Flow Times: 1584239.0982418025
+80756.3105
+9247006.306351531
+28071.5707
+6935031.708322104
+62.9815
+171811.70365548442
+103875.0898
+13493649.816482715
+Average Flow Time: 995.3204
+L2 Norm Flow Time: 130570.0649383311
+4723.9528
+2446439.422877256
+Average Flow Time: 408.8948
+L2-Norm of Flow Times: 252244.21924397
+multiprocessing.pool.RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/usr/lib/python3.8/multiprocessing/pool.py", line 125, in worker
+    result = (True, func(*args, **kwds))
+  File "/usr/lib/python3.8/multiprocessing/pool.py", line 51, in starmapstar
+    return list(itertools.starmap(args[0], args[1]))
+  File "/home/melowu/Work/expri/execute.py", line 7, in process_scheduler
+    return func(args[0])
+  File "/home/melowu/Work/expri/RMlFQ_aFCFS.py", line 202, in Rmlfq_aFCFS
+    job_logs[job_id]['starvation_threshold'] = calculate_starvation_threshold(next_queue, quantum, r)
+  File "/home/melowu/Work/expri/RMlFQ_aFCFS.py", line 29, in calculate_starvation_threshold
+    return (r**level) * quantum[level]
+OverflowError: (34, 'Numerical result out of range')
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/melowu/Work/expri/main.py", line 34, in <module>
+    main()
+  File "/home/melowu/Work/expri/main.py", line 27, in main
+    result = execute.execute(j,bp_parameter)
+  File "/home/melowu/Work/expri/execute.py", line 62, in execute
+    results = pool.starmap(
+  File "/usr/lib/python3.8/multiprocessing/pool.py", line 372, in starmap
+    return self._map_async(func, iterable, starmapstar, chunksize).get()
+  File "/usr/lib/python3.8/multiprocessing/pool.py", line 771, in get
+    raise self._value
+OverflowError: (34, 'Numerical result out of range')
+80756.3105
+9247006.306351531
+28071.5707
+6935031.708322104
+62.9815
+171811.70365548442
+103875.0898
+13493649.816482715
+Average Flow Time: 995.3204
+L2 Norm Flow Time: 130570.0649383311
+4674.7802
+2419873.0600231905
+Average Flow Time: 219.842
+L2-Norm of Flow Times: 188821.8980732902
+multiprocessing.pool.RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/usr/lib/python3.8/multiprocessing/pool.py", line 125, in worker
+    result = (True, func(*args, **kwds))
+  File "/usr/lib/python3.8/multiprocessing/pool.py", line 51, in starmapstar
+    return list(itertools.starmap(args[0], args[1]))
+  File "/home/melowu/Work/expri/execute.py", line 7, in process_scheduler
+    return func(args[0])
+  File "/home/melowu/Work/expri/RMlFQ_aFCFS.py", line 207, in Rmlfq_aFCFS
+    job_logs[job_id]['starvation_threshold'] = calculate_starvation_threshold(next_queue, quantum, r)
+  File "/home/melowu/Work/expri/RMlFQ_aFCFS.py", line 28, in calculate_starvation_threshold
+    return (r**level) * quantum[level]
+OverflowError: (34, 'Numerical result out of range')
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/melowu/Work/expri/main.py", line 34, in <module>
+    main()
+  File "/home/melowu/Work/expri/main.py", line 27, in main
+    result = execute.execute(j,bp_parameter)
+  File "/home/melowu/Work/expri/execute.py", line 62, in execute
+    results = pool.starmap(
+  File "/usr/lib/python3.8/multiprocessing/pool.py", line 372, in starmap
+    return self._map_async(func, iterable, starmapstar, chunksize).get()
+  File "/usr/lib/python3.8/multiprocessing/pool.py", line 771, in get
+    raise self._value
+OverflowError: (34, 'Numerical result out of range')
