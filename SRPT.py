@@ -59,7 +59,7 @@ def Srpt(jobs):
     
     # Calculate L2 norm of the flow time
     l2_norm_flow_time = total_flow_time_squared ** 0.5
-    
+
     return average_flow_time, l2_norm_flow_time
 
 def Save_logs_to_csv(logs, filename):
@@ -67,7 +67,7 @@ def Save_logs_to_csv(logs, filename):
     log_df = pd.DataFrame(logs, columns=["Current Time", "Job Index", "Remaining Time"])
     # Save DataFrame to a CSV file
     log_df.to_csv(filename, index=False)
-jobs = Read_csv("data/(20, 4.073).csv")  
+jobs = Read_csv("data/(22, 4.639).csv")  
 #jobs = Read_csv("data/(30, 16.772).csv")
 avg_flow_time, l2_norm = Srpt(jobs)
 print(avg_flow_time)

@@ -62,7 +62,7 @@ def execute(Arrival_rate,bp_parameter):
             results = pool.starmap(
                 process_scheduler,
                     [(RMLFQ.Rmlfq, rmlfq_list),(MLFQ.Mlfq,mlfq_list),(RR.Rr, rr_list), (SRPT.Srpt, srpt_list),
-                     (SJF.Sjf, sjf_list),(SETF.Setf,setf_list),(FCFS.Fcfs,fcfs_list),(RMlFQ_aFCFS.Rmlfq_aFCFS,rmlfq_ff_list)])
+                     (SJF.Sjf, sjf_list),(SETF.Setf,setf_list),(FCFS.Fcfs,fcfs_list),(RMlFQ_aFCFS.Rmlfq_aFCFS,rmlfq_ff_list,'data/'+str((Arrival_rate,i["L"]))+".csv")])
             rmlfq,mlfq,rr,srpt,sjf,setf,fcfs,rmlfq_aff= results
             mlfq_avg,mlfq_l2n = mlfq
             rmlfq_aff_avg,rmlfq_aff_l2n = rmlfq_aff
