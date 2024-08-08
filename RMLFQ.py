@@ -1,65 +1,164 @@
-import math
-
-import pandas as pd
 import random
+import math
+from math import log2, ceil
+import pandas as pd
+
 def Read_csv(filename):
-# Read the CSV file into a DataFrame 
+    """Read the CSV file into a list of lists."""
     data_frame = pd.read_csv(filename)
     data_list = data_frame.values.tolist()
     return data_list
 
-def Rmlfq(jobs, num_queues=100):
-    """Schedules jobs using the MLFQ algorithm with exponential distribution in first level.
+def calculate_Bj(j):
+    """Calculate Bj based on the index of the job (j)."""
+    if j < 3:
+        return 1
+    else:
+        return 1 - random.expovariate(12 * math.log(j))
+
+def calculate_median(lst):
+    """Calculate the median of a list."""
+    sorted_lst = sorted(lst)
+    n = len(sorted_lst)
+    if n % 2 == 0:
+        return (sorted_lst[n//2 - 1] + sorted_lst[n//2]) / 2
+    else:
+        return sorted_lst[n//2]
+
+def Rmlfq(jobs, initial_num_queues=2):
+    """Schedules jobs using the MLFQ algorithm with exponential distribution in the first level.
 
     Args:
         jobs: List of [arrival_time, job_size] pairs.
-        num_queues: Number of queues in the MLFQ system.
+        initial_num_queues: Initial number of queues in the MLFQ system.
 
     Returns:
         Tuple of (average_flow_time, l2_norm_flow_time).
     """
+    num_queues = initial_num_queues
     queues = [[] for _ in range(num_queues)]
     time = 0
     flow_times = []
+    finished_job_sizes = []
+    mfjs = 0  # Maximum finished job size
 
-    for j, (arrival_time, job_size) in enumerate(jobs, 1):  
+    def add_job_to_appropriate_queue(job):
+        nonlocal num_queues, mfjs, queues
+        mfjs = max(mfjs, job[1])
+        num_queues = max(initial_num_queues, ceil(log2(mfjs)))
+        if len(queues) < num_queues:
+            queues.extend([[] for _ in range(num_queues - len(queues))])
+        queues[0].append(job)
+
+    for j, (arrival_time, job_size) in enumerate(jobs, 1):
         while time < arrival_time:
-            for i, q in enumerate(queues):
-                if q:
-                    job = q[0]
-                    target_time = 2 ** i * max(1, 2 - job[2])  
-
-                    if time - job[0] + 1 >= target_time:  
-                        q.pop(0)
-                        if i < num_queues - 1:  
-                            queues[i + 1].append(job)  # Demote
+            executed = False
+            for i in range(num_queues):
+                if queues[i]:  # Process the first non-empty queue
+                    job = queues[i][0]
+                    max_exec_time = 2 ** i * job[2]
+                    # if i == 0:
+                    #     if finished_job_sizes:
+                    #         median_finished_size = calculate_median(finished_job_sizes)
+                    #         if mfjs >= 1.5 * median_finished_size:
+                    #             max_exec_time = 32
+                    #         elif 1.1 * median_finished_size <= mfjs < 1.5* median_finished_size:
+                    #             max_exec_time = 64*2
+                    if i == num_queues - 1:
+                        exec_time = min(max_exec_time, job[1])
+                        job[1] -= exec_time
+                        time += exec_time
+                        if job[1] == 0:
+                            finish_time = time
+                            flow_time = finish_time - job[0]
+                            flow_times.append(flow_time)
+                            finished_job_sizes.append(job[1] + exec_time)  # Record the finished job size
+                            #print(f"Time {time}: Job {job} completed. Flow time: {flow_time}")
+                            queues[i].pop(0)
+                        else:
+                            queues[i].append(queues[i].pop(0))  # Round-robin rotation
                     else:
-                        job[1] -= 1  # Decrease the job size by the time it has run in the current quantum
-                        if job[1] == 0: #If the job has completed running, record the flow time and remove it from the queue
-                            flow_times.append(time - job[0] + 1)
-                            q.pop(0)
+                        exec_time = min(max_exec_time, job[1])
+                        job[1] -= exec_time
+                        time += exec_time
+                        if job[1] == 0:
+                            finish_time = time
+                            flow_time = finish_time - job[0]
+                            flow_times.append(flow_time)
+                            finished_job_sizes.append(job[1] + exec_time)  # Record the finished job size
+                            #print(f"Time {time}: Job {job} completed. Flow time: {flow_time}")
+                            queues[i].pop(0)
+                        else:
+                            queues[i].pop(0)
+                            queues[i + 1].append(job)  # Move to the next queue
+                            #print(f"Time {time}: Job {job} moved to queue {i+1}")
+                    executed = True
                     break
-            time += 1
+            if not executed:
+                time += 1
+                break
 
-        bj = 1 if j < 3 else 1 - random.expovariate(12 * math.log(j))
-        queues[0].append([arrival_time, job_size, bj]) 
+        time = max(time, arrival_time)
+        bj = calculate_Bj(j)
+        add_job_to_appropriate_queue([arrival_time, job_size, bj])
+        #print(f"Time {time}: Job {[arrival_time, job_size, bj]} added to queue 0")
 
     while any(queues):  # Process remaining jobs
-        for i, q in enumerate(queues):
-            if q:
-                job = q[0]
-                flow_times.append(time - job[0] + 1)
-                q.pop(0)
-                break
-        time += 1
+        executed = False
+        for i in range(num_queues):
+            if queues[i]:
+                job = queues[i][0]
+                max_exec_time = 2 ** i * job[2]
+                # if i == 0:
+                #     if finished_job_sizes:
+                #         median_finished_size = calculate_median(finished_job_sizes)
+                #         if mfjs >= 1.5 * median_finished_size:
+                #             max_exec_time = 64
+                #         elif 1.1 * median_finished_size <= mfjs < 1.5 * median_finished_size:
+                #             max_exec_time = max(max_exec_time, 64)
 
-    average_flow_time = sum(flow_times) / len(flow_times)
-    l2_norm_flow_time = math.sqrt(sum(x*x for x in flow_times)) 
+                if i == num_queues - 1:
+                    exec_time = min(max_exec_time, job[1])
+                    job[1] -= exec_time
+                    time += exec_time
+                    if job[1] == 0:
+                        finish_time = time
+                        flow_time = finish_time - job[0]
+                        flow_times.append(flow_time)
+                        finished_job_sizes.append(job[1] + exec_time)  # Record the finished job size
+                        #print(f"Time {time}: Job {job} completed. Flow time: {flow_time}")
+                        queues[i].pop(0)
+                    else:
+                        queues[i].append(queues[i].pop(0))  # Round-robin rotation
+                else:
+                    exec_time = min(max_exec_time, job[1])
+                    job[1] -= exec_time
+                    time += exec_time
+                    if job[1] == 0:
+                        finish_time = time
+                        flow_time = finish_time - job[0]
+                        flow_times.append(flow_time)
+                        finished_job_sizes.append(job[1] + exec_time)  # Record the finished job size
+                        #print(f"Time {time}: Job {job} completed. Flow time: {flow_time}")
+                        queues[i].pop(0)
+                    else:
+                        queues[i].pop(0)
+                        queues[i + 1].append(job)  # Move to the next queue
+                        #print(f"Time {time}: Job {job} moved to queue {i+1}")
+                executed = True
+                break
+        if not executed:
+            time += 1
+
+    if not flow_times:
+        print("No jobs have been completed. Please check the job scheduling logic.")
+
+    average_flow_time = sum(flow_times) / len(flow_times) if flow_times else 0
+    l2_norm_flow_time = math.sqrt(sum(x*x for x in flow_times)) if flow_times else 0
     return average_flow_time, l2_norm_flow_time
 
-
-# # Example call with the job list
-jobs = Read_csv("data/(20, 4.073).csv")
-average_flow_time, l2_norm_flow_time= Rmlfq(jobs)
-print(average_flow_time)
-print(l2_norm_flow_time)
+# Example call with the job list
+jobs = Read_csv("data/(22, 4.639).csv")
+average_flow_time, l2_norm_flow_time = Rmlfq(jobs)
+print(f"Average Flow Time: {average_flow_time}")
+print(f"L2 Norm Flow Time: {l2_norm_flow_time}")
