@@ -12,7 +12,9 @@ metrics = [
    "RMLFQ_aFF_L2_Norm/SETF_L2_Norm",
    "RMLFQ_aFF_L2_Norm/RMLFQ_L2_Norm",
    "RMLFQ_aFF_L2_Norm/MLFQ_L2_Norm",
-   "RMLFQ_aFF_L2_Norm/SRPT_L2_Norm"
+   "RMLFQ_aFF_L2_Norm/SRPT_L2_Norm",
+   "RMLFQ_L2_Norm/FCFS_L2_Norm",
+   "RMLFQ_L2_Norm/SRPT_L2_Norm"
 ]
 
 # Ensure directory for plots exists or is created
