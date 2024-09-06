@@ -27,7 +27,7 @@ def main():
         result = execute.execute(j,bp_parameter)
         results.extend(result)
         mresults = pd.DataFrame(results)
-    mresults.to_csv(f"/home/melowu/Work/expri/DataSet/result_new.csv", index=False)
+    mresults.to_csv(f"/Users/melowu/Desktop/ultimus/DataSet/result_new.csv", index=False)
         # progress.update(1)
     # Write_csv.Write("/home/melowu/Work/expri/DataSet/result"+str(i)+".csv",results)
 if __name__ == "__main__":
