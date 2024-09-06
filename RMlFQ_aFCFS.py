@@ -28,13 +28,12 @@ def calculate_starvation_threshold(level, quantum, r):
             result = quantum[level]**0.5
         else:
             result = (r**level) * quantum[level]
-            
         
         # Cap the result to avoid overflow
         result = min(result, 1e12)
         
         return result
-    except OverflowError as e:
+    except OverflowError:
         return 1e12  # Return a large but safe value in case of overflow
 
 def detect_starvation(job_logs, queues, current_time):
@@ -62,17 +61,15 @@ def calculate_met(finished_job_sizes, met):
         return met
     sorted_sizes = sorted(finished_job_sizes)
     median_size = sorted_sizes[len(sorted_sizes) // 2]
-    average_size = sum(finished_job_sizes) / len(finished_job_sizes)
+    max_size = max(finished_job_sizes)
 
-    #print(f"Initial met: {met}, Median size: {median_size}, Average size: {average_size}")
-    met = median_size
-    if average_size >= 1.1 * median_size and average_size < 4* median_size:
-         return met *4
+    # Calculate the new median execution time
+    met = max(median_size, 64)
+    if max_size >= 1.1 * median_size and max_size < 2 * median_size:
+        return met * 4
     else:
-        return met 
-    
-    # elif average_size >= 1.2 * median_size:
-    #     median_size *= 1.5
+        return met**0.5
+
 def Rmlfq_aFCFS(jobs, num_queues=100):
     # Initialize data structures
     queues = [deque() for _ in range(num_queues)]
@@ -88,7 +85,7 @@ def Rmlfq_aFCFS(jobs, num_queues=100):
     jobs = sorted(jobs, key=lambda x: x[0])
     next_job_index = 0
     job_completion_order = []
-    met = 2  # Initial maximum execution time
+    met = 64  # Initial maximum execution time
 
     while next_job_index < len(jobs) or any(queues):
         # Enqueue jobs that have now arrived
@@ -97,8 +94,10 @@ def Rmlfq_aFCFS(jobs, num_queues=100):
             job_size = jobs[next_job_index][1]
             arrival_time = jobs[next_job_index][0]
             Bj = calculate_Bj(job_id)
-            quantum = [get_execution_time(i, met) for i in range(num_queues)]
-            job_logs[job_id]['starvation_threshold'] = 30  # Initial threshold
+            quantum = [get_execution_time(i, met) * Bj for i in range(num_queues)]
+            # Set the maximum execution time for the first level
+            quantum[0] = 64
+            job_logs[job_id]['starvation_threshold'] = 64  # Initial threshold
             queues[0].append((job_id, job_size, arrival_time, 0))
             next_job_index += 1
 
@@ -222,8 +221,8 @@ def Rmlfq_aFCFS(jobs, num_queues=100):
                 job_logs[job_id]['starvation_threshold'] = calculate_starvation_threshold(next_queue, quantum, r)
                 queues[next_queue].append((job_id, remaining_size, arrival_time, waiting_time + executed_time))
 
-        # Increment waiting time for all jobs in the queues
-        for queue in queues:
+        # Increment waiting time for jobs in the first four queues
+        for queue in queues[:4]:
             for j in range(len(queue)):
                 job_id, remaining_size, arrival_time, waiting_time = queue[j]
                 queue[j] = (job_id, remaining_size, arrival_time, waiting_time + 1)

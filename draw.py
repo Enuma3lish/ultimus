@@ -5,14 +5,14 @@ import numpy as np
 import matplotlib.cm as cm
 
 # Load the data
-data = pd.read_csv('/home/melowu/Work/expri/DataSet/result_new.csv')  # Adjust this to the path of your CSV file
+data = pd.read_csv('/Users/melowu/Desktop/ultimus/DataSet/result_new.csv')  # Adjust this to the path of your CSV file
 metrics = [
-   "RMLFQ_aFF_L2_Norm/FCFS_L2_Norm",
-   "RMLFQ_aFF_L2_Norm/RR_L2_Norm",
-   "RMLFQ_aFF_L2_Norm/SETF_L2_Norm",
-   "RMLFQ_aFF_L2_Norm/RMLFQ_L2_Norm",
-   "RMLFQ_aFF_L2_Norm/MLFQ_L2_Norm",
-   "RMLFQ_aFF_L2_Norm/SRPT_L2_Norm",
+   "RMLFQ_bFF_L2_Norm/FCFS_L2_Norm",
+   "RMLFQ_bFF_L2_Norm/RR_L2_Norm",
+   "RMLFQ_bFF_L2_Norm/SETF_L2_Norm",
+   "RMLFQ_bFF_L2_Norm/RMLFQ_L2_Norm",
+   "RMLFQ_bFF_L2_Norm/MLFQ_L2_Norm",
+   "RMLFQ_bFF_L2_Norm/SRPT_L2_Norm",
    "RMLFQ_L2_Norm/FCFS_L2_Norm",
    "RMLFQ_L2_Norm/SRPT_L2_Norm"
 ]
@@ -47,10 +47,10 @@ for metric in metrics:
     plt.axhline(y=1.5, color='g', linestyle='--', label='y=1.5')  # Add a horizontal line at y=1.5
     
     # Annotating specific points
-    for line in plt.gca().get_lines():
-        for x_value, y_value in zip(line.get_xdata(), line.get_ydata()):
-            if y_value in [1, 1.2, 1.5]:
-                plt.annotate(f'Important: {y_value}', (x_value, y_value), textcoords="offset points", xytext=(0,10), ha='center')
+    # for line in plt.gca().get_lines():
+    #     for x_value, y_value in zip(line.get_xdata(), line.get_ydata()):
+    #         if y_value in [1, 1.2, 1.5]:
+    #             plt.annotate(f'Important: {y_value}', (x_value, y_value), textcoords="offset points", xytext=(0,10), ha='center')
     
     # Set a fixed y-axis range and custom y-ticks
     plt.ylim(ymin=0, ymax=10)

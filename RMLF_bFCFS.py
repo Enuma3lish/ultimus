@@ -16,8 +16,8 @@ def calculate_Bj(j):
     else:
         return 1 - random.expovariate(12 * math.log(j))
 
-def Rmlfq(jobs, initial_num_queues=2):
-    """Schedules jobs using the MLFQ algorithm with exponential distribution in the first level.
+def Rmlf_bFCFS(jobs, initial_num_queues=2):
+    """Schedules jobs using the RMLF and FCFS modes.
 
     Args:
         jobs: List of [arrival_time, job_size] pairs.
@@ -41,14 +41,43 @@ def Rmlfq(jobs, initial_num_queues=2):
             queues.extend([[] for _ in range(num_queues - len(queues))])
         queues[0].append(job)
 
+    def mean_finished_job_size():
+        """Calculate the mean finished job size."""
+        return sum(finished_job_sizes) / len(finished_job_sizes) if finished_job_sizes else 0
+
+    def use_fcfs_mode():
+        """Decide whether to use FCFS mode or RMLF mode."""
+        mean_size = mean_finished_job_size()
+        if not finished_job_sizes:
+            return False  # Default to RMLF if no jobs have finished
+        log_mean_size = log2(mean_size) if mean_size > 0 else 0
+        log_max_size = log2(mfjs) if mfjs > 0 else 0
+        return log_mean_size * 2 > log_max_size
+
     for j, (arrival_time, job_size) in enumerate(jobs, 1):
         while time < arrival_time:
             executed = False
-            for i in range(num_queues):
-                if queues[i]:  # Process the first non-empty queue
-                    job = queues[i][0]
-                    max_exec_time = 2 ** i * job[2]
-                    if i == num_queues - 1:
+            if use_fcfs_mode():
+                # FCFS mode
+                for i in range(num_queues):
+                    if queues[i]:  # Process the first non-empty queue in FCFS mode
+                        job = queues[i][0]
+                        exec_time = job[1]  # Execute the entire job in FCFS
+                        job[1] -= exec_time
+                        time += exec_time
+                        finish_time = time
+                        flow_time = finish_time - job[0]
+                        flow_times.append(flow_time)
+                        finished_job_sizes.append(job[1] + exec_time)  # Record the finished job size
+                        queues[i].pop(0)
+                        executed = True
+                        break
+            else:
+                # RMLF mode
+                for i in range(num_queues):
+                    if queues[i]:  # Process the first non-empty queue in RMLF mode
+                        job = queues[i][0]
+                        max_exec_time = 2 ** i * job[2]
                         exec_time = min(max_exec_time, job[1])
                         job[1] -= exec_time
                         time += exec_time
@@ -57,27 +86,13 @@ def Rmlfq(jobs, initial_num_queues=2):
                             flow_time = finish_time - job[0]
                             flow_times.append(flow_time)
                             finished_job_sizes.append(job[1] + exec_time)  # Record the finished job size
-                            #print(f"Time {time}: Job {job} completed. Flow time: {flow_time}")
-                            queues[i].pop(0)
-                        else:
-                            queues[i].append(queues[i].pop(0))  # Round-robin rotation
-                    else:
-                        exec_time = min(max_exec_time, job[1])
-                        job[1] -= exec_time
-                        time += exec_time
-                        if job[1] == 0:
-                            finish_time = time
-                            flow_time = finish_time - job[0]
-                            flow_times.append(flow_time)
-                            finished_job_sizes.append(job[1] + exec_time)  # Record the finished job size
-                            #print(f"Time {time}: Job {job} completed. Flow time: {flow_time}")
                             queues[i].pop(0)
                         else:
                             queues[i].pop(0)
-                            queues[i + 1].append(job)  # Move to the next queue
-                            #print(f"Time {time}: Job {job} moved to queue {i+1}")
-                    executed = True
-                    break
+                            if i < num_queues - 1:
+                                queues[i + 1].append(job)  # Move to the next queue
+                        executed = True
+                        break
             if not executed:
                 time += 1
                 break
@@ -85,15 +100,31 @@ def Rmlfq(jobs, initial_num_queues=2):
         time = max(time, arrival_time)
         bj = calculate_Bj(j)
         add_job_to_appropriate_queue([arrival_time, job_size, bj])
-        #print(f"Time {time}: Job {[arrival_time, job_size, bj]} added to queue 0")
 
+    # Process remaining jobs after arrival
     while any(queues):  # Process remaining jobs
         executed = False
-        for i in range(num_queues):
-            if queues[i]:
-                job = queues[i][0]
-                max_exec_time = 2 ** i * job[2]
-                if i == num_queues - 1:
+        if use_fcfs_mode():
+            # FCFS mode
+            for i in range(num_queues):
+                if queues[i]:
+                    job = queues[i][0]
+                    exec_time = job[1]
+                    job[1] -= exec_time
+                    time += exec_time
+                    finish_time = time
+                    flow_time = finish_time - job[0]
+                    flow_times.append(flow_time)
+                    finished_job_sizes.append(job[1] + exec_time)
+                    queues[i].pop(0)
+                    executed = True
+                    break
+        else:
+            # RMLF mode
+            for i in range(num_queues):
+                if queues[i]:
+                    job = queues[i][0]
+                    max_exec_time = 2 ** i * job[2]
                     exec_time = min(max_exec_time, job[1])
                     job[1] -= exec_time
                     time += exec_time
@@ -101,28 +132,14 @@ def Rmlfq(jobs, initial_num_queues=2):
                         finish_time = time
                         flow_time = finish_time - job[0]
                         flow_times.append(flow_time)
-                        finished_job_sizes.append(job[1] + exec_time)  # Record the finished job size
-                        #print(f"Time {time}: Job {job} completed. Flow time: {flow_time}")
-                        queues[i].pop(0)
-                    else:
-                        queues[i].append(queues[i].pop(0))  # Round-robin rotation
-                else:
-                    exec_time = min(max_exec_time, job[1])
-                    job[1] -= exec_time
-                    time += exec_time
-                    if job[1] == 0:
-                        finish_time = time
-                        flow_time = finish_time - job[0]
-                        flow_times.append(flow_time)
-                        finished_job_sizes.append(job[1] + exec_time)  # Record the finished job size
-                        #print(f"Time {time}: Job {job} completed. Flow time: {flow_time}")
+                        finished_job_sizes.append(job[1] + exec_time)
                         queues[i].pop(0)
                     else:
                         queues[i].pop(0)
-                        queues[i + 1].append(job)  # Move to the next queue
-                        #print(f"Time {time}: Job {job} moved to queue {i+1}")
-                executed = True
-                break
+                        if i < num_queues - 1:
+                            queues[i + 1].append(job)
+                    executed = True
+                    break
         if not executed:
             time += 1
 
@@ -134,7 +151,8 @@ def Rmlfq(jobs, initial_num_queues=2):
     return average_flow_time, l2_norm_flow_time
 
 # Example call with the job list
+#jobs = Read_csv("data/(20, 16.772).csv")
 jobs = Read_csv("data/(26, 7.918).csv")
-average_flow_time, l2_norm_flow_time = Rmlfq(jobs)
+average_flow_time, l2_norm_flow_time = Rmlf_bFCFS(jobs)
 print(f"Average Flow Time: {average_flow_time}")
 print(f"L2 Norm Flow Time: {l2_norm_flow_time}")
