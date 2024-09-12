@@ -38,7 +38,8 @@ def Fcfs(jobs):
     l2_norm_flow_time = sqrt(sum(squared_flow_times))
     return average_flow_time, l2_norm_flow_time
 #jobs = Read_csv("data/(20, 16.772).csv")
-jobs = Read_csv("data/(26, 7.918).csv")
+#jobs = Read_csv("data/(26, 7.918).csv")
+jobs = Read_csv("data/(20, 4.073).csv")
 avg,l2=Fcfs(jobs)
 print(f"Average Flow Time: {avg}")
 print(f"L2 Norm Flow Time: {l2}")
