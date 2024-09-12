@@ -14,7 +14,7 @@ def calculate_Bj(j):
     if j < 3:
         return 1
     else:
-        return 1 - random.expovariate(12 * math.log(j))
+        return max(1,2 - random.expovariate(12 * math.log(j)))
 
 def Rmlfq(jobs, initial_num_queues=2):
     """Schedules jobs using the MLFQ algorithm with exponential distribution in the first level.
@@ -135,6 +135,7 @@ def Rmlfq(jobs, initial_num_queues=2):
 
 # Example call with the job list
 jobs = Read_csv("data/(26, 7.918).csv")
+#jobs = Read_csv("data/(20, 4.073).csv")
 average_flow_time, l2_norm_flow_time = Rmlfq(jobs)
 print(f"Average Flow Time: {average_flow_time}")
 print(f"L2 Norm Flow Time: {l2_norm_flow_time}")

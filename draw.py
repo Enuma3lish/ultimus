@@ -5,20 +5,16 @@ import numpy as np
 import matplotlib.cm as cm
 
 # Load the data
-data = pd.read_csv('/Users/melowu/Desktop/ultimus/DataSet/result_new.csv')  # Adjust this to the path of your CSV file
+data = pd.read_csv('/home/melowu/Work/ultimus/scheduler_results.csv')  # Adjust this to the path of your CSV file
 metrics = [
-   "RMLFQ_bFF_L2_Norm/FCFS_L2_Norm",
-   "RMLFQ_bFF_L2_Norm/RR_L2_Norm",
-   "RMLFQ_bFF_L2_Norm/SETF_L2_Norm",
-   "RMLFQ_bFF_L2_Norm/RMLFQ_L2_Norm",
-   "RMLFQ_bFF_L2_Norm/MLFQ_L2_Norm",
-   "RMLFQ_bFF_L2_Norm/SRPT_L2_Norm",
-   "RMLFQ_L2_Norm/FCFS_L2_Norm",
-   "RMLFQ_L2_Norm/SRPT_L2_Norm"
+   "Scheduler/SRPT",
+   "Scheduler/FCFS",
+   "Scheduler_L2_Norm/SRPT_L2_Norm",
+   "Scheduler_L2_Norm/FCFS_L2_Norm"
 ]
 
 # Ensure directory for plots exists or is created
-plots_dir = "img/total/result/"
+plots_dir = "/home/melowu/Work/ultimus/img/total/result/"
 os.makedirs(plots_dir, exist_ok=True)
 
 # Color palette for different bp_parameters
@@ -30,9 +26,27 @@ for metric in metrics:
     color_index = 0
     for bp_param in data['bp_parameter'].unique():
         specific_data = data[data['bp_parameter'] == bp_param]
-        
+
+        # Debugging: Print specific data
+        print(f"bp_parameter: {bp_param}")
+        print(specific_data.head())
+
         if not specific_data.empty:
-            plt.plot(specific_data['arrival_rate'], specific_data[metric], marker='o', linestyle='-', label=f'BP={bp_param}', color=colors(color_index))
+            # Check for NaN or infinite values in the metric column
+            if specific_data[metric].isnull().values.any():
+                print(f"Warning: NaN values found in {metric} for bp_param {bp_param}")
+            if np.isinf(specific_data[metric].values).any():
+                print(f"Warning: Infinite values found in {metric} for bp_param {bp_param}")
+
+            # Plotting the data
+            plt.plot(
+                specific_data['arrival_rate'], 
+                specific_data[metric], 
+                marker='o', 
+                linestyle='-', 
+                label=f'BP={bp_param}', 
+                color=colors(color_index)
+            )
             color_index += 1
 
     plt.title(f'{metric}')
@@ -40,29 +54,21 @@ for metric in metrics:
     plt.ylabel(metric)
     plt.legend(title='BP Parameter', loc='best')
     plt.grid(True)
+
+    # Set a narrower y-axis range for zooming into values close to 1
+    plt.ylim(0, 2)  # Setting y-limits between 0 and 2 for a clearer view of values near 0 and 1
     
-    # Highlighting specific points
-    plt.axhline(y=1, color='b', linestyle='--', label='y=1')   # Add a horizontal line at y=1
-    plt.axhline(y=1.2, color='r', linestyle='--', label='y=1.2')  # Add a horizontal line at y=1.2
-    plt.axhline(y=1.5, color='g', linestyle='--', label='y=1.5')  # Add a horizontal line at y=1.5
+    # Set y-ticks with smaller intervals between 0 and 2
+    plt.yticks(np.arange(0, 2.1, 0.1))  # Smaller intervals (0.1) for better clarity
     
-    # Annotating specific points
-    # for line in plt.gca().get_lines():
-    #     for x_value, y_value in zip(line.get_xdata(), line.get_ydata()):
-    #         if y_value in [1, 1.2, 1.5]:
-    #             plt.annotate(f'Important: {y_value}', (x_value, y_value), textcoords="offset points", xytext=(0,10), ha='center')
-    
-    # Set a fixed y-axis range and custom y-ticks
-    plt.ylim(ymin=0, ymax=10)
-    plt.yticks(np.arange(0, 11, 1))  # Set y-ticks at every integer value
-    
-    # Add custom vertical lines and ticks
+    # Add custom vertical lines and x-ticks
     plt.axvline(x=25, color='black', linestyle='--')
     plt.axvline(x=35, color='black', linestyle='--')
-    plt.xticks(ticks=np.arange(20, 41, 2))
+    plt.xticks(ticks=np.arange(20, 41, 2))  # X-ticks as you had before
     
     plt.tight_layout()  # Adjust the layout to make room for the y-axis label
     
+    # Save the plot
     filename = f'{plots_dir}/{metric.replace("/", "_")}_combined.png'
     plt.savefig(filename)
     plt.close()
