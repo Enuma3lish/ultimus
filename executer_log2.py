@@ -36,7 +36,8 @@ def scheduler(arrival_rates, bp_parameters):
             print(f"Processing Arrival_rate: {arrival_rates}, bp_parameter: {bp_param}")
 
             job_list = Read_csv.Read_csv('data/' + str((arrival_rates, bp_param["L"])) + ".csv")
-            N = int(math.log2(len(job_list)))
+            #N = int(math.log2(len(job_list)))
+            N = len(job_list)
             remaining_jobs = len(job_list)
 
             algorithms = {
