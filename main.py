@@ -26,14 +26,15 @@ def main():
     results = []
     logs = []
     for j in Arrival_rate:
-        log = executer_log2.scheduler(j,bp_parameter)
-        result = execute.execute(j,bp_parameter)
-        log.extend(log)
-        results.extend(result)
-        mlogs = pd.DataFrame(logs)
-        mresults = pd.DataFrame(results)
-    mresults.to_csv(f"/home/melowu/Work/ultimus/DataSet/result_new.csv", index=False)
-    mlogs.to_csv(f"/home/melowu/Work/ultimus/DataSet/result_logs.csv", index=False)
+          executer_log2.scheduler(j,bp_parameter)
+    #     log = executer_log2.scheduler(j,bp_parameter)
+    #     #result = execute.execute(j,bp_parameter)
+    #     logs.extend(log)
+    #     #results.extend(result)
+    #     mlogs = pd.DataFrame(logs)
+    #     mresults = pd.DataFrame(results)
+    # mresults.to_csv(f"/home/melowu/Work/ultimus/DataSet/result_new.csv", index=False)
+    # mlogs.to_csv(f"/home/melowu/Work/ultimus/DataSet/result_logs.csv", index=False)
         # progress.update(1)
     # Write_csv.Write("/home/melowu/Work/expri/DataSet/result"+str(i)+".csv",results)
 if __name__ == "__main__":

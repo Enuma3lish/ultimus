@@ -5,26 +5,28 @@ import numpy as np
 import matplotlib.cm as cm
 
 # Load the data
-data = pd.read_csv('/home/melowu/Work/ultimus/scheduler_results.csv')  # Adjust this to the path of your CSV file
+data = pd.read_csv('/home/melowu/Work/ultimus/log/combined_results.csv')  # Adjust this to the path of your CSV file
 metrics = [
-   "Scheduler/SRPT",
-   "Scheduler/FCFS",
-   "Scheduler_L2_Norm/SRPT_L2_Norm",
-   "Scheduler_L2_Norm/FCFS_L2_Norm"
+    "Dynamic_L2_Norm_vs_FCFS", "Dynamic_L2_Norm_vs_SRPT"
 ]
 
 # Ensure directory for plots exists or is created
-plots_dir = "/home/melowu/Work/ultimus/img/total/result/"
+plots_dir = "/home/melowu/Work/ultimus/log/img"
 os.makedirs(plots_dir, exist_ok=True)
 
-# Color palette for different bp_parameters
-colors = cm.get_cmap('viridis', len(data['bp_parameter'].unique()))
+# Color palette for different bp_parameters (restrict to 4 colors)
+colors = cm.get_cmap('viridis', 5)
+
+# Define four different marker styles (symbols)
+markers = ['o', 's', '^', 'D','>']  # You can modify these symbols as you prefer
+linestyle = '-'  # Only one kind of line
 
 for metric in metrics:
     plt.figure(figsize=(12, 8))
     
     color_index = 0
-    for bp_param in data['bp_parameter'].unique():
+    # Loop over unique bp_parameter (limit to 4 iterations)
+    for bp_param in data['bp_parameter'].unique()[:5]:  # Ensure we only get the first 4 unique parameters
         specific_data = data[data['bp_parameter'] == bp_param]
 
         # Debugging: Print specific data
@@ -40,18 +42,18 @@ for metric in metrics:
 
             # Plotting the data
             plt.plot(
-                specific_data['arrival_rate'], 
-                specific_data[metric], 
-                marker='o', 
-                linestyle='-', 
-                label=f'BP={bp_param}', 
-                color=colors(color_index)
+                specific_data['arrival_rate'],  # X-axis: arrival_rate (mean interarrival time)
+                specific_data[metric],          # Y-axis: metric value
+                marker=markers[color_index % len(markers)],  # Different marker for each bp_param
+                linestyle=linestyle,            # Same line style for all bp_param
+                label=f'BP={bp_param}',         # Label for each bp_param
+                color=colors(color_index)       # Use a different color for each line
             )
             color_index += 1
 
     plt.title(f'{metric}')
-    plt.xlabel('Mean Arrival Time')
-    plt.ylabel(metric)
+    plt.xlabel('Mean Interarrival Time (Arrival Rate)')  # X-axis label for mean interarrival time
+    plt.ylabel(metric)                                   # Y-axis label for metric comparison
     plt.legend(title='BP Parameter', loc='best')
     plt.grid(True)
 
@@ -61,14 +63,12 @@ for metric in metrics:
     # Set y-ticks with smaller intervals between 0 and 2
     plt.yticks(np.arange(0, 2.1, 0.1))  # Smaller intervals (0.1) for better clarity
     
-    # Add custom vertical lines and x-ticks
-    plt.axvline(x=25, color='black', linestyle='--')
-    plt.axvline(x=35, color='black', linestyle='--')
-    plt.xticks(ticks=np.arange(20, 41, 2))  # X-ticks as you had before
+    # Set custom x-ticks for mean interarrival time (arrival_rate)
+    plt.xticks(ticks=np.arange(20, 41, 2))  # Assuming arrival rates are between 20 and 40 with a step of 2
     
     plt.tight_layout()  # Adjust the layout to make room for the y-axis label
     
     # Save the plot
-    filename = f'{plots_dir}/{metric.replace("/", "_")}_combined.png'
+    filename = f'{plots_dir}/{metric.replace("/", "_")}_comparison_limited.pdf'
     plt.savefig(filename)
     plt.close()
