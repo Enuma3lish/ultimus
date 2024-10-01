@@ -3,38 +3,45 @@ import scipy.stats as stats
 import tqdm
 import Write_csv
 import math
-Arrival_rate = [i for i in range(20, 41, 2)]
-#Arrival_rate=[0.05,0.04545,0.0416,0.0385,0.036,0.033,0.03123,0.029,0.028,0.026,0.025] #problem for loop 
-bp_parameter=[{"L":16.772,"H":pow(2,6)},{"L":7.918,"H":pow(2,9)},{"L":5.649,"H":pow(2,12)},{"L":4.639,"H":pow(2,15)},{"L":4.073,"H":pow(2,18)}]   
-def job_init(num_jobs,arrival_rate,xmin,xmax):
-    alpha =1.1
+
+# Define inter-arrival times
+inter_arrival_time = [i for i in range(20, 41, 2)]  # This defines average inter-arrival times
+
+# Bounded Pareto parameters
+bp_parameter = [
+    {"L": 16.772, "H": pow(2, 6)},
+    {"L": 7.918, "H": pow(2, 9)},
+    {"L": 5.649, "H": pow(2, 12)},
+    {"L": 4.639, "H": pow(2, 15)},
+    {"L": 4.073, "H": pow(2, 18)}
+]
+
+def job_init(num_jobs, avg_inter_arrival_time, xmin, xmax):
+    alpha = 1.1
     samples = []
-    jb=[]
-    pareto = stats.pareto(b=alpha) #bounded pareto
+    jb = []
+    pareto = stats.pareto(b=alpha)  # Bounded Pareto distribution
+    # Generate job sizes within [xmin, xmax]
     while len(jb) < num_jobs:
         raw_sample = math.ceil(pareto.rvs(size=1)[0])
         if xmin <= raw_sample <= xmax:
             jb.append(raw_sample)
-    arrival_times = np.random.poisson(arrival_rate, num_jobs).cumsum()  #put iterarrival time
+    # Generate inter-arrival times from exponential distribution
+    inter_arrival_times = np.random.exponential(scale=avg_inter_arrival_time, size=num_jobs)
+    # Compute arrival times as cumulative sum of inter-arrival times
+    arrival_times = np.cumsum(inter_arrival_times)
+    # Create job list with arrival times and job sizes
     for k in range(len(jb)):
-        samples.append({"arrival_time":arrival_times[k],"job_size":jb[k]})
+        samples.append({"arrival_time": arrival_times[k], "job_size": jb[k]})
     return samples
 
 def Save_file(num_jobs):
-    for a in Arrival_rate:
+    for avg_inter_arrival in inter_arrival_time:
         for b in tqdm.tqdm(bp_parameter):
-            #put bp_paremeter in avg_job_flow because each turn
-            job_list =job_init(num_jobs,a,b["L"],b["H"])
+            job_list = job_init(num_jobs, avg_inter_arrival, b["L"], b["H"])
             bl = b["L"]
-            Write_csv.Write_raw(f"/home/melowu/Work/ultimus/data/{a,bl}.csv",job_list)
+            # Format the filename as (inter_arrival, bl).csv
+            filename = f"/home/melowu/Work/ultimus/data/({avg_inter_arrival}, {bl}).csv"
+            Write_csv.Write_raw(filename, job_list)
+
 Save_file(100000)
-# Save_file(100000,1)
-# Save_file(100000,2)
-# Save_file(100000,3)
-# Save_file(100000,4)
-# Save_file(100000,5)
-# Save_file(100000,6)
-# Save_file(100000,7)
-# Save_file(100000,8)
-# Save_file(100000,9)
-# Save_file(100000,10)
