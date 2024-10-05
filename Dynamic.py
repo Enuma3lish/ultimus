@@ -18,6 +18,9 @@ bp_parameter_values = [
 # List to store the results for sorting and final output
 results_list = []
 
+# Track job arrivals for checkpoint
+job_arrival_count = 0
+
 
 def fetch_results(result_queue):
     """Fetch results from the result queue."""
@@ -76,8 +79,8 @@ def add_to_results_list(inter_arrival_time, bp_param, fcfs_result, srpt_result, 
     dynamic_algo, dynamic_avg_time, dynamic_l2_norm = dynamic_result
 
     # Ratios for comparison
-    fcfs_dynamic_ratio = 1.0 if dynamic_l2_norm == 0 else dynamic_l2_norm / fcfs_l2_norm
-    srpt_dynamic_ratio = 1.0 if dynamic_l2_norm == 0 else dynamic_l2_norm / srpt_l2_norm
+    fcfs_dynamic_ratio = 1.0 if fcfs_l2_norm == 0 else dynamic_l2_norm / fcfs_l2_norm
+    srpt_dynamic_ratio = 1.0 if srpt_l2_norm == 0 else dynamic_l2_norm / srpt_l2_norm
 
     # Append the result as a tuple (bp_param stays as dict)
     results_list.append((
@@ -87,7 +90,6 @@ def add_to_results_list(inter_arrival_time, bp_param, fcfs_result, srpt_result, 
         srpt_avg_time,
         fcfs_l2_norm,
         srpt_l2_norm,
-        dynamic_algo,  # This is a string, so should not be summed
         dynamic_avg_time,
         dynamic_l2_norm,
         fcfs_dynamic_ratio,
@@ -95,16 +97,32 @@ def add_to_results_list(inter_arrival_time, bp_param, fcfs_result, srpt_result, 
     ))
 
 
-def process_file(file_path, inter_arrival_time, bp_param):
-    """Processes a single CSV file and adds the results to the list."""
-    print(f"Processing file: {file_path} with bp_param: {bp_param} and inter_arrival_time: {inter_arrival_time}")
+def process_file(file_path, inter_arrival_time, bp_param, checkpoint_job_count):
+    """Processes a single CSV file and adds the results to the list, stopping at checkpoint."""
     jobs = read_jobs_from_csv(file_path)
+
     if jobs:
+        # Monitor job arrivals for the checkpoint
+        global job_arrival_count
+        job_arrival_count = 0
+
+        def monitor_arrivals():
+            """Monitor job arrivals and stop when checkpoint is reached."""
+            global job_arrival_count
+            for job in jobs:
+                job_arrival_count += 1
+                if job_arrival_count >= checkpoint_job_count:
+                    print(f"Checkpoint reached: {checkpoint_job_count} jobs have arrived.")
+                    break
+
+        monitor_arrivals()
+
+        # After the checkpoint is reached, we run both SRPT and FCFS
         result_queue = multiprocessing.Queue()
 
         # Run SRPT and FCFS simulations in parallel
-        srpt_process = multiprocessing.Process(target=simulate_srpt, args=(jobs, result_queue))
-        fcfs_process = multiprocessing.Process(target=simulate_fcfs, args=(jobs, result_queue))
+        srpt_process = multiprocessing.Process(target=simulate_srpt, args=(jobs[:checkpoint_job_count], result_queue))
+        fcfs_process = multiprocessing.Process(target=simulate_fcfs, args=(jobs[:checkpoint_job_count], result_queue))
 
         srpt_process.start()
         fcfs_process.start()
@@ -120,7 +138,7 @@ def process_file(file_path, inter_arrival_time, bp_param):
             add_to_results_list(inter_arrival_time, bp_param, fcfs_result, srpt_result, dynamic_result_first_round)
 
             # Second round: Dynamic chooses between FCFS or SRPT based on smaller L2 norm
-            dynamic_process = multiprocessing.Process(target=simulate_dynamic, args=(jobs, dynamic_policy, result_queue))
+            dynamic_process = multiprocessing.Process(target=simulate_dynamic, args=(jobs[:checkpoint_job_count], dynamic_policy, result_queue))
             dynamic_process.start()
             dynamic_process.join()
 
@@ -158,9 +176,8 @@ def parse_filename(filename):
     return None
 
 
-def process_directory(directory):
+def process_directory(directory, checkpoint_job_count):
     """Processes all CSV files in a given directory, using the correct bp_parameter."""
-    bp_param_map = {}
     for index, filename in enumerate(sorted(os.listdir(directory))):  # Ensure files are processed in order
         if filename.endswith(".csv"):
             file_path = os.path.join(directory, filename)
@@ -169,46 +186,34 @@ def process_directory(directory):
             inter_arrival_time = parse_filename(filename)
 
             if inter_arrival_time is not None:
-                # Ensure the bp_parameter is correctly mapped and no data point is skipped
+                # Use the corresponding bp_parameter for this file
                 bp_param = bp_parameter_values[index % len(bp_parameter_values)]
-
-                # Track mapping of files to bp_param for debugging purposes
-                bp_param_map[(inter_arrival_time, bp_param['L'])] = file_path
-
-                process_file(file_path, inter_arrival_time, bp_param)
-
-    # Print out a map of all the files processed with their parameters
-    print("Mapping of processed files to parameters:")
-    for key, value in bp_param_map.items():
-        print(f"Arrival Time: {key[0]}, L Value: {key[1]} -> File: {value}")
+                process_file(file_path, inter_arrival_time, bp_param, checkpoint_job_count)
 
 
 def compute_average_for_duplicates():
     """Compute the average of duplicate rows with the same arrival time and bp_parameter."""
-    combined_results = defaultdict(lambda: [0.0] * 9 + ["", 0])  # Dict to hold aggregated sums and counts
-    
+    # Dict to hold aggregated sums and counts
+    combined_results = defaultdict(lambda: [0.0] * (len(results_list[0]) - 2) + [0])
+
     for result in results_list:
-        key = (result[0], tuple(result[1].items()))  # (arrival_rate, bp_parameter as tuple for immutability)
+        key = (result[0], tuple(sorted(result[1].items())))  # (arrival_rate, bp_parameter as tuple for immutability)
         for i in range(2, len(result)):
-            if i == 6:  # Column index 6 is 'Dynamic_Chosen_Algo' (a string), so we skip summing it
-                if combined_results[key][i - 2] == "":
-                    combined_results[key][i - 2] = result[i]  # Keep the first 'Dynamic_Chosen_Algo'
-            else:
-                combined_results[key][i - 2] += result[i]  # Sum the numeric columns
+            combined_results[key][i - 2] += result[i]  # Sum the numeric columns
         combined_results[key][-1] += 1  # Count occurrences
-    
+
     # Compute the averages
     averaged_results = []
     for key, values in combined_results.items():
         count = values[-1]
-        averaged_values = [v / count if isinstance(v, (int, float)) else v for v in values[:-1]]  # Calculate the average for numeric values
+        averaged_values = [v / count for v in values[:-1]]  # Calculate the average for numeric values
         bp_param = dict(key[1])  # Convert bp_parameter back from tuple to dict
         averaged_results.append((key[0], bp_param, *averaged_values))
-    
+
     return averaged_results
 
 
-def write_sorted_results_to_csv():
+def write_sorted_results_to_csv(checkpoint):
     """Sort the results by arrival time and bp_parameter['L'], and write them to the CSV."""
     # Compute averages for duplicates
     averaged_results = compute_average_for_duplicates()
@@ -216,14 +221,17 @@ def write_sorted_results_to_csv():
     # Sort the results by arrival time and then by bp_param['L']
     sorted_results = sorted(averaged_results, key=lambda x: (x[0], x[1]['L']))
 
+    # Ensure the 'log' directory exists
+    os.makedirs('log', exist_ok=True)
+
     # Write the sorted results to a combined CSV file
-    combined_file = os.path.join('log', "combined_results.csv")
+    combined_file = os.path.join('log', f"{checkpoint}_combined_results.csv")
     with open(combined_file, mode='w', newline='') as file:
         writer = csv.writer(file)
         # Write the header
         writer.writerow([
             'arrival_rate', 'bp_parameter', 'FCFS_Avg_Flow_Time', 'SRPT_Avg_Flow_Time',
-            'FCFS_L2_Norm', 'SRPT_L2_Norm', 'Dynamic_Chosen_Algo', 'Dynamic_Avg_Flow_Time',
+            'FCFS_L2_Norm', 'SRPT_L2_Norm', 'Dynamic_Avg_Flow_Time',
             'Dynamic_L2_Norm', 'Dynamic_L2_Norm_vs_FCFS', 'Dynamic_L2_Norm_vs_SRPT'
         ])
         # Write the sorted results
@@ -231,15 +239,19 @@ def write_sorted_results_to_csv():
             writer.writerow([
                 result[0],  # arrival_rate
                 f"{{'L': {result[1]['L']:.3f}, 'H': {result[1]['H']}}}",  # bp_parameter
-                *result[2:]  # the rest of the values
+                *result[2:]  # All remaining columns
             ])
 
 
 def main():
     directory = "data"  # Replace with your directory containing CSV files
-    process_directory(directory)
-    # After processing all files, sort and write the results to CSV
-    write_sorted_results_to_csv()
+    # checkpoint_job_count = int(input("Enter the number of jobs to arrive before checkpoint: "))
+    check = [2 ** i for i in range(4, 12, 1)]
+    print(check)
+    for c in check:
+        process_directory(directory, c)
+        # After processing all files, sort and write the results to CSV
+        write_sorted_results_to_csv(c)
 
 
 if __name__ == "__main__":
