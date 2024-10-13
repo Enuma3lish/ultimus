@@ -5,11 +5,11 @@ import numpy as np
 import matplotlib.cm as cm
 
 # Load the data
-check = [2 ** i for i in range(6, 12, 1)]
+check = [2 ** i for i in range(4, 15, 1)]
 for c in check:
-    data = pd.read_csv('/home/melowu/Work/ultimus/log/'+str(c)+'_combined_results.csv')  # Adjust this to the path of your CSV file
+    data = pd.read_csv('/home/melowu/Work/ultimus/log/result'+str(c)+'.csv')  # Adjust this to the path of your CSV file
     metrics = [
-        "Dynamic_L2_Norm_vs_FCFS", "Dynamic_L2_Norm_vs_SRPT"
+        "DYNAMIC_L2_Norm/SRPT_L2_Norm","DYNAMIC_L2_Norm/FCFS_L2_Norm"
     ]
 
     # Ensure directory for plots exists or is created
@@ -71,6 +71,6 @@ for c in check:
         plt.tight_layout()  # Adjust the layout to make room for the y-axis label
     
     # Save the plot
-        filename = f'{plots_dir}/{metric.replace("/", "_")}'+'_'+str(c)+'_comparison_limited.pdf'
+        filename = f'{plots_dir}/{metric.replace("/", "_")}'+'_'+str(c)+'_comparison.pdf'
         plt.savefig(filename)
         plt.close()
