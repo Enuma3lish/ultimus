@@ -38,8 +38,7 @@ def Sjf(jobs):
     
     return avg_flow_time, l2_norm_flow_time
 
-jobs = Read_csv("data/(20, 16.772).csv")
-avg,l2=Sjf(jobs)
-print(avg)
-print(l2)
-# print(logs)
+# jobs = Read_csv("data/(20, 16.772).csv")
+# avg,l2=Sjf(jobs)
+# print(avg)
+# print(l2)

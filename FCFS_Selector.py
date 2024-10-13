@@ -1,5 +1,20 @@
-# FCFS_Selector.py
-def select_next_job(job_queue):
-    # Select the tuple with the earliest arrival_time and lowest job_index to break ties
-    selected_tuple = min(job_queue, key=lambda x: (x[0], x[1]))  # x[0] is 'arrival_time', x[1] is 'job_index'
-    return selected_tuple
+def select_next_job(waiting_queue):
+    if not waiting_queue:
+        return None
+
+    # Initialize the first job as the best candidate
+    best_job = waiting_queue[0]
+
+    # Iterate through the waiting_queue
+    for job in waiting_queue:
+        # Compare arrival times
+        if job['arrival_time'] < best_job['arrival_time']:
+            best_job = job
+        # If arrival times are equal, compare job sizes
+        elif job['arrival_time'] == best_job['arrival_time'] and job['job_size'] < best_job['job_size']:
+            best_job = job
+        # If arrival times and job sizes are equal, compare job IDs
+        elif job['arrival_time'] == best_job['arrival_time'] and job['job_size'] == best_job['job_size'] and job['job_index'] < best_job['job_index']:
+            best_job = job
+
+    return best_job

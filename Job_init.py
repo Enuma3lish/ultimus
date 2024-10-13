@@ -26,10 +26,18 @@ def job_init(num_jobs, avg_inter_arrival_time, xmin, xmax):
         raw_sample = math.ceil(pareto.rvs(size=1)[0])
         if xmin <= raw_sample <= xmax:
             jb.append(raw_sample)
-    # Generate inter-arrival times from exponential distribution
-    inter_arrival_times = np.random.exponential(scale=avg_inter_arrival_time, size=num_jobs)
-    # Compute arrival times as cumulative sum of inter-arrival times
-    arrival_times = np.cumsum(inter_arrival_times)
+    
+    # Generate integer arrival times
+    current_time = 0
+    arrival_times = []
+    for _ in range(num_jobs):
+        # Generate inter-arrival time and round to nearest integer
+        inter_arrival = round(np.random.exponential(scale=avg_inter_arrival_time))
+        # Ensure inter-arrival time is at least 1
+        inter_arrival = max(1, inter_arrival)
+        current_time += inter_arrival
+        arrival_times.append(current_time)
+    
     # Create job list with arrival times and job sizes
     for k in range(len(jb)):
         samples.append({"arrival_time": arrival_times[k], "job_size": jb[k]})
@@ -44,4 +52,5 @@ def Save_file(num_jobs):
             filename = f"/home/melowu/Work/ultimus/data/({avg_inter_arrival}, {bl}).csv"
             Write_csv.Write_raw(filename, job_list)
 
-Save_file(100000)
+if __name__ == "__main__":
+    Save_file(10000)
