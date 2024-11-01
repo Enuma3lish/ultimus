@@ -144,9 +144,9 @@ def DYNAMIC(jobs, nJobsPerRound):
     total_jobs = len(jobs)
 
     # If nJobsPerRound is greater than or equal to total_jobs, use SRPT for all jobs
-    if nJobsPerRound >= total_jobs:
-        print(f"Checkpoint ({nJobsPerRound}) >= Total jobs ({total_jobs}). Using SRPT for all jobs.")
-        return Srpt(jobs)
+    # if nJobsPerRound >= total_jobs:
+    #     print(f"Checkpoint ({nJobsPerRound}) >= Total jobs ({total_jobs}). Using SRPT for all jobs.")
+    #     return Srpt(jobs)
 
     current_time = 0
     active_jobs = []
@@ -235,12 +235,12 @@ def read_jobs_from_csv(filename):
         logger.error(f"Error reading CSV file: {e}")
         return []
 
-def main():
-    filename = 'data/(22, 4.073).csv'  # Replace with your input file name
-    jobs = read_jobs_from_csv(filename)
-    avg_flow_time, l2_norm = DYNAMIC(jobs, 1000)  # Set your desired checkpoint value
-    print(f"\nAverage Flow Time: {avg_flow_time}")
-    print(f"L2 Norm of Flow Time: {l2_norm}")
+# def main():
+#     filename = 'data/(22, 4.073).csv'  # Replace with your input file name
+#     jobs = read_jobs_from_csv(filename)
+#     avg_flow_time, l2_norm = DYNAMIC(jobs, 1000)  # Set your desired checkpoint value
+#     print(f"\nAverage Flow Time: {avg_flow_time}")
+#     print(f"L2 Norm of Flow Time: {l2_norm}")
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()

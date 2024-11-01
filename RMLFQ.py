@@ -1,3 +1,4 @@
+#re-designed
 import random
 import math
 from math import log2, ceil
@@ -11,21 +12,9 @@ def Read_csv(filename):
 
 def calculate_Bj(j):
     """Calculate Bj based on the index of the job (j)."""
-    if j < 3:
-        return 1
-    else:
-        return max(1,2 - random.expovariate(12 * math.log(j)))
+    return max(1,2 - random.expovariate(12 * math.log(j)))
 
 def Rmlfq(jobs, initial_num_queues=2):
-    """Schedules jobs using the MLFQ algorithm with exponential distribution in the first level.
-
-    Args:
-        jobs: List of [arrival_time, job_size] pairs.
-        initial_num_queues: Initial number of queues in the MLFQ system.
-
-    Returns:
-        Tuple of (average_flow_time, l2_norm_flow_time).
-    """
     num_queues = initial_num_queues
     queues = [[] for _ in range(num_queues)]
     time = 0
@@ -135,6 +124,7 @@ def Rmlfq(jobs, initial_num_queues=2):
 
 # Example call with the job list
 jobs = Read_csv("data/(26, 7.918).csv")
+print(jobs)
 #jobs = Read_csv("data/(20, 4.073).csv")
 average_flow_time, l2_norm_flow_time = Rmlfq(jobs)
 print(f"Average Flow Time: {average_flow_time}")
