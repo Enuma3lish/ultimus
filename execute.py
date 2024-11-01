@@ -14,7 +14,7 @@ def convert_jobs(jobs):
         return [{'arrival_time': float(job[0]), 'job_size': float(job[1])} for job in jobs]
     return jobs
 
-def process_scheduler_with_timeout(func, args, timeout=3000):  # 5 minutes timeout
+def process_scheduler_with_timeout(func, args, timeout=300000):  # 5 minutes timeout
     try:
         with multiprocessing.Pool(1) as pool:
             result = pool.apply_async(func, args)

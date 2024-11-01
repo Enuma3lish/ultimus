@@ -1,7 +1,7 @@
 import math
 import csv
 from FCFS_Selector import select_next_job
-
+import time
 
 def Fcfs(jobs):
     current_time = 0
@@ -20,7 +20,7 @@ def Fcfs(jobs):
 
     while len(completed_jobs) < total_jobs:
         # Add jobs that arrive at the current time
-        while jobs_pointer < total_jobs and jobs[jobs_pointer]['arrival_time'] <= current_time:
+        while jobs_pointer < total_jobs and jobs[jobs_pointer]['arrival_time'] == current_time:
             job = jobs[jobs_pointer]
             # Copy job to avoid modifying the original
             job_copy = {
@@ -35,7 +35,7 @@ def Fcfs(jobs):
             jobs_pointer += 1
 
         # Select the next job using the select_next_job function
-        if current_job is None and waiting_queue:
+        if waiting_queue:
             current_job = select_next_job(waiting_queue)
             if current_job:
                 waiting_queue.remove(current_job)
@@ -50,8 +50,11 @@ def Fcfs(jobs):
             # Check if job is completed
             if current_job['remaining_time'] == 0:
                 current_job['completion_time'] = current_time + 1  # Adjusted here
+                print(current_job)
                 completed_jobs.append(current_job)
                 current_job = None
+            else:
+                waiting_queue.append(current_job)
 
         # Increment time
         current_time += 1
@@ -60,7 +63,7 @@ def Fcfs(jobs):
     total_flow_time = sum(job['completion_time'] - job['arrival_time'] for job in completed_jobs)
     if total_jobs > 0:
         avg_flow_time = total_flow_time / total_jobs
-        l2_norm_flow_time = (sum((job['completion_time'] - job['arrival_time']) ** 2 for job in completed_jobs))**0.5
+        l2_norm_flow_time = (sum((job['completion_time'] - job['arrival_time']) ** 2 for job in completed_jobs)) ** 0.5
     else:
         avg_flow_time = 0
         l2_norm_flow_time = 0
@@ -82,15 +85,16 @@ def read_jobs_from_csv(filename):
         print(f"Error reading CSV file: {e}")
     return jobs
 
-def main():
-    filename = 'data/(20, 16.772).csv'  # Replace with your input file name
-    jobs = read_jobs_from_csv(filename)
-    if jobs:
-        avg_flow_time, l2_norm = Fcfs(jobs)
-        print(f"Average Flow Time: {avg_flow_time}")
-        print(f"L2 Norm of Flow Time: {l2_norm}")
-    else:
-        print("No jobs were loaded. Please check the input file.")
+# def main():
+#     filename = 'data/(20, 4.073).csv'  # Replace with your input file name
+#     jobs = read_jobs_from_csv(filename)
 
-if __name__ == "__main__":
-    main()
+#     if jobs:
+#         avg_flow_time, l2_norm = Fcfs(jobs)
+#         print(f"Average Flow Time: {avg_flow_time}")
+#         print(f"L2 Norm of Flow Time: {l2_norm}")
+#     else:
+#         print("No jobs were loaded. Please check the input file.")
+
+# if __name__ == "__main__":
+#     main()

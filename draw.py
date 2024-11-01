@@ -2,75 +2,100 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-import matplotlib.cm as cm
 
 # Load the data
-check = [2 ** i for i in range(4, 15, 1)]
+check = [128]
+
+# Define the bp_parameter
+bp_parameter = [
+    {"L": 4.073, "H": pow(2, 18)},
+    {"L": 4.639, "H": pow(2, 15)},
+    {"L": 5.649, "H": pow(2, 12)},
+    {"L": 7.918, "H": pow(2, 9)},
+    {"L": 16.772, "H": pow(2, 6)}
+]
+
+# Ensure directory for plots exists or is created
+plots_dir = "/Users/melowu/Desktop/ultimus/log/img"
+os.makedirs(plots_dir, exist_ok=True)
+
+# Define markers and line styles
+srpt_markers = [
+    {'marker': '^', 'size': 10},  # Large upward triangle
+    {'marker': '^', 'size': 6},   # Small upward triangle
+    {'marker': 'o', 'size': 8},   # Circle
+    {'marker': 'v', 'size': 6},   # Small downward triangle
+    {'marker': 'v', 'size': 10}   # Large downward triangle
+]
+fcfs_markers = srpt_markers
+srpt_color = 'blue'  # Fixed color for SRPT lines
+fcfs_color = 'red'   # Fixed color for FCFS lines
+
+# Function to get the index of a bp_parameter in the ordered list
+def get_bp_index(bp_param):
+    for i, param in enumerate(bp_parameter):
+        if f"{param['L']:.3f}" in bp_param:
+            return i
+    return len(bp_parameter)  # Return max index if not found
+
+# Loop over each check
 for c in check:
-    data = pd.read_csv('/home/melowu/Work/ultimus/log/result'+str(c)+'.csv')  # Adjust this to the path of your CSV file
-    metrics = [
-        "DYNAMIC_L2_Norm/SRPT_L2_Norm","DYNAMIC_L2_Norm/FCFS_L2_Norm"
-    ]
-
-    # Ensure directory for plots exists or is created
-    plots_dir = "/home/melowu/Work/ultimus/log/img"
-    os.makedirs(plots_dir, exist_ok=True)
-
-    # Color palette for different bp_parameters (restrict to 4 colors)
-    colors = cm.get_cmap('viridis', 5)
-
-# Define four different marker styles (symbols)
-    markers = ['o', 's', '^', 'D','>']  # You can modify these symbols as you prefer
-    linestyle = '-'  # Only one kind of line
-
-    for metric in metrics:
-        plt.figure(figsize=(12, 8))
+    data = pd.read_csv(f'/Users/melowu/Desktop/ultimus/log/result{c}.csv')  # Adjust path as needed
     
-        color_index = 0
-        # Loop over unique bp_parameter (limit to 4 iterations)
-        for bp_param in data['bp_parameter'].unique()[:5]:  # Ensure we only get the first 4 unique parameters
-            specific_data = data[data['bp_parameter'] == bp_param]
+    # Prepare the plot
+    plt.figure(figsize=(12, 8))
 
-            # Debugging: Print specific data
-            print(f"bp_parameter: {bp_param}")
-            print(specific_data.head())
+    # Sort the unique bp_parameters based on the defined order
+    unique_bp_params = sorted(data['bp_parameter'].unique(), key=get_bp_index)
 
-            if not specific_data.empty:
-                # Check for NaN or infinite values in the metric column
-                if specific_data[metric].isnull().values.any():
-                    print(f"Warning: NaN values found in {metric} for bp_param {bp_param}")
-                if np.isinf(specific_data[metric].values).any():
-                    print(f"Warning: Infinite values found in {metric} for bp_param {bp_param}")
+    # First, plot SRPT comparisons
+    for color_index, bp_param in enumerate(unique_bp_params):
+        specific_data = data[data['bp_parameter'] == bp_param]
+        if not specific_data.empty:
+            marker_style = srpt_markers[color_index % len(srpt_markers)]['marker']
+            marker_size = srpt_markers[color_index % len(srpt_markers)]['size']
+            plt.plot(
+                specific_data['arrival_rate'],
+                specific_data['DYNAMIC_L2_Norm/SRPT_L2_Norm'],
+                marker=marker_style,
+                markersize=marker_size,
+                linestyle='-',
+                label=f'SRPT BP={bp_param}',
+                color=srpt_color
+            )
 
-            # Plotting the data
-                plt.plot(
-                    specific_data['arrival_rate'],  # X-axis: arrival_rate (mean interarrival time)
-                    specific_data[metric],          # Y-axis: metric value
-                    marker=markers[color_index % len(markers)],  # Different marker for each bp_param
-                    linestyle=linestyle,            # Same line style for all bp_param
-                    label=f'BP={bp_param}',         # Label for each bp_param
-                    color=colors(color_index)       # Use a different color for each line
-                )
-                color_index += 1
+    # Now, plot FCFS comparisons
+    for color_index, bp_param in enumerate(unique_bp_params):
+        specific_data = data[data['bp_parameter'] == bp_param]
+        if not specific_data.empty:
+            marker_style = fcfs_markers[color_index % len(fcfs_markers)]['marker']
+            marker_size = fcfs_markers[color_index % len(fcfs_markers)]['size']
+            plt.plot(
+                specific_data['arrival_rate'],
+                specific_data['DYNAMIC_L2_Norm/FCFS_L2_Norm'],
+                marker=marker_style,
+                markersize=marker_size,
+                linestyle='--',
+                label=f'FCFS BP={bp_param}',
+                color=fcfs_color
+            )
 
-        plt.title(f'{metric}')
-        plt.xlabel('Mean Interarrival Time')  # X-axis label for mean interarrival time
-        plt.ylabel(metric)                                   # Y-axis label for metric comparison
-        plt.legend(title='BP Parameter', loc='best')
-        plt.grid(True)
+    # Add titles, labels, and grid
+    plt.title(f'Comparison of L2 Norm for DYNAMIC vs SRPT and FCFS (Check={c})')
+    plt.xlabel('Mean Interarrival Time')
+    plt.ylabel('L2 Norm Ratio')
+    plt.legend(title='Comparison Type and BP Parameter', loc='best')
+    plt.grid(True)
 
-    # Set a narrower y-axis range for zooming into values close to 1
-        plt.ylim(0, 2)  # Setting y-limits between 0 and 2 for a clearer view of values near 0 and 1
-    
-    # Set y-ticks with smaller intervals between 0 and 2
-        plt.yticks(np.arange(0, 2.1, 0.1))  # Smaller intervals (0.1) for better clarity
-    
+    # Set y-limits for zooming into values close to 1
+    plt.ylim(0, 2)
+    plt.yticks(np.arange(0, 2.1, 0.1))
+
     # Set custom x-ticks for mean interarrival time (arrival_rate)
-        plt.xticks(ticks=np.arange(20, 41, 2))  # Assuming arrival rates are between 20 and 40 with a step of 2
+    plt.xticks(ticks=np.arange(20, 41, 2))
     
-        plt.tight_layout()  # Adjust the layout to make room for the y-axis label
-    
-    # Save the plot
-        filename = f'{plots_dir}/{metric.replace("/", "_")}'+'_'+str(c)+'_comparison.pdf'
-        plt.savefig(filename)
-        plt.close()
+    # Adjust layout and save the figure
+    plt.tight_layout()
+    filename = f'{plots_dir}/L2_Norm_Comparison_{c}.pdf'
+    plt.savefig(filename)
+    plt.close()

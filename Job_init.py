@@ -49,8 +49,8 @@ def Save_file(num_jobs):
             job_list = job_init(num_jobs, avg_inter_arrival, b["L"], b["H"])
             bl = b["L"]
             # Format the filename as (inter_arrival, bl).csv
-            filename = f"/home/melowu/Work/ultimus/data/({avg_inter_arrival}, {bl}).csv"
+            filename = f"/Users/melowu/Desktop/ultimus/data/({avg_inter_arrival}, {bl}).csv"
             Write_csv.Write_raw(filename, job_list)
 
 if __name__ == "__main__":
-    Save_file(10000)
+    Save_file(100000)
