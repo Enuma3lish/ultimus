@@ -269,7 +269,7 @@ def DYNAMIC(jobs: List[Dict[str, Any]], checkpoint: int = 1000, prob_greedy: flo
     return scheduler.simulate(jobs)
 
 def main():
-    filename = 'data/(20, 4.073).csv'
+    filename = 'data/(20, 7.918).csv'
     jobs = read_jobs_from_csv(filename)
 
     if jobs:
