@@ -9,10 +9,12 @@ class Job:
     id: int
     arrival_time: float
     processing_time: float
+    beta: float = 0.0
     
     # Dynamic properties
     executing_time: float = 0
     current_queue: int = 0
+    current_target: float = 0
     time_in_current_queue: float = 0
     last_execution_start: float = 0
     completion_time: float = 0
@@ -36,6 +38,7 @@ class MLFQueue:
         self.level = level
         self.queue = Queue()
         self.jobs = []
+        self.time_quantum = 2 ** level
     
     def enqueue(self, job: Job):
         self.queue.put(job)
@@ -80,9 +83,22 @@ class MLF:
         self.finished_jobs: List[Job] = []
         self.total_jobs = 0
     
+    def generate_beta(self, j: int) -> float:
+        """Generate beta value for job j with proper rules"""
+        if j <= 3:
+            return 1  # β_j = 0 for j ≤ 3
+        # For j > 3, use exponential distribution
+        return -math.log(1 - random.random()) / (self.TAU * math.log(j))
+    
+    def calculate_target(self, job_index: int, queue_level: int) -> float:
+        """Calculate target based on queue level and beta value"""
+        beta = self.generate_beta(job_index)
+        base_target = max(1, 2 - beta)  # T₀,ₕ = max(1, 2-βₕ)
+        return (2 ** queue_level) * base_target  # Ti,j = 2^i * T₀,j
+    
     def should_promote_job(self, job: Job) -> bool:
-        current_queue = self.queues[job.current_queue]
-        return job.time_in_current_queue >= (2 ** job.current_queue)
+        target = self.calculate_target(job.id, job.current_queue)
+        return job.time_in_current_queue >= target
     
     def promote_job(self, job: Job):
         old_queue = job.current_queue
@@ -90,8 +106,10 @@ class MLF:
         
         self.queues[old_queue].dequeue(job)
         self.queues[new_queue].enqueue(job)
+        job.current_target = self.calculate_target(job.id, new_queue)
         
         print(f"Job {job.id} promoted: Queue {old_queue} -> {new_queue}")
+        print(f"  New target: {job.current_target:.1f}")
     
     def get_job_in_lowest_queue(self) -> Optional[Job]:
         for queue in self.queues:
