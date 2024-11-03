@@ -82,7 +82,7 @@ def read_jobs_from_csv(filename):
     return jobs
 
 def main():
-    filename = 'data/(20, 16.772).csv'  # Replace with your input file name
+    filename = 'data/(20, 4.073).csv'  # Replace with your input file name
     jobs = read_jobs_from_csv(filename)
     if jobs:
         avg_flow_time, l2_norm = Srpt(jobs)
