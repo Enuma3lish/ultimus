@@ -86,7 +86,7 @@ def read_jobs_from_csv(filename):
     return jobs
 
 def main():
-    filename = 'data/(20, 7.918).csv'  # Replace with your input file name
+    filename = 'data/(30, 4.073).csv'  # Replace with your input file name
     jobs = read_jobs_from_csv(filename)
 
     if jobs:
@@ -98,3 +98,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+# Average Flow Time: 2278.97
+# L2 Norm of Flow Time: 85878.47039858127
