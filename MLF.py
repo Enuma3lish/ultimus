@@ -1,8 +1,8 @@
+# MLF.py
 from dataclasses import dataclass
 from typing import Optional, List, Set
 import math
 import random
-from queue import Queue
 
 @dataclass
 class Job:
@@ -12,12 +12,10 @@ class Job:
     beta: float = 0.0
     
     # Dynamic properties
-    executing_time: float = 0
+    executing_time: float = 0.0
     current_queue: int = 0
-    current_target: float = 0
-    time_in_current_queue: float = 0
-    last_execution_start: float = 0
-    completion_time: float = 0
+    time_in_current_queue: float = 0.0
+    completion_time: float = 0.0
     
     def get_remaining_time(self) -> float:
         return self.processing_time - self.executing_time
@@ -36,29 +34,19 @@ class Job:
 class MLFQueue:
     def __init__(self, level: int):
         self.level = level
-        self.queue = Queue()
-        self.jobs = []
-        self.time_quantum = 2 ** level
+        self.jobs: List[Job] = []
     
     def enqueue(self, job: Job):
-        self.queue.put(job)
         self.jobs.append(job)
         job.current_queue = self.level
         
-    def dequeue(self, job=None) -> Optional[Job]:
+    def dequeue(self, job: Optional[Job] = None) -> Optional[Job]:
         if job:
             if job in self.jobs:
                 self.jobs.remove(job)
-                temp_queue = Queue()
-                while not self.queue.empty():
-                    current_job = self.queue.get()
-                    if current_job != job:
-                        temp_queue.put(current_job)
-                self.queue = temp_queue
                 return job
-        elif not self.queue.empty():
-            job = self.queue.get()
-            self.jobs.remove(job)
+        elif self.jobs:
+            job = self.jobs.pop(0)
             return job
         return None
     
@@ -74,50 +62,68 @@ class MLFQueue:
         return self.jobs.copy()
 
 class MLF:
-    # Constants
     TAU = 12
     
-    def __init__(self, initial_queues: int = 2):
+    def __init__(self, initial_queues: int = 1):
         self.queues = [MLFQueue(level) for level in range(initial_queues)]
         self.active_jobs: Set[Job] = set()
         self.finished_jobs: List[Job] = []
         self.total_jobs = 0
     
-    def generate_beta(self, j: int) -> float:
-        """Generate beta value for job j with proper rules"""
-        if j <= 3:
-            return 1  # β_j = 0 for j ≤ 3
-        # For j > 3, use exponential distribution
-        return -math.log(1 - random.random()) / (self.TAU * math.log(j))
-    
-    def calculate_target(self, job_index: int, queue_level: int) -> float:
-        """Calculate target based on queue level and beta value"""
-        beta = self.generate_beta(job_index)
-        base_target = max(1, 2 - beta)  # T₀,ₕ = max(1, 2-βₕ)
-        return (2 ** queue_level) * base_target  # Ti,j = 2^i * T₀,j
-    
-    def should_promote_job(self, job: Job) -> bool:
-        target = self.calculate_target(job.id, job.current_queue)
-        return job.time_in_current_queue >= target
-    
-    def promote_job(self, job: Job):
-        old_queue = job.current_queue
-        new_queue = min(old_queue + 1, len(self.queues) - 1)
+    def insert(self, job: Job):
+        """Insert job into lowest queue"""
+        self.total_jobs += 1
+        job.beta = self.generate_beta(self.total_jobs)
+        job.current_queue = 0
+        job.time_in_current_queue = 0
         
-        self.queues[old_queue].dequeue(job)
-        self.queues[new_queue].enqueue(job)
-        job.current_target = self.calculate_target(job.id, new_queue)
+        self.queues[0].enqueue(job)
+        self.active_jobs.add(job)
         
-        print(f"Job {job.id} promoted: Queue {old_queue} -> {new_queue}")
-        print(f"  New target: {job.current_target:.1f}")
+    def remove(self, job: Job):
+        """Remove completed job"""
+        if job in self.active_jobs:
+            self.active_jobs.remove(job)
+            self.finished_jobs.append(job)
+            current_queue = self.queues[job.current_queue]
+            current_queue.dequeue(job)
     
-    def get_job_in_lowest_queue(self) -> Optional[Job]:
-        for queue in self.queues:
-            if not queue.is_empty:
-                return queue.dequeue()
-        return None
+    def increase(self, job: Job):
+        """Process job and handle promotion"""
+        if job not in self.active_jobs:
+            return
+            
+        job.executing_time += 1
+        job.time_in_current_queue += 1
+        
+        # Check if job should be promoted
+        target = self.calculate_target(job)
+        if job.time_in_current_queue >= target:
+            old_queue = job.current_queue
+            new_queue = old_queue + 1
+            
+            # Add new queue if needed
+            if new_queue >= len(self.queues):
+                self.queues.append(MLFQueue(new_queue))
+            
+            # Move to next queue
+            self.queues[old_queue].dequeue(job)
+            self.queues[new_queue].enqueue(job)
+            job.current_queue = new_queue
+            job.time_in_current_queue = 0
     
-    def add_queue_if_needed(self, job_size: int):
-        needed_queues = math.ceil(math.log2(max(2, job_size)))
-        while len(self.queues) < needed_queues:
-            self.queues.append(MLFQueue(len(self.queues)))
+    def generate_beta(self, job_index: int) -> float:
+        if job_index <= 3:
+            return 2.0
+        return -math.log(1 - random.random()) / (self.TAU * math.log(job_index))
+    
+    def calculate_target(self, job: Job) -> float:
+        base_target = max(1, 2 - job.beta)
+        return 2 ** job.current_queue * base_target
+    
+    def get_queue_status(self) -> str:
+        status = []
+        for i, queue in enumerate(self.queues):
+            jobs = [str(job.id) for job in queue.get_jobs_list()]
+            status.append(f"Queue {i}: {len(jobs)} jobs - [{', '.join(jobs)}]")
+        return "\n".join(status)
