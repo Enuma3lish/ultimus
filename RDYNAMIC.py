@@ -41,21 +41,13 @@ def DYNAMIC(jobs: List[Dict[str, Any]], checkpoint: int = 100, prob_greedy: floa
         return earliest_job
 
     def rmlf_selector(mlf: MLF) -> Optional[Job]:
-        """Select job based on RMLF policy"""
-        lowest_queue_level = float('inf')
-        longest_waiting_job = None
-        
         for queue in mlf.queues:
             if not queue.is_empty:
-                if queue.level < lowest_queue_level:
-                    lowest_queue_level = queue.level
-                    # Get job with longest time in this queue
-                    jobs_in_queue = queue.get_jobs_list()
-                    longest_waiting_job = max(jobs_in_queue, 
-                                           key=lambda j: j.time_in_current_queue)
-        
-        return longest_waiting_job
-
+                # Get the first job in the queue (FIFO principle)
+                jobs_in_queue = queue.get_jobs_list()
+                if jobs_in_queue:  # Safety check
+                    return jobs_in_queue[0]
+        return None
     initial_queues = 1
     print(f"Starting with {initial_queues} queues")
 
@@ -99,7 +91,7 @@ def DYNAMIC(jobs: List[Dict[str, Any]], checkpoint: int = 100, prob_greedy: floa
                     else:
                         selected_algo = "RMLF"
                 else:  # discovery mode
-                    selected_algo = "FCFS" if random.random() < 0.3 else "RMLF"
+                    selected_algo = "FCFS" if random.random() < 0.5 else "RMLF"
             
             print(f"\nTime {current_time}: Round {round} - {selected_algo}")
             round_score = 0
