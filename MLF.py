@@ -89,28 +89,29 @@ class MLF:
             current_queue.dequeue(job)
     
     def increase(self, job: Job):
-        """Process job and handle promotion"""
+        """Process job and handle MLFQ queue transitions"""
         if job not in self.active_jobs:
             return
             
         job.executing_time += 1
         job.time_in_current_queue += 1
         
-        # Check if job should be promoted
+        # Check if job has used its time quantum
         target = self.calculate_target(job)
         if job.time_in_current_queue >= target:
-            old_queue = job.current_queue
-            new_queue = old_queue + 1
+            current_queue = job.current_queue
+            next_queue = current_queue + 1
             
             # Add new queue if needed
-            if new_queue >= len(self.queues):
-                self.queues.append(MLFQueue(new_queue))
+            if next_queue >= len(self.queues):
+                self.queues.append(MLFQueue(next_queue))
             
-            # Move to next queue
-            self.queues[old_queue].dequeue(job)
-            self.queues[new_queue].enqueue(job)
-            job.current_queue = new_queue
+            # Move to next lower priority queue (higher number)
+            self.queues[current_queue].dequeue(job)
+            self.queues[next_queue].enqueue(job)
+            job.current_queue = next_queue
             job.time_in_current_queue = 0
+            print(f"Job {job.id} moved to lower priority queue {next_queue}")
     
     def generate_beta(self, job_index: int) -> float:
         if job_index <= 3:

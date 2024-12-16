@@ -1,91 +1,75 @@
-import numpy as np
-import pandas as pd
 from math import sqrt
-import heapq
+from typing import List, Tuple
+from SETF_Selector import SETFSelector
 
-def Read_csv(filename):
-    # Read the CSV file into a DataFrame 
-    data_frame = pd.read_csv(filename)
-    data_list = data_frame.values.tolist()
-    return data_list
-
-def Setf(jobs):
-    time = 0
+def Setf(jobs: List[Tuple[float, float]]) -> Tuple[float, float]:
+    """
+    Run the Shortest Elapsed Time First (SETF) scheduling algorithm.
+    
+    Args:
+        jobs: List of tuples (arrival_time, job_size)
+        
+    Returns:
+        Tuple of (average_flow_time, l2_norm_flow_time)
+    """
+    current_time = 0
     total_flow_time = 0
     squared_flow_time = 0
     completed_jobs = 0
-    current_job = None
-    job_heap = []  # min-heap to store jobs based on elapsed time
-    job_execution_times = {}
-    job_counter = 0  # used to break ties in the heap
-
-    for arrival_time, job_size in jobs:
-        # Process all jobs that have completed before this new job arrives
-        while job_heap and time < arrival_time:
-            if not current_job:
-                _, _, current_job = heapq.heappop(job_heap)
-            
-            job_arrival, job_size = current_job
-            elapsed_time = job_execution_times[current_job]
-            remaining_time = job_size - elapsed_time
-            
-            if time + remaining_time <= arrival_time:
-                # Job completes before next arrival
-                time += remaining_time
-                flow_time = time - job_arrival
-                total_flow_time += flow_time
-                squared_flow_time += flow_time ** 2
-                completed_jobs += 1
-                current_job = None
-            else:
-                # Job is interrupted by new arrival
-                run_time = arrival_time - time
-                job_execution_times[current_job] += run_time
-                heapq.heappush(job_heap, (job_execution_times[current_job], job_counter, current_job))
-                job_counter += 1
-                time = arrival_time
-                break
+    
+    # Initialize job selector
+    selector = SETFSelector()
+    
+    # Sort jobs by arrival time
+    sorted_jobs = sorted(jobs, key=lambda x: x[0])
+    n_jobs = len(sorted_jobs)
+    job_pointer = 0
+    
+    while job_pointer < n_jobs or selector.has_active_jobs():
+        # 1. Determine next event time
+        next_arrival = sorted_jobs[job_pointer][0] if job_pointer < n_jobs else float('inf')
         
-        if time < arrival_time:
-            time = arrival_time
-
-        # Add newly arrived job
-        new_job = (arrival_time, job_size)
-        job_execution_times[new_job] = 0
-        heapq.heappush(job_heap, (0, job_counter, new_job))
-        job_counter += 1
-
-        # Select the job with the shortest elapsed time
-        if not current_job or job_execution_times[new_job] < job_execution_times[current_job]:
-            if current_job:
-                heapq.heappush(job_heap, (job_execution_times[current_job], job_counter, current_job))
-                job_counter += 1
-            current_job = new_job
-
-    # Process remaining jobs after all arrivals
-    while current_job or job_heap:
-        if not current_job and job_heap:
-            _, _, current_job = heapq.heappop(job_heap)
-
-        if current_job:
-            job_arrival, job_size = current_job
-            elapsed_time = job_execution_times[current_job]
-            remaining_time = job_size - elapsed_time
+        # If no active jobs, jump to next arrival
+        if not selector.has_active_jobs():
+            current_time = next_arrival
+            if job_pointer < n_jobs:
+                selector.add_job(job_pointer, *sorted_jobs[job_pointer])
+                job_pointer += 1
+            continue
+        
+        # 2. Get job with shortest elapsed time
+        next_job = selector.get_next_job()
+        elapsed, job_id, arrival_time, size = next_job
+        remaining = size - selector.job_elapsed[job_id]
+        
+        # 3. Determine how long to run current job
+        if job_pointer < n_jobs:
+            run_time = min(remaining, next_arrival - current_time)
+        else:
+            run_time = remaining
             
-            time += remaining_time
-            flow_time = time - job_arrival
+        # 4. Update job progress and time
+        current_time += run_time
+        selector.update_job_progress(job_id, run_time)
+        
+        # 5. Check if job completed
+        if selector.is_job_completed(job_id, size):
+            flow_time = current_time - arrival_time
             total_flow_time += flow_time
-            squared_flow_time += flow_time ** 2
+            squared_flow_time += flow_time * flow_time
             completed_jobs += 1
-            current_job = None
-
-    average_flow_time = total_flow_time / completed_jobs if completed_jobs > 0 else 0
+        else:
+            selector.requeue_job(job_id, arrival_time, size)
+            
+        # 6. Add any new arrivals
+        while job_pointer < n_jobs and sorted_jobs[job_pointer][0] <= current_time:
+            selector.add_job(job_pointer, *sorted_jobs[job_pointer])
+            job_pointer += 1
+    
+    if completed_jobs == 0:
+        return 0.0, 0.0
+        
+    average_flow_time = total_flow_time / completed_jobs
     l2_norm_flow_time = sqrt(squared_flow_time)
-
+    
     return average_flow_time, l2_norm_flow_time
-
-# # Example usage
-# jobs = Read_csv("data/(20, 16.772).csv")
-# avg, l2 = Setf(jobs)
-# print(f"Average flow time: {avg}")
-# print(f"L2 norm of flow time: {l2}")

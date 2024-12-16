@@ -85,18 +85,15 @@ def read_jobs_from_csv(filename):
         print(f"Error reading CSV file: {e}")
     return jobs
 
-def main():
-    filename = 'data/(30, 4.073).csv'  # Replace with your input file name
-    jobs = read_jobs_from_csv(filename)
+# def main():
+#      filename = 'data/(20, 16.772).csv'  # Replace with your input file name
+#      jobs = read_jobs_from_csv(filename)
 
-    if jobs:
-        avg_flow_time, l2_norm = Fcfs(jobs)
-        print(f"Average Flow Time: {avg_flow_time}")
-        print(f"L2 Norm of Flow Time: {l2_norm}")
-    else:
-        print("No jobs were loaded. Please check the input file.")
-
-if __name__ == "__main__":
-    main()
-# Average Flow Time: 2278.97
-# L2 Norm of Flow Time: 85878.47039858127
+#      if jobs:
+#          avg_flow_time, l2_norm = Fcfs(jobs)
+#          print(f"Average Flow Time: {avg_flow_time}")
+#          print(f"L2 Norm of Flow Time: {l2_norm}")
+#      else:
+#          print("No jobs were loaded. Please check the input file.")
+# if __name__ == "__main__":
+#      main()

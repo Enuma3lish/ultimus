@@ -1,4 +1,3 @@
-# RMLF.py
 import math
 import pandas as pd
 from typing import Optional, List, Dict, Any, Tuple
@@ -29,20 +28,14 @@ def RMLF(jobs: List[Dict[str, Any]]) -> Tuple[float, float]:
         return 0.0, 0.0
 
     def rmlf_selector(mlf: MLF) -> Optional[Job]:
-        """Select job based on RMLF policy"""
-        lowest_queue_level = float('inf')
-        longest_waiting_job = None
-        
         for queue in mlf.queues:
             if not queue.is_empty:
-                if queue.level < lowest_queue_level:
-                    lowest_queue_level = queue.level
-                    jobs_in_queue = queue.get_jobs_list()
-                    longest_waiting_job = max(jobs_in_queue, 
-                                           key=lambda j: j.time_in_current_queue)
-        return longest_waiting_job
+                jobs_in_queue = queue.get_jobs_list()
+                for job in jobs_in_queue:
+                    if job.processing_time > 0:
+                        return job
+        return None
 
-    # Initialize MLF
     mlf = MLF(initial_queues=1)
     completed_jobs = []
     sorted_jobs = sorted(jobs, key=lambda x: x['arrival_time'])
@@ -63,14 +56,12 @@ def RMLF(jobs: List[Dict[str, Any]]) -> Tuple[float, float]:
             mlf.insert(new_job)
             jobs_pointer += 1
         
-        # Update time_in_current_queue for all jobs
-        for job in mlf.active_jobs:
-            job.time_in_current_queue += 1
-        
         # Select and process job
         selected_job = rmlf_selector(mlf)
         if selected_job:
+            # Process the job - this will handle queue transitions
             mlf.increase(selected_job)
+            
             if selected_job.is_completed():
                 mlf.remove(selected_job)
                 completed_jobs.append({
@@ -82,6 +73,7 @@ def RMLF(jobs: List[Dict[str, Any]]) -> Tuple[float, float]:
                 n_completed_jobs += 1
                 if n_completed_jobs == n_jobs:
                     break
+            # No else clause needed - MLF.increase() now handles queue transitions
     
     # Calculate metrics
     flow_times = [job['completion_time'] - job['arrival_time'] for job in completed_jobs]
@@ -89,19 +81,3 @@ def RMLF(jobs: List[Dict[str, Any]]) -> Tuple[float, float]:
     l2_norm = math.sqrt(sum(t * t for t in flow_times)) if flow_times else 0
     
     return avg_flow_time, l2_norm
-
-def main():
-    filename = 'data/(30, 4.073).csv'
-    jobs = read_jobs_from_csv(filename)
-    
-    if jobs:
-        print(f"Loaded {len(jobs)} jobs")
-        avg_flow_time, l2_norm = RMLF(jobs)
-        print("\nFinal Results:")
-        print(f"Average Flow Time: {avg_flow_time:.3f}")
-        print(f"L2 Norm of Flow Time: {l2_norm:.3f}")
-    else:
-        print("No jobs were loaded. Please check the input file.")
-
-if __name__ == "__main__":
-    main()
