@@ -18,7 +18,6 @@ def checkIfJobFeasible(schedule_filename, job_id, job_arrival_time, job_size) ->
         has_encountered_first_execution = False
         execution_slot = 0
         for row in reader:
-            print(job_id)
             if row["executed_job_id"] == '':  # Check executed_job_id
                 continue
             if job_id == int(row["executed_job_id"]):  # Compare job_id instead of job_index
@@ -33,7 +32,6 @@ def checkIfJobFeasible(schedule_filename, job_id, job_arrival_time, job_size) ->
             print(f"Job {job_id} size mismatch: executed {execution_slot}, expected {job_size}.")
             return False
     return True    
-
 # Run the Checker function
-result = Checker('data/(20, 4.073).csv', 'dy_time_slot_log.csv')
+result = Checker('data/(20, 4.073).csv', 'Rdy_time_slot_log.csv')
 print(result)

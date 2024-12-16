@@ -4,8 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Load the data
-check = [128]
-
+check = [64,128,256,512,1024]
 # Define the bp_parameter
 bp_parameter = [
     {"L": 4.073, "H": pow(2, 18)},
@@ -48,7 +47,7 @@ for c in check:
     # Sort the unique bp_parameters based on the defined order
     unique_bp_params = sorted(data['bp_parameter'].unique(), key=get_bp_index)
 
-    # First, plot SRPT comparisons
+    # First, plot RMLF comparisons
     for color_index, bp_param in enumerate(unique_bp_params):
         specific_data = data[data['bp_parameter'] == bp_param]
         if not specific_data.empty:
@@ -56,11 +55,11 @@ for c in check:
             marker_size = srpt_markers[color_index % len(srpt_markers)]['size']
             plt.plot(
                 specific_data['arrival_rate'],
-                specific_data['DYNAMIC_L2_Norm/SRPT_L2_Norm'],
+                specific_data['RDYNAMIC_L2_Norm/RMLF_L2_Norm'],
                 marker=marker_style,
                 markersize=marker_size,
                 linestyle='-',
-                label=f'SRPT BP={bp_param}',
+                label=f'RMLF BP={bp_param}',
                 color=srpt_color
             )
 
@@ -72,7 +71,7 @@ for c in check:
             marker_size = fcfs_markers[color_index % len(fcfs_markers)]['size']
             plt.plot(
                 specific_data['arrival_rate'],
-                specific_data['DYNAMIC_L2_Norm/FCFS_L2_Norm'],
+                specific_data['RDYNAMIC_L2_Norm/FCFS_L2_Norm'],
                 marker=marker_style,
                 markersize=marker_size,
                 linestyle='--',
@@ -81,7 +80,7 @@ for c in check:
             )
 
     # Add titles, labels, and grid
-    plt.title(f'Comparison of L2 Norm for DYNAMIC vs SRPT and FCFS (Check={c})')
+    plt.title(f'Comparison of L2 Norm for DYNAMIC vs RMLF and FCFS (Check={c})')
     plt.xlabel('Mean Interarrival Time')
     plt.ylabel('L2 Norm Ratio')
     plt.legend(title='Comparison Type and BP Parameter', loc='best')
