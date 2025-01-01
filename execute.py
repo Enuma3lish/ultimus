@@ -53,8 +53,8 @@ def execute(Arrival_rate, bp_parameter, c):
         # Execute algorithms sequentially with proper format for each
         for algo, jobs, needs_index, as_list in [
             (RR.RR, job_list.copy(), False, True),
-            (SRPT.Srpt, job_list.copy(), False, False),
-            (SJF.Sjf, job_list.copy(), False, True),
+            # (SRPT.Srpt, job_list.copy(), False, False),
+            # (SJF.Sjf, job_list.copy(), False, True),
             (SETF.Setf, job_list.copy(), False, True),
             (FCFS.Fcfs, job_list.copy(), False, False),
             (RMLF.RMLF, job_list.copy(), True, False)
@@ -71,15 +71,15 @@ def execute(Arrival_rate, bp_parameter, c):
             algorithm_results[algo.__name__] = algo_result
 
         # Execute DYNAMIC algorithm
-        logger.info("Running DYNAMIC")
-        start_time = time.time()
-        converted_dynamic_list = convert_jobs(job_list.copy())
-        dy = process_scheduler_with_timeout(Dynamic.DYNAMIC, (converted_dynamic_list, c))
-        end_time = time.time()
-        logger.info(f"DYNAMIC completed in {end_time - start_time:.2f} seconds")
-        if dy is None:
-            logger.error("DYNAMIC failed or timed out")
-            return []
+        # logger.info("Running DYNAMIC")
+        # start_time = time.time()
+        # converted_dynamic_list = convert_jobs(job_list.copy())
+        # dy = process_scheduler_with_timeout(Dynamic.DYNAMIC, (converted_dynamic_list, c))
+        # end_time = time.time()
+        # logger.info(f"DYNAMIC completed in {end_time - start_time:.2f} seconds")
+        # if dy is None:
+        #     logger.error("DYNAMIC failed or timed out")
+        #     return []
 
         # Execute RDYNAMIC algorithm
         logger.info("Running RDYNAMIC")
@@ -94,33 +94,32 @@ def execute(Arrival_rate, bp_parameter, c):
         
         # Unpack results
         rr_avg, rr_l2n = algorithm_results['RR']
-        srpt_avg, srpt_l2n = algorithm_results['Srpt']
-        sjf_avg, sjf_l2n = algorithm_results['Sjf']
+        #srpt_avg, srpt_l2n = algorithm_results['Srpt']
+        #sjf_avg, sjf_l2n = algorithm_results['Sjf']
         setf_avg, setf_l2n = algorithm_results['Setf']
         fcfs_avg, fcfs_l2n = algorithm_results['Fcfs']
         rmlf_avg, rmlf_l2n = algorithm_results['RMLF']
-        dy_avg, dy_l2n = dy
+        #dy_avg, dy_l2n = dy
         rdy_avg, rdy_l2n = rdy
-        sjf_avg_srpt = sjf_avg / srpt_avg 
-        rr_avg_srpt = rr_avg / srpt_avg
-        setf_avg_srpt = setf_avg / srpt_avg
-        fcfs_avg_srpt = fcfs_avg / srpt_avg
-        dynamic_avg_srpt = dy_avg / srpt_avg
-        rdynamic_avg_srpt = rdy_avg / srpt_avg
-        rmlf_avg_srpt = rmlf_avg / srpt_avg
+        #sjf_avg_srpt = sjf_avg / srpt_avg 
+        #r_avg_srpt = rr_avg / srpt_avg
+        # setf_avg_srpt = setf_avg / srpt_avg
+        # fcfs_avg_srpt = fcfs_avg / srpt_avg
+       # dynamic_avg_srpt = dy_avg / srpt_avg
+       # rmlf_avg_srpt = rmlf_avg / srpt_avg
         
         # L2 norm ratios
-        sjf_l2n_srpt = sjf_l2n / srpt_l2n 
-        rr_l2n_srpt = rr_l2n / srpt_l2n
-        setf_l2n_srpt = setf_l2n / srpt_l2n
+        # sjf_l2n_srpt = sjf_l2n / srpt_l2n 
+        # rr_l2n_srpt = rr_l2n / srpt_l2n
+        # setf_l2n_srpt = setf_l2n / srpt_l2n
         setf_l2n_fcfs = setf_l2n/fcfs_l2n
-        fcfs_l2n_srpt = fcfs_l2n / srpt_l2n
-        dy_l2n_result = dy_l2n / srpt_l2n
-        rmlf_l2n_srpt = rmlf_l2n / srpt_l2n
+        # fcfs_l2n_srpt = fcfs_l2n / srpt_l2n
+        # dy_l2n_result = dy_l2n / srpt_l2n
+        # rmlf_l2n_srpt = rmlf_l2n / srpt_l2n
         rmlf_l2n_rr = rmlf_l2n/ rr_l2n
         rmlf_l2n_fcfs = rmlf_l2n/fcfs_l2n
         rmlf_l2n_setf = rmlf_l2n/setf_l2n
-        rdy_l2n_srpt = rdy_l2n / srpt_l2n
+        # rdy_l2n_srpt = rdy_l2n / srpt_l2n
         rdy_l2n_fcfs = rdy_l2n / fcfs_l2n
         rdy_l2n_rr  = rdy_l2n / rr_l2n
         rdy_l2n_rmlf = rdy_l2n / rmlf_l2n
@@ -129,7 +128,8 @@ def execute(Arrival_rate, bp_parameter, c):
             "arrival_rate": Arrival_rate,
             "bp_parameter": i,
             "c":c,
-            "RDYNAMIC_L2_Norm/SRPT_L2_Norm":rdy_l2n_srpt,
+            # "RDYNAMIC_L2_Norm/SRPT_L2_Norm":rdy_l2n_srpt,
+            "RMLF_L2_Norm/FCFS_L2_Norm": rmlf_l2n/fcfs_l2n,
             "RDYNAMIC_L2_Norm/FCFS_L2_Norm": rdy_l2n_fcfs,
             "RDYNAMIC_L2_Norm/SETF_L2_Norm": rdy_l2n_setf,
             "RDYNAMIC_L2_Norm/RR_L2_Norm":  rdy_l2n_rr,

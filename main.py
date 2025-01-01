@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 def create_dataset():
     Arrival_rate = [i for i in range(20, 42, 2)]
-    check = [64,128,256,512,1024]
+    check = [64,128,256,512,1024,2048,4096,8192,16384]
     bp_parameter = [
         {"L": 16.772, "H": pow(2, 6)},
         {"L": 7.918, "H": pow(2, 9)},
@@ -20,7 +20,7 @@ def create_dataset():
     ]
 
     # Create the log directory if it doesn't exist
-    log_dir = "/Users/melowu/Desktop/ultimus/log/"
+    log_dir = "/Users/melowu/Desktop/ultimus/log/zeropointnight/"
     os.makedirs(log_dir, exist_ok=True)
 
     # Use tqdm for the outer loop to show overall progress

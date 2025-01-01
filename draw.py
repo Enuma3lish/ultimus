@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Load the data
-check = [64,128,256,512,1024]
+check = [64,128,256,512,1024,2048,4096,8192,16384]
 # Define the bp_parameter
 bp_parameter = [
     {"L": 4.073, "H": pow(2, 18)},
@@ -78,7 +78,6 @@ for c in check:
                 label=f'FCFS BP={bp_param}',
                 color=fcfs_color
             )
-
     # Add titles, labels, and grid
     plt.title(f'Comparison of L2 Norm for DYNAMIC vs RMLF and FCFS (Check={c})')
     plt.xlabel('Mean Interarrival Time')

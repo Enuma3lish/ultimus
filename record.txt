@@ -1,3 +1,4 @@
-1.利用rmlf的每一個job在每一層queue最大執行間的設定(得到最小的avg flow time)
-2.因為猜測當h很大時大部分的job size很小所以通常在前面幾層就會完成故將前面3層的starvation threshold設定的比較小，而當job跑到3之後的queue我就會猜他擁有較大的job size，故將threshold的成長倍率以所在該層的平方。
-3.因為SRPT會選擇剩餘較小的工作執行imply 他每次執行時的執行時間都很小，故將每層最大執行時間增加幅度減少，以防止浪費過多的時間在執行相對工作量較大的工作。
+1. Why we need to add discover mode? : In the result of expriment we found that the L2 norm is very close, when H is 512 and 4096; 
+In this part we need to define what is very close, a result of L2 norm of an algorithm is A and another is B,
+and the result of A/B is in range of +-10% we define very close , this result might cause temporary hallucination our calculation method.
+
