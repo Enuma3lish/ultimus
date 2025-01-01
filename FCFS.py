@@ -3,6 +3,16 @@ import csv
 from FCFS_Selector import select_next_job
 import time
 
+def create_log_file():
+    with open('FCFS_time_slot_log.csv', 'w', newline='') as log_file:
+        log_writer = csv.writer(log_file)
+        log_writer.writerow(['time_slot', 'executed_job_id'])
+
+def log_execution(time_slot, job_id=None):
+    with open('FCFS_time_slot_log.csv', 'a', newline='') as log_file:
+        log_writer = csv.writer(log_file)
+        log_writer.writerow([time_slot, '' if job_id is None else job_id])
+
 def Fcfs(jobs):
     current_time = 0
     completed_jobs = []
@@ -10,6 +20,9 @@ def Fcfs(jobs):
     total_jobs = len(jobs)
     jobs_pointer = 0
     current_job = None
+
+    # Create log file
+    create_log_file()
 
     # Assign job indices
     for idx, job in enumerate(jobs):
@@ -43,18 +56,24 @@ def Fcfs(jobs):
                 if current_job['start_time'] is None:
                     current_job['start_time'] = current_time
 
-        # Process current job
+        # Process current job and log execution
         if current_job:
+            # Log the execution with the job's index
+            log_execution(current_time, current_job['job_index'])
+            
             current_job['remaining_time'] -= 1
 
             # Check if job is completed
             if current_job['remaining_time'] == 0:
-                current_job['completion_time'] = current_time + 1  # Adjusted here
+                current_job['completion_time'] = current_time + 1
                 print(current_job)
                 completed_jobs.append(current_job)
                 current_job = None
             else:
                 waiting_queue.append(current_job)
+        else:
+            # Log empty time slot
+            log_execution(current_time)
 
         # Increment time
         current_time += 1
@@ -86,14 +105,19 @@ def read_jobs_from_csv(filename):
     return jobs
 
 # def main():
-#      filename = 'data/(20, 16.772).csv'  # Replace with your input file name
-#      jobs = read_jobs_from_csv(filename)
+#     filename = 'data/(22, 7.918).csv'
+#     #filename = 'data/(22, 16.772).csv'
+#     jobs = read_jobs_from_csv(filename)
+#     if jobs:
+#         avg_flow_time, l2_norm = Fcfs(jobs)
+#         print(f"Average Flow Time: {avg_flow_time}")
+#         print(f"L2 Norm of Flow Time: {l2_norm}")
+#         # Run the checker
+#         # from Checker import Checker
+#         # result = Checker(filename, 'FCFS_time_slot_log.csv')
+#         # print(f"Checker result: {result}")
+#     else:
+#         print("No jobs were loaded. Please check the input file.")
 
-#      if jobs:
-#          avg_flow_time, l2_norm = Fcfs(jobs)
-#          print(f"Average Flow Time: {avg_flow_time}")
-#          print(f"L2 Norm of Flow Time: {l2_norm}")
-#      else:
-#          print("No jobs were loaded. Please check the input file.")
 # if __name__ == "__main__":
-#      main()
+#     main()

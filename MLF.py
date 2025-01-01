@@ -125,6 +125,6 @@ class MLF:
     def get_queue_status(self) -> str:
         status = []
         for i, queue in enumerate(self.queues):
-            jobs = [str(job.id) for job in queue.get_jobs_list()]
-            status.append(f"Queue {i}: {len(jobs)} jobs - [{', '.join(jobs)}]")
+            jobs_info = [f"{job.id}({job.get_remaining_time():.1f})" for job in queue.get_jobs_list()]
+            status.append(f"Queue {i}: {len(jobs_info)} jobs - [{', '.join(jobs_info)}]")
         return "\n".join(status)

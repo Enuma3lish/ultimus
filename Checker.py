@@ -33,5 +33,5 @@ def checkIfJobFeasible(schedule_filename, job_id, job_arrival_time, job_size) ->
             return False
     return True    
 # Run the Checker function
-result = Checker('data/(20, 4.073).csv', 'Rdy_time_slot_log.csv')
-print(result)
+# result = Checker('data/(20, 4.073).csv', 'Rdy_time_slot_log.csv')
+# print(result)
