@@ -1,30 +1,13 @@
 import csv
 import random
 import math
+import os
 from typing import Optional, List, Dict, Any, Tuple
 from MLF import Job, MLF
 from itertools import count
 
-def read_jobs_from_csv(filename: str) -> List[Dict[str, Any]]:
-    jobs = []
-    try:
-        with open(filename, 'r') as file:
-            reader = csv.DictReader(file)
-            for i, row in enumerate(reader):
-                arrival_time = float(row['arrival_time'])
-                job_size = float(row['job_size'])
-                jobs.append({
-                    'arrival_time': arrival_time,
-                    'job_size': job_size,
-                    'job_index': i
-                })
-    except FileNotFoundError:
-        print(f"Error: File '{filename}' not found.")
-    except csv.Error as e:
-        print(f"Error reading CSV file: {e}")
-    return jobs
-
 def log_algorithm_usage(filename: str, checkpoint_data: List[Dict[str, Any]]) -> None:
+    """Log algorithm usage statistics to a CSV file"""
     fieldnames = ['checkpoint_time', 'algorithm', 'fcfs_score', 'rmlf_score', 'rmlf_ratio', 'fcfs_ratio']
     
     try:
@@ -36,6 +19,7 @@ def log_algorithm_usage(filename: str, checkpoint_data: List[Dict[str, Any]]) ->
         print(f"Error writing to CSV file: {e}")
 
 def log_time_slots(filename: str, time_slots: List[Dict[str, Any]]) -> None:
+    """Log time slot information to a CSV file"""
     fieldnames = ['time_slot', 'executed_job_id']
     try:
         with open(filename, 'w', newline='') as file:
@@ -44,11 +28,52 @@ def log_time_slots(filename: str, time_slots: List[Dict[str, Any]]) -> None:
             writer.writerows(time_slots)
     except IOError as e:
         print(f"Error writing to CSV file: {e}")
-def RDYNAMIC(jobs: List[Dict[str, Any]], checkpoint: int, prob_greedy: float = 0.9) -> Tuple[float, float]:
+
+def log_algorithm_ratios(checkpoint: int, arrival_rate: float, bp_param: dict, rmlf_ratio: float, fcfs_ratio: float) -> None:
+    """Save algorithm usage ratios to a CSV file with mean_inter_arrival_time@ratio_results.csv format"""
+    base_filename = f"log/{checkpoint}@ratio_results.csv"
+    file_exists = os.path.isfile(base_filename)
+    
+    fieldnames = ['checkpoint', 'arrival_rate', 'bp_parameter', 'rmlf_ratio', 'fcfs_ratio']
+    
+    try:
+        mode = 'a' if file_exists else 'w'
+        with open(base_filename, mode, newline='') as file:
+            writer = csv.DictWriter(file, fieldnames=fieldnames)
+            
+            if not file_exists:
+                writer.writeheader()
+                
+            writer.writerow({
+                'checkpoint': checkpoint,
+                'arrival_rate': arrival_rate,
+                'bp_parameter': bp_param,
+                'rmlf_ratio': rmlf_ratio,
+                'fcfs_ratio': fcfs_ratio
+            })
+    except IOError as e:
+        print(f"Error writing to ratio results file: {e}")
+
+def RDYNAMIC(jobs: List[Dict[str, Any]], checkpoint: int, arrival_rate: float, bp_param: dict, prob_greedy: float = 1.0) -> Tuple[float, float]:
+    """
+    Dynamic scheduling algorithm that switches between FCFS and RMLF based on performance
+    
+    Args:
+        jobs: List of job dictionaries containing arrival_time, job_size, and job_index
+        checkpoint: Number of time units between algorithm evaluations
+        arrival_rate: Job arrival rate
+        bp_param: Background process parameters
+        mean_inter_arrival_time: Mean time between job arrivals
+        prob_greedy: Probability of choosing greedy selection vs exploration
+        
+    Returns:
+        Tuple of (average flow time, L2 norm of flow times)
+    """
     if not jobs:
         return 0.0, 0.0
 
     def fcfs_selector(mlf: MLF) -> Optional[Job]:
+        """Select next job using FCFS policy"""
         earliest_job = None
         earliest_arrival = float('inf')
         
@@ -60,6 +85,7 @@ def RDYNAMIC(jobs: List[Dict[str, Any]], checkpoint: int, prob_greedy: float = 0
         return earliest_job
 
     def rmlf_selector(mlf: MLF) -> Optional[Job]:
+        """Select next job using RMLF policy"""
         for queue in mlf.queues:
             if not queue.is_empty:
                 jobs_in_queue = queue.get_jobs_list()
@@ -68,10 +94,10 @@ def RDYNAMIC(jobs: List[Dict[str, Any]], checkpoint: int, prob_greedy: float = 0
                         return job
         return None
     
+    # Initialize MLF and variables
     initial_queues = 1
     print(f"Starting with {initial_queues} queues")
-
-    # Initialize variables
+    
     jobs_pointer = 0
     selected_algo = "FCFS"
     round_score = 0
@@ -81,31 +107,29 @@ def RDYNAMIC(jobs: List[Dict[str, Any]], checkpoint: int, prob_greedy: float = 0
     fcfs_score = float('inf')
     rmlf_score = float('inf')
     mlf = MLF(initial_queues=initial_queues)
+    
+    # Track jobs
     completed_jobs = []
     sorted_jobs = sorted(jobs, key=lambda x: x['arrival_time'])
     n_jobs = len(sorted_jobs)
     n_completed_jobs = 0
-    
-    # Track completed jobs per round
     round_completed_jobs = 0
     
+    # Logging data
     checkpoint_data = []
     fcfs_count = 0
     rmlf_count = 0
-    
-    # Initialize time slot logging
     time_slot_log = []
     current_job_id = None
     
-    # Track job progress
+    # Job tracking
     job_progress = {job['job_index']: 0 for job in sorted_jobs}
     job_sizes = {job['job_index']: int(job['job_size']) for job in sorted_jobs}
-    
-    # Initialize FCFS job size tracking
     fcfs_job_log = []
     
+    # Main scheduling loop
     for current_time in count():
-        # Check for new job arrivals
+        # Process new job arrivals
         while (jobs_pointer < len(sorted_jobs) and 
                sorted_jobs[jobs_pointer]['arrival_time'] <= current_time):
             new_job = Job(
@@ -116,9 +140,11 @@ def RDYNAMIC(jobs: List[Dict[str, Any]], checkpoint: int, prob_greedy: float = 0
             mlf.insert(new_job)
             jobs_pointer += 1
         
-        # Start of a round
+        # Start of new round
         if current_time > 0 and current_time % checkpoint == 0:
             round_start_time = current_time
+            
+            # Algorithm selection
             if current_round == 1:
                 selected_algo = "FCFS"
             elif current_round == 2:
@@ -130,6 +156,7 @@ def RDYNAMIC(jobs: List[Dict[str, Any]], checkpoint: int, prob_greedy: float = 0
                 else:  # discovery mode
                     selected_algo = "FCFS" if random.random() <= 0.5 else "RMLF"
             
+            # Update algorithm counts
             if selected_algo == "FCFS":
                 fcfs_count += 1
             else:
@@ -139,13 +166,10 @@ def RDYNAMIC(jobs: List[Dict[str, Any]], checkpoint: int, prob_greedy: float = 0
             round_score = 0
             round_completed_jobs = 0
         
-        # Select job based on algorithm
-        if selected_algo == "FCFS":
-            selected_job = fcfs_selector(mlf)
-        else:  # RMLF
-            selected_job = rmlf_selector(mlf)
-
-        # Update current_job_id based on selection and progress
+        # Select and process job
+        selected_job = fcfs_selector(mlf) if selected_algo == "FCFS" else rmlf_selector(mlf)
+        
+        # Update current job status
         if (selected_job and 
             selected_job.arrival_time <= current_time and 
             job_progress[selected_job.id] < job_sizes[selected_job.id]):
@@ -153,18 +177,19 @@ def RDYNAMIC(jobs: List[Dict[str, Any]], checkpoint: int, prob_greedy: float = 0
         else:
             current_job_id = None
             selected_job = None
-
+            
         # Log time slot
         time_slot_log.append({
             'time_slot': float(current_time),
             'executed_job_id': str(current_job_id) if current_job_id is not None else ''
         })
         
-        # Process selected job and log FCFS job information
+        # Process selected job
         if selected_job and current_job_id is not None:
             job_progress[current_job_id] += 1
             mlf.increase(selected_job)
-            # Check if job is completed
+            
+            # Check for job completion
             if job_progress[current_job_id] >= job_sizes[current_job_id]:
                 mlf.remove(selected_job)
                 completed_jobs.append({
@@ -176,26 +201,28 @@ def RDYNAMIC(jobs: List[Dict[str, Any]], checkpoint: int, prob_greedy: float = 0
                 print(f"Time {current_time:.1f}: Job {selected_job.id} completed")
                 n_completed_jobs += 1
                 round_completed_jobs += 1
+                
                 if n_completed_jobs == n_jobs:
-                    # Add final empty time slot
                     time_slot_log.append({
                         'time_slot': float(current_time + 1),
                         'executed_job_id': ''
                     })
                     break
         
-        # Calculate round score based on waiting times
+        # Update round score
         round_score += sum(current_time - job.arrival_time for job in mlf.active_jobs)
-                    
-        # End of round
+        
+        # End of round processing
         if current_time > 0 and (current_time + 1) % checkpoint == 0:
             normalized_score = round_score / max((round_completed_jobs+1), 1)
             
+            # Update algorithm scores
             if selected_algo == "FCFS":
                 fcfs_score = normalized_score if fcfs_score == float('inf') else fcfs_score * discount_factor + normalized_score
             else:  # RMLF
                 rmlf_score = normalized_score if rmlf_score == float('inf') else rmlf_score * discount_factor + normalized_score
             
+            # Calculate usage ratios
             total_rounds = fcfs_count + rmlf_count
             if total_rounds > 0:
                 rmlf_ratio = float((rmlf_count / total_rounds) * 100)
@@ -204,6 +231,7 @@ def RDYNAMIC(jobs: List[Dict[str, Any]], checkpoint: int, prob_greedy: float = 0
                 rmlf_ratio = 0.0
                 fcfs_ratio = 0.0
             
+            # Log checkpoint data
             checkpoint_data.append({
                 'checkpoint_time': current_time + 1,
                 'algorithm': selected_algo,
@@ -213,6 +241,7 @@ def RDYNAMIC(jobs: List[Dict[str, Any]], checkpoint: int, prob_greedy: float = 0
                 'fcfs_ratio': float(f"{fcfs_ratio:.1f}")
             })
             
+            # Print round statistics
             print(f"\nEnd of Round {current_round}")
             print(f"Round completed jobs: {round_completed_jobs}")
             print(f"Raw round score: {round_score:.2f}")
@@ -224,25 +253,31 @@ def RDYNAMIC(jobs: List[Dict[str, Any]], checkpoint: int, prob_greedy: float = 0
             print(mlf.get_queue_status())
             current_round += 1
     
-    # Write logs
+    # Calculate final ratios
+    total_rounds = fcfs_count + rmlf_count
+    if total_rounds > 0:
+        final_rmlf_ratio = float((rmlf_count / total_rounds) * 100)
+        final_fcfs_ratio = float((fcfs_count / total_rounds) * 100)
+    else:
+        final_rmlf_ratio = 0.0
+        final_fcfs_ratio = 0.0
+    
+    # Log final results
+    log_algorithm_ratios(
+        checkpoint=checkpoint,
+        arrival_rate=arrival_rate,
+        bp_param=bp_param,
+        rmlf_ratio=final_rmlf_ratio,
+        fcfs_ratio=final_fcfs_ratio
+    )
+    
+    # Write detailed logs
     log_algorithm_usage(f'algorithm_usage_log_{len(jobs)}jobs.csv', checkpoint_data)
     log_time_slots('Rdy_time_slot_log.csv', time_slot_log)
+    
+    # Calculate and return final metrics
     flow_times = [job['completion_time'] - job['arrival_time'] for job in completed_jobs]
     avg_flow_time = sum(flow_times) / len(flow_times) if flow_times else 0
     l2_norm = math.sqrt(sum(t * t for t in flow_times)) if flow_times else 0
+    
     return avg_flow_time, l2_norm
-# def main():
-#      filename = 'data/(22, 7.918).csv'
-#      jobs = read_jobs_from_csv(filename)
-#      if jobs:
-#          avg_flow_time, l2_norm = RDYNAMIC(jobs,64)
-#          print(f"Average Flow Time: {avg_flow_time}")
-#          print(f"L2 Norm of Flow Time: {l2_norm}")
-#          # Run the checker
-#         #  from Checker import Checker
-#         #  result = Checker(filename, 'Rdy_time_slot_log.csv')
-#         #  print(f"Checker result: {result}")
-#      else:
-#          print("No jobs were loaded. Please check the input file.")
-# if __name__ == "__main__":
-#      main()

@@ -105,7 +105,7 @@ def read_jobs_from_csv(filename):
     return jobs
 
 # def main():
-#     filename = 'data/(22, 7.918).csv'
+#     filename = 'data/(30, 7.918).csv'
 #     #filename = 'data/(22, 16.772).csv'
 #     jobs = read_jobs_from_csv(filename)
 #     if jobs:
