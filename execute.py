@@ -1,8 +1,9 @@
 import multiprocessing
 import Read_csv
-import RR, SJF, SETF, FCFS, Dynamic, SRPT, RDYNAMIC, RMLF
+import RR, SRPT, SETF, FCFS, RDYNAMIC, RMLF
 import logging
 import time
+import pandas as pd
 from functools import partial
 
 # Set up logging
@@ -12,8 +13,8 @@ logger = logging.getLogger(__name__)
 def convert_jobs(jobs, include_index=False, as_list=False):
     """
     Convert jobs to appropriate format based on algorithm requirements
-    as_list: True returns [[arrival_time, job_size], ...] format for RR, SJF, SETF
-    include_index: True includes job_index for RMLF and RDYNAMIC
+    as_list: True returns [[arrival_time, job_size], ...] format for RR, SETF
+    include_index: True includes job_index for RDYNAMIC
     """
     if jobs and isinstance(jobs[0], (list, tuple)):
         if as_list:
@@ -37,10 +38,9 @@ def process_scheduler_with_timeout(func, args, timeout=300000):  # 5 minutes tim
         logger.error(f"Error in {func.__name__}: {e}")
         return None
 
-def execute(Arrival_rate, bp_parameter, c):
-    logger.info(f"Starting execution with Arrival_rate={Arrival_rate}, bp_parameter={bp_parameter}, c={c}")
-    
-    c = int(c)
+def execute_phase1(Arrival_rate, bp_parameter):
+    """Execute first phase algorithms and save results to CSV"""
+    logger.info(f"Starting phase 1 execution with Arrival_rate={Arrival_rate}, bp_parameter={bp_parameter}")
     
     results = []
     for i in bp_parameter:
@@ -53,8 +53,7 @@ def execute(Arrival_rate, bp_parameter, c):
         # Execute algorithms sequentially with proper format for each
         for algo, jobs, needs_index, as_list in [
             (RR.RR, job_list.copy(), False, True),
-            # (SRPT.Srpt, job_list.copy(), False, False),
-            # (SJF.Sjf, job_list.copy(), False, True),
+            (SRPT.Srpt, job_list.copy(), False, False),
             (SETF.Setf, job_list.copy(), False, True),
             (FCFS.Fcfs, job_list.copy(), False, False),
             (RMLF.RMLF, job_list.copy(), True, False)
@@ -70,71 +69,89 @@ def execute(Arrival_rate, bp_parameter, c):
                 return []
             algorithm_results[algo.__name__] = algo_result
 
-        # Execute DYNAMIC algorithm
-        # logger.info("Running DYNAMIC")
-        # start_time = time.time()
-        # converted_dynamic_list = convert_jobs(job_list.copy())
-        # dy = process_scheduler_with_timeout(Dynamic.DYNAMIC, (converted_dynamic_list, c))
-        # end_time = time.time()
-        # logger.info(f"DYNAMIC completed in {end_time - start_time:.2f} seconds")
-        # if dy is None:
-        #     logger.error("DYNAMIC failed or timed out")
-        #     return []
+        # Unpack results
+        rr_avg, rr_l2n = algorithm_results['RR']
+        srpt_avg, srpt_l2n = algorithm_results['Srpt']
+        setf_avg, setf_l2n = algorithm_results['Setf']
+        fcfs_avg, fcfs_l2n = algorithm_results['Fcfs']
+        rmlf_avg, rmlf_l2n = algorithm_results['RMLF']
+        
+        results.append({
+            "arrival_rate": Arrival_rate,
+            "bp_parameter": i,
+            "RR_L2_Norm": rr_l2n,
+            "SRPT_L2_Norm": srpt_l2n,
+            "SETF_L2_Norm": setf_l2n,
+            "FCFS_L2_Norm": fcfs_l2n,
+            "RMLF_L2_Norm": rmlf_l2n
+        })
 
-        # Execute RDYNAMIC algorithm
+    # Save results to CSV
+    df = pd.DataFrame(results)
+    csv_filename = f'phase1_results_{Arrival_rate}.csv'
+    df.to_csv(csv_filename, index=False)
+    logger.info(f"Phase 1 results saved to {csv_filename}")
+    return results
+
+def execute_phase2(Arrival_rate, bp_parameter, c):
+    """Execute RDYNAMIC and compare with phase 1 results"""
+    logger.info(f"Starting phase 2 execution with Arrival_rate={Arrival_rate}, bp_parameter={bp_parameter}, c={c}")
+    
+    # Calculate mean inter-arrival time
+    mean_inter_arrival_time = Arrival_rate
+    
+    # Read phase 1 results
+    phase1_df = pd.read_csv(f'phase1_results_{Arrival_rate}.csv')
+    
+    results = []
+    for i in bp_parameter:
+        logger.info(f"Processing bp_parameter: {i}")
+        job_list = Read_csv.Read_csv('data/'+str((Arrival_rate,i["L"]))+".csv")
+        
+        # Execute RDYNAMIC with additional parameters
         logger.info("Running RDYNAMIC")
         start_time = time.time()
         converted_rdynamic_list = convert_jobs(job_list.copy(), include_index=True)
-        rdy = process_scheduler_with_timeout(RDYNAMIC.RDYNAMIC, (converted_rdynamic_list,c))
+        rdy = process_scheduler_with_timeout(
+            RDYNAMIC.RDYNAMIC,
+            (converted_rdynamic_list, c, Arrival_rate, i)
+        )
         end_time = time.time()
         logger.info(f"RDYNAMIC completed in {end_time - start_time:.2f} seconds")
         if rdy is None:
             logger.error("RDYNAMIC failed or timed out")
             return []
         
-        # Unpack results
-        rr_avg, rr_l2n = algorithm_results['RR']
-        #srpt_avg, srpt_l2n = algorithm_results['Srpt']
-        #sjf_avg, sjf_l2n = algorithm_results['Sjf']
-        setf_avg, setf_l2n = algorithm_results['Setf']
-        fcfs_avg, fcfs_l2n = algorithm_results['Fcfs']
-        rmlf_avg, rmlf_l2n = algorithm_results['RMLF']
-        #dy_avg, dy_l2n = dy
+        # Get RDYNAMIC results
         rdy_avg, rdy_l2n = rdy
-        #sjf_avg_srpt = sjf_avg / srpt_avg 
-        #r_avg_srpt = rr_avg / srpt_avg
-        # setf_avg_srpt = setf_avg / srpt_avg
-        # fcfs_avg_srpt = fcfs_avg / srpt_avg
-       # dynamic_avg_srpt = dy_avg / srpt_avg
-       # rmlf_avg_srpt = rmlf_avg / srpt_avg
         
-        # L2 norm ratios
-        # sjf_l2n_srpt = sjf_l2n / srpt_l2n 
-        # rr_l2n_srpt = rr_l2n / srpt_l2n
-        # setf_l2n_srpt = setf_l2n / srpt_l2n
-        setf_l2n_fcfs = setf_l2n/fcfs_l2n
-        # fcfs_l2n_srpt = fcfs_l2n / srpt_l2n
-        # dy_l2n_result = dy_l2n / srpt_l2n
-        # rmlf_l2n_srpt = rmlf_l2n / srpt_l2n
-        rmlf_l2n_rr = rmlf_l2n/ rr_l2n
-        rmlf_l2n_fcfs = rmlf_l2n/fcfs_l2n
-        rmlf_l2n_setf = rmlf_l2n/setf_l2n
-        # rdy_l2n_srpt = rdy_l2n / srpt_l2n
-        rdy_l2n_fcfs = rdy_l2n / fcfs_l2n
-        rdy_l2n_rr  = rdy_l2n / rr_l2n
-        rdy_l2n_rmlf = rdy_l2n / rmlf_l2n
-        rdy_l2n_setf = rdy_l2n / setf_l2n
+        # Get corresponding phase 1 results
+        phase1_row = phase1_df[phase1_df['bp_parameter'].astype(str) == str(i)].iloc[0]
+        
         results.append({
             "arrival_rate": Arrival_rate,
             "bp_parameter": i,
-            "c":c,
-            # "RDYNAMIC_L2_Norm/SRPT_L2_Norm":rdy_l2n_srpt,
-            "RMLF_L2_Norm/FCFS_L2_Norm": rmlf_l2n/fcfs_l2n,
-            "RDYNAMIC_L2_Norm/FCFS_L2_Norm": rdy_l2n_fcfs,
-            "RDYNAMIC_L2_Norm/SETF_L2_Norm": rdy_l2n_setf,
-            "RDYNAMIC_L2_Norm/RR_L2_Norm":  rdy_l2n_rr,
-            "RDYNAMIC_L2_Norm/RMLF_L2_Norm": rdy_l2n_rmlf
+            "c": c,
+            "RMLF_L2_Norm/FCFS_L2_Norm": phase1_row['RMLF_L2_Norm'] / phase1_row['FCFS_L2_Norm'],
+            "RDYNAMIC_L2_Norm/FCFS_L2_Norm": rdy_l2n / phase1_row['FCFS_L2_Norm'],
+            "RDYNAMIC_L2_Norm/SETF_L2_Norm": rdy_l2n / phase1_row['SETF_L2_Norm'],
+            "RDYNAMIC_L2_Norm/RR_L2_Norm": rdy_l2n / phase1_row['RR_L2_Norm'],
+            "RDYNAMIC_L2_Norm/RMLF_L2_Norm": rdy_l2n / phase1_row['RMLF_L2_Norm']
         })
 
-    logger.info("Execution completed successfully")
+    # Save final results
+    df = pd.DataFrame(results)
+    csv_filename = f'final_results_{Arrival_rate}.csv'
+    df.to_csv(csv_filename, index=False)
+    logger.info(f"Final results saved to {csv_filename}")
     return results
+
+def execute(Arrival_rate, bp_parameter, c):
+    """Main execution function"""
+    # Execute phase 1
+    phase1_results = execute_phase1(Arrival_rate, bp_parameter)
+    if not phase1_results:
+        return []
+    
+    # Execute phase 2
+    return execute_phase2(Arrival_rate, bp_parameter, int(c))

@@ -15,7 +15,7 @@ bp_parameter = [
 ]
 
 # Ensure directory for plots exists or is created
-plots_dir = "/Users/melowu/Desktop/ultimus/log/img"
+plots_dir = "/Users/melowu/Desktop/ultimus/log/img/onepointzero"
 os.makedirs(plots_dir, exist_ok=True)
 
 # Define markers and line styles
@@ -39,7 +39,7 @@ def get_bp_index(bp_param):
 
 # Loop over each check
 for c in check:
-    data = pd.read_csv(f'/Users/melowu/Desktop/ultimus/log/result{c}.csv')  # Adjust path as needed
+    data = pd.read_csv(f'/Users/melowu/Desktop/ultimus/log/onepointzero/result{c}.csv')  # Adjust path as needed
     
     # Prepare the plot
     plt.figure(figsize=(12, 8))
