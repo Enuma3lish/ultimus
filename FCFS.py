@@ -3,16 +3,6 @@ import csv
 from FCFS_Selector import select_next_job
 import time
 
-def create_log_file():
-    with open('FCFS_time_slot_log.csv', 'w', newline='') as log_file:
-        log_writer = csv.writer(log_file)
-        log_writer.writerow(['time_slot', 'executed_job_id'])
-
-def log_execution(time_slot, job_id=None):
-    with open('FCFS_time_slot_log.csv', 'a', newline='') as log_file:
-        log_writer = csv.writer(log_file)
-        log_writer.writerow([time_slot, '' if job_id is None else job_id])
-
 def Fcfs(jobs):
     current_time = 0
     completed_jobs = []
@@ -20,10 +10,6 @@ def Fcfs(jobs):
     total_jobs = len(jobs)
     jobs_pointer = 0
     current_job = None
-
-    # Create log file
-    create_log_file()
-
     # Assign job indices
     for idx, job in enumerate(jobs):
         job['job_index'] = idx
@@ -59,8 +45,6 @@ def Fcfs(jobs):
         # Process current job and log execution
         if current_job:
             # Log the execution with the job's index
-            log_execution(current_time, current_job['job_index'])
-            
             current_job['remaining_time'] -= 1
 
             # Check if job is completed
@@ -71,10 +55,6 @@ def Fcfs(jobs):
                 current_job = None
             else:
                 waiting_queue.append(current_job)
-        else:
-            # Log empty time slot
-            log_execution(current_time)
-
         # Increment time
         current_time += 1
 

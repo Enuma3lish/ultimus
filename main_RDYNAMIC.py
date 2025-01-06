@@ -1,4 +1,4 @@
-import execute
+import execute_comp_RDYNAMIC
 import tqdm
 import pandas as pd
 import logging
@@ -23,27 +23,26 @@ def create_dataset():
     # Create the log directory if it doesn't exist
     log_dir = "/Users/melowu/Desktop/ultimus/log/"
     os.makedirs(log_dir, exist_ok=True)
-    for j in range(1,11):
     # Use tqdm for the outer loop to show overall progress
-        for c in tqdm.tqdm(check, desc="Processing checkpoints"):
-            results = []
-            for i in tqdm.tqdm(Arrival_rate, desc=f"Processing arrival rates for checkpoint {c}", leave=False):
-                try:
-                    result = execute.execute(i, bp_parameter, c)
-                    results.extend(result)
-                except Exception as e:
-                    logger.error(f"Error processing arrival rate {i} for checkpoint {c}: {e}")
-                    continue
+    for c in tqdm.tqdm(check, desc="Processing checkpoints"):
+        results = []
+        for i in tqdm.tqdm(Arrival_rate, desc=f"Processing arrival rates for checkpoint {c}", leave=False):
+            try:
+                result = execute_comp_RDYNAMIC.execute(i, bp_parameter, c)
+                results.extend(result)
+            except Exception as e:
+                        logger.error(f"Error processing arrival rate {i} for checkpoint {c}: {e}")
+                        continue
 
-            if results:
-                try:
-                    mresults = pd.DataFrame(results)
-                    output_file = os.path.join(log_dir, f"{j}result{c}.csv")
-                    mresults.to_csv(output_file, index=False)
-                    logger.info(f"Results saved to {output_file}")
-                except Exception as e:
+        if results:
+            try:
+                mresults = pd.DataFrame(results)
+                output_file = os.path.join(log_dir, f"result{c}.csv")
+                mresults.to_csv(output_file, index=False)
+                logger.info(f"Results saved to {output_file}")
+            except Exception as e:
                     logger.error(f"Error saving results for checkpoint {c}: {e}")
-            else:
+        else:
                 logger.warning(f"No results to save for checkpoint {c}")
 
 if __name__ == "__main__":

@@ -2,6 +2,7 @@ import csv
 import random
 import math
 import os
+import pandas as pd
 from typing import Optional, List, Dict, Any, Tuple
 from MLF import Job, MLF
 from itertools import count
@@ -17,23 +18,16 @@ def log_algorithm_usage(filename: str, checkpoint_data: List[Dict[str, Any]]) ->
             writer.writerows(checkpoint_data)
     except IOError as e:
         print(f"Error writing to CSV file: {e}")
-
-def log_time_slots(filename: str, time_slots: List[Dict[str, Any]]) -> None:
-    """Log time slot information to a CSV file"""
-    fieldnames = ['time_slot', 'executed_job_id']
-    try:
-        with open(filename, 'w', newline='') as file:
-            writer = csv.DictWriter(file, fieldnames=fieldnames)
-            writer.writeheader()
-            writer.writerows(time_slots)
-    except IOError as e:
-        print(f"Error writing to CSV file: {e}")
-
-def log_algorithm_ratios(checkpoint: int, arrival_rate: float, bp_param: dict, rmlf_ratio: float, fcfs_ratio: float) -> None:
-    """Save algorithm usage ratios to a CSV file with mean_inter_arrival_time@ratio_results.csv format"""
-    base_filename = f"log/{checkpoint}@ratio_results.csv"
-    file_exists = os.path.isfile(base_filename)
+        
+def log_algorithm_ratios(checkpoint: int, arrival_rate: float, bp_param: dict, rmlf_ratio: float, fcfs_ratio: float, run_number: Optional[int] = None) -> None:
+    """Save algorithm usage ratios to a CSV file with sequential run numbering"""
+    # Create log directory if it doesn't exist
+    os.makedirs('log', exist_ok=True)
     
+    # Generate filename with run number
+    base_filename = f"log/{run_number}ratio@{checkpoint}.csv" if run_number is not None else f"log/ratio@{checkpoint}.csv"
+    
+    file_exists = os.path.isfile(base_filename)
     fieldnames = ['checkpoint', 'arrival_rate', 'bp_parameter', 'rmlf_ratio', 'fcfs_ratio']
     
     try:
@@ -54,7 +48,51 @@ def log_algorithm_ratios(checkpoint: int, arrival_rate: float, bp_param: dict, r
     except IOError as e:
         print(f"Error writing to ratio results file: {e}")
 
-def RDYNAMIC(jobs: List[Dict[str, Any]], checkpoint: int, arrival_rate: float, bp_param: dict, prob_greedy: float = 1.0) -> Tuple[float, float]:
+def calculate_final_ratios(checkpoint: int) -> None:
+    """Calculate and save average ratios from multiple sequentially numbered run files"""
+    # Find all numbered ratio files for this checkpoint
+    run_files = []
+    for i in range(1, 11):  # Looks for files 1 through 10
+        filename = f"log/{i}ratio@{checkpoint}.csv"
+        if os.path.exists(filename):
+            run_files.append(filename)
+    
+    if not run_files:
+        print(f"No ratio result files found for checkpoint {checkpoint}")
+        return
+        
+    print(f"Found {len(run_files)} ratio result files for checkpoint {checkpoint}")
+    
+    # Read and combine all files
+    dfs = []
+    for file in run_files:
+        try:
+            df = pd.read_csv(file)
+            dfs.append(df)
+        except Exception as e:
+            print(f"Error reading file {file}: {e}")
+            continue
+    
+    if not dfs:
+        print("No valid data files found")
+        return
+    
+    # Calculate averages
+    combined_df = pd.concat(dfs, ignore_index=True)
+    grouped = combined_df.groupby(['checkpoint', 'arrival_rate', 'bp_parameter']).agg({
+        'rmlf_ratio': 'mean',
+        'fcfs_ratio': 'mean'
+    }).reset_index()
+    
+    # Round ratios
+    grouped['rmlf_ratio'] = grouped['rmlf_ratio'].round(1)
+    grouped['fcfs_ratio'] = grouped['fcfs_ratio'].round(1)
+    
+    # Save final results
+    output_file = f"log/final_ratio@{checkpoint}.csv"
+    grouped.to_csv(output_file, index=False)
+    print(f"Final averaged results saved to {output_file}")
+def RDYNAMIC(jobs: List[Dict[str, Any]], checkpoint: int, arrival_rate: float, bp_param: dict, prob_greedy: float = 1.0, run_number: int =10) -> Tuple[float, float]:
     """
     Dynamic scheduling algorithm that switches between FCFS and RMLF based on performance
     
@@ -63,8 +101,8 @@ def RDYNAMIC(jobs: List[Dict[str, Any]], checkpoint: int, arrival_rate: float, b
         checkpoint: Number of time units between algorithm evaluations
         arrival_rate: Job arrival rate
         bp_param: Background process parameters
-        mean_inter_arrival_time: Mean time between job arrivals
         prob_greedy: Probability of choosing greedy selection vs exploration
+        run_number: Optional run number for multiple executions
         
     Returns:
         Tuple of (average flow time, L2 norm of flow times)
@@ -125,7 +163,6 @@ def RDYNAMIC(jobs: List[Dict[str, Any]], checkpoint: int, arrival_rate: float, b
     # Job tracking
     job_progress = {job['job_index']: 0 for job in sorted_jobs}
     job_sizes = {job['job_index']: int(job['job_size']) for job in sorted_jobs}
-    fcfs_job_log = []
     
     # Main scheduling loop
     for current_time in count():
@@ -177,12 +214,6 @@ def RDYNAMIC(jobs: List[Dict[str, Any]], checkpoint: int, arrival_rate: float, b
         else:
             current_job_id = None
             selected_job = None
-            
-        # Log time slot
-        time_slot_log.append({
-            'time_slot': float(current_time),
-            'executed_job_id': str(current_job_id) if current_job_id is not None else ''
-        })
         
         # Process selected job
         if selected_job and current_job_id is not None:
@@ -262,19 +293,15 @@ def RDYNAMIC(jobs: List[Dict[str, Any]], checkpoint: int, arrival_rate: float, b
         final_rmlf_ratio = 0.0
         final_fcfs_ratio = 0.0
     
-    # Log final results
+    # Log final results with run number
     log_algorithm_ratios(
         checkpoint=checkpoint,
         arrival_rate=arrival_rate,
         bp_param=bp_param,
         rmlf_ratio=final_rmlf_ratio,
-        fcfs_ratio=final_fcfs_ratio
+        fcfs_ratio=final_fcfs_ratio,
+        run_number=run_number
     )
-    
-    # Write detailed logs
-    log_algorithm_usage(f'algorithm_usage_log_{len(jobs)}jobs.csv', checkpoint_data)
-    log_time_slots('Rdy_time_slot_log.csv', time_slot_log)
-    
     # Calculate and return final metrics
     flow_times = [job['completion_time'] - job['arrival_time'] for job in completed_jobs]
     avg_flow_time = sum(flow_times) / len(flow_times) if flow_times else 0
