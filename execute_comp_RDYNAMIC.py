@@ -5,7 +5,9 @@ import logging
 import time
 import pandas as pd
 import os
+import numpy as np
 from functools import partial
+import ast
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -36,43 +38,6 @@ def process_scheduler_with_timeout(func, args, timeout=300000):
         logger.error(f"Error in {func.__name__}: {e}")
         return None
 
-def calculate_average_ratios(checkpoint):
-    """Calculate average ratios from multiple runs"""
-    logger.info(f"Calculating average ratios for checkpoint {checkpoint}")
-    all_ratios = []
-    
-    # Read all ratio files for this checkpoint
-    for run in range(1, 11):
-        filename = f"log/{run}ratio@{checkpoint}.csv"
-        try:
-            if os.path.exists(filename):
-                df = pd.read_csv(filename)
-                all_ratios.append(df)
-        except Exception as e:
-            logger.error(f"Error reading {filename}: {e}")
-            continue
-    
-    if not all_ratios:
-        logger.error(f"No ratio files found for checkpoint {checkpoint}")
-        return
-    
-    # Combine and calculate averages
-    combined = pd.concat(all_ratios, ignore_index=True)
-    averaged = combined.groupby(['checkpoint', 'arrival_rate', 'bp_parameter']).agg({
-        'rmlf_ratio': 'mean',
-        'fcfs_ratio': 'mean'
-    }).reset_index()
-    
-    # Round the ratios to 1 decimal place
-    averaged['rmlf_ratio'] = averaged['rmlf_ratio'].round(1)
-    averaged['fcfs_ratio'] = averaged['fcfs_ratio'].round(1)
-    
-    # Save the averaged results
-    output_file = f"log/ratio{checkpoint}.csv"
-    averaged.to_csv(output_file, index=False)
-    logger.info(f"Averaged ratios saved to {output_file}")
-    return averaged
-
 def execute_single_run(job_list, checkpoint, arrival_rate, bp_param, run_number):
     """Execute a single run of RDYNAMIC"""
     logger.info(f"Starting run {run_number} for arrival rate {arrival_rate}")
@@ -89,38 +54,65 @@ def execute_single_run(job_list, checkpoint, arrival_rate, bp_param, run_number)
     
     return result
 
-def execute_phase2(Arrival_rate, bp_parameter, checkpoint):
-    """Execute multiple runs of RDYNAMIC"""
-    logger.info(f"Starting phase 2 with Arrival_rate={Arrival_rate}, checkpoint={checkpoint}")
+def execute_phase2(arrival_rate, bp_parameter, checkpoint):
+    """Execute phase 2 and calculate ratios"""
+    logger.info(f"Starting phase 2 with arrival_rate={arrival_rate}, checkpoint={checkpoint}")
     
-    # Ensure log directory exists
-    os.makedirs('log', exist_ok=True)
-    
+    try:
+        # Read phase1 results
+        phase1_df = pd.read_csv(f"phase1_results_{arrival_rate}.csv")
+        # Convert string representation of dictionary to actual dictionary
+        phase1_df['bp_parameter'] = phase1_df['bp_parameter'].apply(ast.literal_eval)
+    except Exception as e:
+        logger.error(f"Error reading phase1 results: {e}")
+        return None
+
     results = []
     for bp_param in bp_parameter:
         logger.info(f"Processing bp_parameter: {bp_param}")
         
         # Get job list
-        job_list = Read_csv.Read_csv('data/'+str((Arrival_rate, bp_param["L"]))+".csv")
+        job_list = Read_csv.Read_csv('data/'+str((arrival_rate, bp_param["L"]))+".csv")
         
-        # Execute 10 runs
+        # Run RDYNAMIC 10 times and get average L2 norm
+        l2_norms = []
         for run in range(1, 11):
-            result = execute_single_run(job_list, checkpoint, Arrival_rate, bp_param, run)
+            result = execute_single_run(job_list, checkpoint, arrival_rate, bp_param, run)
             if result:
-                avg_flow_time, l2_norm = result
-                results.append({
-                    "arrival_rate": Arrival_rate,
-                    "bp_parameter": bp_param,
-                    "run": run,
-                    "avg_flow_time": avg_flow_time,
-                    "l2_norm": l2_norm
-                })
+                _, l2_norm = result
+                l2_norms.append(l2_norm)
+        
+        if l2_norms:
+            rdynamic_l2 = np.mean(l2_norms)
+            
+            # Get phase1 results for this bp_parameter
+            phase1_row = phase1_df[phase1_df['bp_parameter'].apply(lambda x: x['L'] == bp_param['L'])].iloc[0]
+            
+            # Create result row with ratios for each algorithm
+            result_row = {
+                'arrival_rate': arrival_rate,
+                'bp_parameter': str(bp_param),
+                'RR_ratio': rdynamic_l2 / phase1_row['RR_L2_Norm'],
+                'SRPT_ratio': rdynamic_l2 / phase1_row['SRPT_L2_Norm'],
+                'SETF_ratio': rdynamic_l2 / phase1_row['SETF_L2_Norm'],
+                'FCFS_ratio': rdynamic_l2 / phase1_row['FCFS_L2_Norm'],
+                'RMLF_ratio': rdynamic_l2 / phase1_row['RMLF_L2_Norm']
+            }
+            results.append(result_row)
     
-    # Calculate and save average ratios
-    calculate_average_ratios(checkpoint)
+    if results:
+        # Save results to CSV
+        results_df = pd.DataFrame(results)
+        
+        # If file doesn't exist, create it with header
+        if not os.path.exists(f"final_result_{checkpoint}.csv"):
+            results_df.to_csv(f"final_result_{checkpoint}.csv", index=False)
+        else:
+            # Append without header
+            results_df.to_csv(f"final_result_{checkpoint}.csv", mode='a', header=False, index=False)
     
     return results
 
-def execute(Arrival_rate, bp_parameter, checkpoint):
+def execute(arrival_rate, bp_parameter, checkpoint):
     """Main execution function"""
-    return execute_phase2(Arrival_rate, bp_parameter, int(checkpoint))
+    return execute_phase2(arrival_rate, bp_parameter, int(checkpoint))
