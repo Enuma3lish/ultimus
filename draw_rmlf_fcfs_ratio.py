@@ -89,7 +89,7 @@ def plot_ratio_trends(csv_file):
 
 if __name__ == "__main__":
     try:
-        csv_files = ['log/ratio64.csv']
+        csv_files = ['log/ratio1.csv','log/ratio2.csv','log/ratio4.csv','log/ratio8.csv','log/ratio16.csv','log/ratio30.csv']
         
         for csv_file in csv_files:
             print(f"\nProcessing {csv_file}...")
