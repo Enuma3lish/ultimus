@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 def create_dataset():
     Arrival_rate = [i for i in range(20, 42, 2)]
-    check = [32,64] 
+    check = [1,2,4,8,16,30] 
     #[32,64,128,256,512,1024,2048,4096,8192,16384]
     bp_parameter = [
         {"L": 16.772, "H": pow(2, 6)},
