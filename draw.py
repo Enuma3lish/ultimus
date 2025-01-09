@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Load the data
-check = [32,64]
+check = [1,2,4,8,16,30]
 # Define the bp_parameter
 bp_parameter = [
     {"L": 4.073, "H": pow(2, 18)},
@@ -15,7 +15,7 @@ bp_parameter = [
 ]
 
 # Ensure directory for plots exists or is created
-plots_dir = "/Users/melowu/Desktop/ultimus/log/img"
+plots_dir = "/log/img"
 os.makedirs(plots_dir, exist_ok=True)
 
 # Define markers and line styles
@@ -39,7 +39,7 @@ def get_bp_index(bp_param):
 
 # Loop over each check
 for c in check:
-    data = pd.read_csv(f'/Users/melowu/Desktop/ultimus/log/final_result_{c}.csv')  # Adjust path as needed
+    data = pd.read_csv(f'log/final_result_{c}.csv')  # Adjust path as needed
     
     # Prepare the plot
     plt.figure(figsize=(12, 8))
