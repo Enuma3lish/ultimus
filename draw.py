@@ -15,7 +15,7 @@ bp_parameter = [
 ]
 
 # Ensure directory for plots exists or is created
-plots_dir = "/log/img"
+plots_dir = "log/img/"
 os.makedirs(plots_dir, exist_ok=True)
 
 # Define markers and line styles
