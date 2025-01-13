@@ -8,26 +8,37 @@ import math
 inter_arrival_time = [i for i in range(20, 41, 2)]  # This defines average inter-arrival times
 
 # Bounded Pareto parameters
-bp_parameter30 = [
-    {"L": 16.772, "H": pow(2, 6)},
-    {"L": 7.918, "H": pow(2, 9)},
-    {"L": 5.649, "H": pow(2, 12)},
-    {"L": 4.639, "H": pow(2, 15)},
-    {"L": 4.073, "H": pow(2, 18)}
-]
+# bp_parameter30 = [
+#     {"L": 16.772, "H": pow(2, 6)},
+#     {"L": 7.918, "H": pow(2, 9)},
+#     {"L": 5.649, "H": pow(2, 12)},
+#     {"L": 4.639, "H": pow(2, 15)},
+#     {"L": 4.073, "H": pow(2, 18)}
+# ]
 bp_parameter = [
     {"L": 56.300, "H": pow(2, 6)},
     {"L": 18.900, "H": pow(2, 9)},
     {"L": 12.400, "H": pow(2, 12)},
     {"L": 9.800, "H": pow(2, 15)},
-    {"L": 8.500, "H": pow(2, 18)}
-]
-bp_parameter_90 = [
-    {"L": 64.000, "H": pow(2, 6)},  # Using this case is no exist in average = 90
+    {"L": 8.500, "H": pow(2, 18)},
     {"L": 32.300, "H": pow(2, 9)},
     {"L": 19.700, "H": pow(2, 12)},
     {"L": 15.300, "H": pow(2, 15)},
-    {"L": 13.000, "H": pow(2, 18)}
+    {"L": 13.000, "H": pow(2, 18)},
+    {"L": 16.772, "H": pow(2, 6)},
+    {"L": 7.918, "H": pow(2, 9)},
+    {"L": 5.649, "H": pow(2, 12)},
+    {"L": 4.639, "H": pow(2, 15)},
+    {"L": 4.073, "H": pow(2, 18)},
+    {"L": 56.300, "H": pow(2, 6)},
+    {"L": 18.900, "H": pow(2, 9)},
+    {"L": 12.400, "H": pow(2, 12)},
+    {"L": 9.800, "H": pow(2, 15)},
+    {"L": 8.500, "H": pow(2, 18)},
+    {"L": 32.300, "H": pow(2, 9)},
+    {"L": 19.700, "H": pow(2, 12)},
+    {"L": 15.300, "H": pow(2, 15)},
+    {"L": 13.000, "H": pow(2, 18)} 
 ]
 def job_init(num_jobs, avg_inter_arrival_time, xmin, xmax):
     alpha = 1.1
@@ -62,7 +73,7 @@ def Save_file(num_jobs):
             job_list = job_init(num_jobs, avg_inter_arrival, b["L"], b["H"])
             bl = b["L"]
             # Format the filename as (inter_arrival, bl).csv
-            filename = f"/Users/melowu/Desktop/ultimus/data/({avg_inter_arrival}, {bl}).csv"
+            filename = f"data/({avg_inter_arrival}, {bl}).csv"
             Write_csv.Write_raw(filename, job_list)
 
 if __name__ == "__main__":
