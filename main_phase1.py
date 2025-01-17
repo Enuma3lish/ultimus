@@ -33,14 +33,13 @@ def create_dataset():
     log_dir = "log/"
     os.makedirs(log_dir, exist_ok=True)
     # Use tqdm for the outer loop to show overall progress
-    for c in tqdm.tqdm(check, desc="Processing checkpoints"):
-        results = []
-        for i in tqdm.tqdm(Arrival_rate, desc=f"Processing arrival rates for checkpoint {c}", leave=False):
-            try:
-                execute_phase1.execute_phase1(i, bp_parameter)
-            except Exception as e:
-                    logger.error(f"Error processing arrival rate {i} for checkpoint {c}: {e}")
-                    continue
+    results = []
+    for i in tqdm.tqdm(Arrival_rate, desc=f"Processing arrival rates for checkpoint {c}", leave=False):
+        try:
+            execute_phase1.execute_phase1(i, bp_parameter)
+        except Exception as e:
+                logger.error(f"Error processing arrival rate {i} for checkpoint {c}: {e}")
+                continue
 
 if __name__ == "__main__":
     create_dataset()
