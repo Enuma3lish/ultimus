@@ -1,14 +1,10 @@
 import multiprocessing
 import Read_csv
 import RR, SRPT, SETF, FCFS, RMLF
-import logging
 import time
 import pandas as pd
 import numpy as np
-from functools import partial
-
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 def convert_jobs(jobs, include_index=False, as_list=False):
     """
@@ -26,43 +22,42 @@ def convert_jobs(jobs, include_index=False, as_list=False):
                  'job_size': float(job[1])} for job in jobs]
     return jobs
 
-def process_scheduler_with_timeout(func, args, timeout=300000):  # 5 minutes timeout
+def run_algorithm(algo, jobs, needs_index, as_list):
+    """Run an algorithm and return its L2 norm"""
     try:
-        with multiprocessing.Pool(1) as pool:
-            result = pool.apply_async(func, args)
-            return result.get(timeout=timeout)
-    except multiprocessing.TimeoutError:
-        logger.error(f"Timeout occurred for {func.__name__}")
-        return None
-    except Exception as e:
-        logger.error(f"Error in {func.__name__}: {e}")
+        converted_jobs = convert_jobs(jobs.copy(), include_index=needs_index, as_list=as_list)
+        _, l2n = algo(converted_jobs)
+        return l2n
+    except Exception:
         return None
 
-def run_algorithm_multiple_times(algo, jobs, needs_index, as_list, num_runs=10):
-    """Run an algorithm multiple times and return average L2 norm"""
-    l2_norms = []
-    for _ in range(num_runs):
-        converted_jobs = convert_jobs(jobs.copy(), include_index=needs_index, as_list=as_list)
-        result = process_scheduler_with_timeout(algo, (converted_jobs,))
-        if result is None:
-            return None
-        _, l2n = result
-        l2_norms.append(l2n)
-    return np.mean(l2_norms)
+def run_all_algorithms_parallel(job_list, algorithms):
+    """Run all algorithms in parallel"""
+    results = {}
+    with ProcessPoolExecutor(max_workers=len(algorithms)) as executor:
+        future_to_algo = {}
+        for algo, jobs, needs_index, as_list in algorithms:
+            future = executor.submit(run_algorithm, algo, jobs, needs_index, as_list)
+            future_to_algo[future] = algo.__name__
+
+        for future in as_completed(future_to_algo):
+            algo_name = future_to_algo[future]
+            try:
+                l2n = future.result()
+                if l2n is None:
+                    return None
+                results[algo_name] = l2n
+            except Exception:
+                return None
+                
+    return results
 
 def execute_phase1(Arrival_rate, bp_parameter):
-    """Execute first phase algorithms and save results to CSV"""
-    logger.info(f"Starting phase 1 execution with Arrival_rate={Arrival_rate}, bp_parameter={bp_parameter}")
-    
+    """Execute first phase algorithms in parallel and save results to CSV"""
     results = []
     for i in bp_parameter:
-        logger.info(f"Processing bp_parameter: {i}")
         job_list = Read_csv.Read_csv('data/'+str((Arrival_rate,i["L"]))+".csv")
-        logger.debug(f"Read job_list: {job_list[:5]}...")  
 
-        algorithm_results = {}
-        
-        # Execute algorithms with multiple runs
         algorithms = [
             (RR.RR, job_list.copy(), False, True),
             (SRPT.Srpt, job_list.copy(), False, False),
@@ -71,18 +66,10 @@ def execute_phase1(Arrival_rate, bp_parameter):
             (RMLF.RMLF, job_list.copy(), True, False)
         ]
         
-        for algo, jobs, needs_index, as_list in algorithms:
-            logger.info(f"Running {algo.__name__} 10 times")
-            start_time = time.time()
-            avg_l2n = run_algorithm_multiple_times(algo, jobs, needs_index, as_list)
-            end_time = time.time()
-            logger.info(f"{algo.__name__} completed 10 runs in {end_time - start_time:.2f} seconds")
-            
-            if avg_l2n is None:
-                logger.error(f"{algo.__name__} failed or timed out")
-                return []
-                
-            algorithm_results[algo.__name__] = avg_l2n
+        algorithm_results = run_all_algorithms_parallel(job_list, algorithms)
+        
+        if algorithm_results is None:
+            return []
 
         results.append({
             "arrival_rate": Arrival_rate,
@@ -98,6 +85,5 @@ def execute_phase1(Arrival_rate, bp_parameter):
     df = pd.DataFrame(results)
     csv_filename = f'phase1_results_{Arrival_rate}.csv'
     df.to_csv(csv_filename, index=False)
-    logger.info(f"Phase 1 results saved to {csv_filename}")
     
-    return job_list  # Return job_list for potential further use
+    return job_list
