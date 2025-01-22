@@ -29,7 +29,7 @@ def create_dataset():
         {"L": 13.000, "H": pow(2, 18)}
     ]
     # Create the log directory if it doesn't exist
-    log_dir = "/Users/melowu/Desktop/ultimus/log/"
+    log_dir = "/home/melowu/Work/ultimus/"
     os.makedirs(log_dir, exist_ok=True)
     # Use tqdm for the outer loop to show overall progress
     for c in tqdm.tqdm(check, desc="Processing checkpoints"):
