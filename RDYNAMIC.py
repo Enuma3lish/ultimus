@@ -134,7 +134,7 @@ def RDYNAMIC(jobs: List[Dict[str, Any]], checkpoint: int, arrival_rate: float, b
     
     # Initialize MLF and variables
     initial_queues = 1
-    print(f"Starting with {initial_queues} queues")
+    #print(f"Starting with {initial_queues} queues")
     
     jobs_pointer = 0
     selected_algo = "FCFS"
@@ -199,7 +199,7 @@ def RDYNAMIC(jobs: List[Dict[str, Any]], checkpoint: int, arrival_rate: float, b
             else:
                 rmlf_count += 1
                 
-            print(f"\nTime {current_time}: Round {current_round} - {selected_algo}")
+            #print(f"\nTime {current_time}: Round {current_round} - {selected_algo}")
             round_score = 0
             round_completed_jobs = 0
         
@@ -229,7 +229,7 @@ def RDYNAMIC(jobs: List[Dict[str, Any]], checkpoint: int, arrival_rate: float, b
                     'job_index': selected_job.id,
                     'completion_time': current_time + 1
                 })
-                print(f"Time {current_time:.1f}: Job {selected_job.id} completed")
+                #print(f"Time {current_time:.1f}: Job {selected_job.id} completed")
                 n_completed_jobs += 1
                 round_completed_jobs += 1
                 
@@ -273,15 +273,15 @@ def RDYNAMIC(jobs: List[Dict[str, Any]], checkpoint: int, arrival_rate: float, b
             })
             
             # Print round statistics
-            print(f"\nEnd of Round {current_round}")
-            print(f"Round completed jobs: {round_completed_jobs}")
-            print(f"Raw round score: {round_score:.2f}")
-            print(f"Normalized round score: {normalized_score:.2f}")
-            print(f"FCFS Score: {fcfs_score:.2f}")
-            print(f"RMLF Score: {rmlf_score:.2f}")
-            print(f"Algorithm Usage - RMLF: {rmlf_ratio:.1f}%, FCFS: {fcfs_ratio:.1f}%")
-            print("\nQueue Status:")
-            print(mlf.get_queue_status())
+            # print(f"\nEnd of Round {current_round}")
+            # print(f"Round completed jobs: {round_completed_jobs}")
+            # print(f"Raw round score: {round_score:.2f}")
+            # print(f"Normalized round score: {normalized_score:.2f}")
+            # print(f"FCFS Score: {fcfs_score:.2f}")
+            # print(f"RMLF Score: {rmlf_score:.2f}")
+            # print(f"Algorithm Usage - RMLF: {rmlf_ratio:.1f}%, FCFS: {fcfs_ratio:.1f}%")
+            # print("\nQueue Status:")
+            # print(mlf.get_queue_status())
             current_round += 1
     
     # Calculate final ratios

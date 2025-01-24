@@ -111,7 +111,7 @@ class MLF:
             self.queues[next_queue].enqueue(job)
             job.current_queue = next_queue
             job.time_in_current_queue = 0
-            print(f"Job {job.id} moved to lower priority queue {next_queue}")
+            #print(f"Job {job.id} moved to lower priority queue {next_queue}")
     
     def generate_beta(self, job_index: int) -> float:
         if job_index <= 3:

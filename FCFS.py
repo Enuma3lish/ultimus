@@ -50,7 +50,6 @@ def Fcfs(jobs):
             # Check if job is completed
             if current_job['remaining_time'] == 0:
                 current_job['completion_time'] = current_time + 1
-                print(current_job)
                 completed_jobs.append(current_job)
                 current_job = None
             else:
