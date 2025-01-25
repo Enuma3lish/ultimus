@@ -29,13 +29,14 @@ def create_dataset():
     ]
 
     # Create the log directory if it doesn't exist
-    log_dir = "log/"
+    log_dir = "log"
     os.makedirs(log_dir, exist_ok=True)
     # Use tqdm for the outer loop to show overall progress
     results = []
     for i in tqdm.tqdm(Arrival_rate, desc=f"Processing arrival rates", leave=False):
         try:
             execute_phase1.execute_phase1(i, bp_parameter)
+            execute_phase1.execute_phase1_random(i)
         except Exception as e:
                 logger.error(f"Error processing arrival rate {i} : {e}")
                 continue

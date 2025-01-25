@@ -19,34 +19,34 @@ def log_algorithm_usage(filename: str, checkpoint_data: List[Dict[str, Any]]) ->
     except IOError as e:
         print(f"Error writing to CSV file: {e}")
         
-def log_algorithm_ratios(checkpoint: int, arrival_rate: float, bp_param: dict, rmlf_ratio: float, fcfs_ratio: float, run_number: Optional[int] = None) -> None:
-    """Save algorithm usage ratios to a CSV file with sequential run numbering"""
-    # Create log directory if it doesn't exist
-    os.makedirs('log', exist_ok=True)
+# def log_algorithm_ratios(checkpoint: int, arrival_rate: float, bp_param: dict, rmlf_ratio: float, fcfs_ratio: float, run_number: Optional[int] = None) -> None:
+#     """Save algorithm usage ratios to a CSV file with sequential run numbering"""
+#     # Create log directory if it doesn't exist
+#     os.makedirs('log', exist_ok=True)
     
-    # Generate filename with run number
-    base_filename = f"log/{run_number}ratio@{checkpoint}.csv" if run_number is not None else f"log/ratio@{checkpoint}.csv"
+#     # Generate filename with run number
+#     base_filename = f"log/{run_number}ratio@{checkpoint}.csv" if run_number is not None else f"log/ratio@{checkpoint}.csv"
     
-    file_exists = os.path.isfile(base_filename)
-    fieldnames = ['checkpoint', 'arrival_rate', 'bp_parameter', 'rmlf_ratio', 'fcfs_ratio']
+#     file_exists = os.path.isfile(base_filename)
+#     fieldnames = ['checkpoint', 'arrival_rate', 'bp_parameter', 'rmlf_ratio', 'fcfs_ratio']
     
-    try:
-        mode = 'a' if file_exists else 'w'
-        with open(base_filename, mode, newline='') as file:
-            writer = csv.DictWriter(file, fieldnames=fieldnames)
+#     try:
+#         mode = 'a' if file_exists else 'w'
+#         with open(base_filename, mode, newline='') as file:
+#             writer = csv.DictWriter(file, fieldnames=fieldnames)
             
-            if not file_exists:
-                writer.writeheader()
+#             if not file_exists:
+#                 writer.writeheader()
                 
-            writer.writerow({
-                'checkpoint': checkpoint,
-                'arrival_rate': arrival_rate,
-                'bp_parameter': bp_param,
-                'rmlf_ratio': rmlf_ratio,
-                'fcfs_ratio': fcfs_ratio
-            })
-    except IOError as e:
-        print(f"Error writing to ratio results file: {e}")
+#             writer.writerow({
+#                 'checkpoint': checkpoint,
+#                 'arrival_rate': arrival_rate,
+#                 'bp_parameter': bp_param,
+#                 'rmlf_ratio': rmlf_ratio,
+#                 'fcfs_ratio': fcfs_ratio
+#             })
+#     except IOError as e:
+#         print(f"Error writing to ratio results file: {e}")
 
 def calculate_final_ratios(checkpoint: int) -> None:
     """Calculate and save average ratios from multiple sequentially numbered run files"""
@@ -92,21 +92,7 @@ def calculate_final_ratios(checkpoint: int) -> None:
     output_file = f"log/final_ratio@{checkpoint}.csv"
     grouped.to_csv(output_file, index=False)
     print(f"Final averaged results saved to {output_file}")
-def RDYNAMIC(jobs: List[Dict[str, Any]], checkpoint: int, arrival_rate: float, bp_param: dict, prob_greedy: float = 1.0, run_number: int =10) -> Tuple[float, float]:
-    """
-    Dynamic scheduling algorithm that switches between FCFS and RMLF based on performance
-    
-    Args:
-        jobs: List of job dictionaries containing arrival_time, job_size, and job_index
-        checkpoint: Number of time units between algorithm evaluations
-        arrival_rate: Job arrival rate
-        bp_param: Background process parameters
-        prob_greedy: Probability of choosing greedy selection vs exploration
-        run_number: Optional run number for multiple executions
-        
-    Returns:
-        Tuple of (average flow time, L2 norm of flow times)
-    """
+def RDYNAMIC(jobs: List[Dict[str, Any]], checkpoint: int, arrival_rate: float, prob_greedy: float = 1.0, run_number: int =10) -> Tuple[float, float]:
     if not jobs:
         return 0.0, 0.0
 
@@ -285,23 +271,23 @@ def RDYNAMIC(jobs: List[Dict[str, Any]], checkpoint: int, arrival_rate: float, b
             current_round += 1
     
     # Calculate final ratios
-    total_rounds = fcfs_count + rmlf_count
-    if total_rounds > 0:
-        final_rmlf_ratio = float((rmlf_count / total_rounds) * 100)
-        final_fcfs_ratio = float((fcfs_count / total_rounds) * 100)
-    else:
-        final_rmlf_ratio = 0.0
-        final_fcfs_ratio = 0.0
+    # total_rounds = fcfs_count + rmlf_count
+    # if total_rounds > 0:
+    #     final_rmlf_ratio = float((rmlf_count / total_rounds) * 100)
+    #     final_fcfs_ratio = float((fcfs_count / total_rounds) * 100)
+    # else:
+    #     final_rmlf_ratio = 0.0
+    #     final_fcfs_ratio = 0.0
     
     # Log final results with run number
-    log_algorithm_ratios(
-        checkpoint=checkpoint,
-        arrival_rate=arrival_rate,
-        bp_param=bp_param,
-        rmlf_ratio=final_rmlf_ratio,
-        fcfs_ratio=final_fcfs_ratio,
-        run_number=run_number
-    )
+    # log_algorithm_ratios(
+    #     checkpoint=checkpoint,
+    #     arrival_rate=arrival_rate,
+    #     bp_param=bp_param,
+    #     rmlf_ratio=final_rmlf_ratio,
+    #     fcfs_ratio=final_fcfs_ratio,
+    #     run_number=run_number
+    # )
     # Calculate and return final metrics
     flow_times = [job['completion_time'] - job['arrival_time'] for job in completed_jobs]
     avg_flow_time = sum(flow_times) / len(flow_times) if flow_times else 0

@@ -88,3 +88,31 @@ def execute_phase1(Arrival_rate, bp_parameter):
         df.to_csv(csv_filename, index=False)
     
     return job_list if results else []
+
+def execute_phase1_random(Arrival_rate):
+    results = []
+    job_list = Read_csv.Read_csv('random_data/'+'inter_arrival_'+str(Arrival_rate)+".csv")
+    algorithms = [
+                (RR.RR, job_list.copy(), False, True),
+                (SRPT.Srpt, job_list.copy(), False, False),
+                (SETF.Setf, job_list.copy(), False, True),
+                (FCFS.Fcfs, job_list.copy(), False, False),
+                (RMLF.RMLF, job_list.copy(), True, False)
+        ]
+            
+    algorithm_results = run_all_algorithms_parallel(job_list, algorithms)
+    if algorithm_results and all(v is not None for v in algorithm_results.values()):
+                results.append({
+                    "arrival_rate": Arrival_rate,
+                    "RR_L2_Norm": algorithm_results['RR'],
+                    "SRPT_L2_Norm": algorithm_results['Srpt'],
+                    "SETF_L2_Norm": algorithm_results['Setf'],
+                    "FCFS_L2_Norm": algorithm_results['Fcfs'],
+                    "RMLF_L2_Norm": algorithm_results['RMLF']
+                })
+    if results:
+        df = pd.DataFrame(results)
+        csv_filename = f'random_phase1_results_{Arrival_rate}.csv'
+        df.to_csv(csv_filename, index=False)
+        
+    return job_list if results else []

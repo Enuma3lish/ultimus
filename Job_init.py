@@ -7,14 +7,6 @@ import math
 # Define inter-arrival times
 inter_arrival_time = [i for i in range(20, 41, 2)]  # This defines average inter-arrival times
 
-# Bounded Pareto parameters
-# bp_parameter30 = [
-#     {"L": 16.772, "H": pow(2, 6)},
-#     {"L": 7.918, "H": pow(2, 9)},
-#     {"L": 5.649, "H": pow(2, 12)},
-#     {"L": 4.639, "H": pow(2, 15)},
-#     {"L": 4.073, "H": pow(2, 18)}
-# ]
 bp_parameter = [
     {"L": 56.300, "H": pow(2, 6)},
     {"L": 18.900, "H": pow(2, 9)},
@@ -77,4 +69,4 @@ def Save_file(num_jobs):
             Write_csv.Write_raw(filename, job_list)
 
 if __name__ == "__main__":
-    Save_file(10000)
+    Save_file(100)

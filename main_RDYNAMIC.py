@@ -30,6 +30,7 @@ def create_dataset():
         for i in tqdm.tqdm(Arrival_rate, desc=f"Processing arrival rates for checkpoint {c}", leave=False):
             try:
                 result = execute_comp_RDYNAMIC.execute(i, bp_parameter, c)
+                execute_comp_RDYNAMIC.execute_random(i,c)
                 results.extend(result)
             except Exception:
                 continue
