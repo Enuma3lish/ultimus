@@ -1,6 +1,7 @@
 import multiprocessing
 import Read_csv
 import RDYNAMIC
+import Dynamic
 import logging
 import time
 import pandas as pd
@@ -38,9 +39,9 @@ def process_scheduler_with_timeout(func, args, timeout=300000):
         logger.error(f"Error in {func.__name__}: {e}")
         return None
 
-def execute_single_run(job_list, checkpoint, arrival_rate, run_number):
+def execute_single_run_rdynamic(job_list, checkpoint, arrival_rate, run_number):
     """Execute a single run of RDYNAMIC"""
-    logger.info(f"Starting run {run_number} for arrival rate {arrival_rate}")
+    logger.info(f"Starting RDYNAMIC run {run_number} for arrival rate {arrival_rate}")
     converted_jobs = convert_jobs(job_list.copy(), include_index=True)
     
     result = process_scheduler_with_timeout(
@@ -49,7 +50,23 @@ def execute_single_run(job_list, checkpoint, arrival_rate, run_number):
     )
     
     if result is None:
-        logger.error(f"Run {run_number} failed")
+        logger.error(f"RDYNAMIC Run {run_number} failed")
+        return None
+    
+    return result
+
+def execute_single_run_dynamic(job_list, checkpoint, arrival_rate, run_number):
+    """Execute a single run of Dynamic"""
+    logger.info(f"Starting Dynamic run {run_number} for arrival rate {arrival_rate}")
+    converted_jobs = convert_jobs(job_list.copy(), include_index=True)
+    
+    result = process_scheduler_with_timeout(
+        Dynamic.DYNAMIC,
+        (converted_jobs, checkpoint, arrival_rate, 1.0, run_number)
+    )
+    
+    if result is None:
+        logger.error(f"Dynamic Run {run_number} failed")
         return None
     
     return result
@@ -74,29 +91,37 @@ def execute_phase2(arrival_rate, bp_parameter, checkpoint):
         # Get job list
         job_list = Read_csv.Read_csv('data/'+str((arrival_rate, bp_param["L"]))+".csv")
         
-        # Run RDYNAMIC 10 times and get average L2 norm
-        l2_norms = []
-        for run in range(1, 11):
-            result = execute_single_run(job_list, checkpoint, arrival_rate, run)
-            if result:
-                _, l2_norm = result
-                l2_norms.append(l2_norm)
+        # Run RDYNAMIC and Dynamic in parallel using multiprocessing
+        with multiprocessing.Pool(2) as pool:
+            # Create partial functions with fixed parameters
+            rdynamic_partial = partial(execute_single_run_rdynamic, job_list, checkpoint, arrival_rate)
+            dynamic_partial = partial(execute_single_run_dynamic, job_list, checkpoint, arrival_rate)
+            
+            # Run both algorithms 10 times each
+            rdynamic_results = pool.map(rdynamic_partial, range(1, 11))
+            dynamic_results = pool.map(dynamic_partial, range(1, 11))
+
+        # Calculate average L2 norms
+        rdynamic_l2_norms = [result[1] for result in rdynamic_results if result]
+        dynamic_l2_norms = [result[1] for result in dynamic_results if result]
         
-        if l2_norms:
-            rdynamic_l2 = np.mean(l2_norms)
+        if rdynamic_l2_norms and dynamic_l2_norms:
+            rdynamic_l2 = np.mean(rdynamic_l2_norms)
+            dynamic_l2 = np.mean(dynamic_l2_norms)
             
             # Get phase1 results for this bp_parameter
             phase1_row = phase1_df[phase1_df['bp_parameter'].apply(lambda x: x['L'] == bp_param['L'])].iloc[0]
             
-            # Create result row with ratios for each algorithm
+            # Create result row with ratios for each algorithm including Dynamic
             result_row = {
                 'arrival_rate': arrival_rate,
                 'bp_parameter': str(bp_param),
-                'RR_ratio': rdynamic_l2 / phase1_row['RR_L2_Norm'],
-                'SRPT_ratio': rdynamic_l2 / phase1_row['SRPT_L2_Norm'],
-                'SETF_ratio': rdynamic_l2 / phase1_row['SETF_L2_Norm'],
-                'FCFS_ratio': rdynamic_l2 / phase1_row['FCFS_L2_Norm'],
-                'RMLF_ratio': rdynamic_l2 / phase1_row['RMLF_L2_Norm']
+                'RDYNAMIC/RR_ratio': rdynamic_l2 / phase1_row['RR_L2_Norm'],
+                'RDYNAMIC/SRPT_ratio': rdynamic_l2 / phase1_row['SRPT_L2_Norm'],
+                'RDYNAMIC/SETF_ratio': rdynamic_l2 / phase1_row['SETF_L2_Norm'],
+                'RDYNAMIC/FCFS_ratio': rdynamic_l2 / phase1_row['FCFS_L2_Norm'],
+                'RDYNAMIC/RMLF_ratio': rdynamic_l2 / phase1_row['RMLF_L2_Norm'],
+                'RDYNAMIC/Dynamic_ratio': rdynamic_l2 / dynamic_l2
             }
             results.append(result_row)
     
@@ -112,24 +137,9 @@ def execute_phase2(arrival_rate, bp_parameter, checkpoint):
             results_df.to_csv(f"final_result_{checkpoint}.csv", mode='a', header=False, index=False)
     
     return results
-def random_execute_single_run(job_list, checkpoint, arrival_rate, run_number):
-    """Execute a single run of RDYNAMIC"""
-    logger.info(f"Starting run {run_number} for arrival rate {arrival_rate}")
-    converted_jobs = convert_jobs(job_list.copy(), include_index=True)
-    
-    result = process_scheduler_with_timeout(
-        RDYNAMIC.RDYNAMIC,
-        (converted_jobs, checkpoint, arrival_rate, 1.0, run_number)
-    )
-    
-    if result is None:
-        logger.error(f"Run {run_number} failed")
-        return None
-    
-    return result
 
 def random_execute_phase2(arrival_rate, checkpoint):
-    """Execute phase 2 and calculate ratios"""
+    """Execute phase 2 and calculate ratios for random data"""
     logger.info(f"Starting phase 2 with arrival_rate={arrival_rate}, checkpoint={checkpoint}")
     
     try:
@@ -141,26 +151,31 @@ def random_execute_phase2(arrival_rate, checkpoint):
 
     # Get job list
     job_list = Read_csv.Read_csv('random_data/'+'inter_arrival_'+str(arrival_rate)+".csv")
+    
+    # Run RDYNAMIC and Dynamic in parallel
+    with multiprocessing.Pool(2) as pool:
+        rdynamic_partial = partial(execute_single_run_rdynamic, job_list, checkpoint, arrival_rate)
+        dynamic_partial = partial(execute_single_run_dynamic, job_list, checkpoint, arrival_rate)
         
-    # Run RDYNAMIC 10 times and get average L2 norm
-    l2_norms = []
-    for run in range(1, 11):
-        result = execute_single_run(job_list, checkpoint, arrival_rate, run)
-        if result:
-            _, l2_norm = result
-            l2_norms.append(l2_norm)
+        rdynamic_results = pool.map(rdynamic_partial, range(1, 11))
+        dynamic_results = pool.map(dynamic_partial, range(1, 11))
+
+    rdynamic_l2_norms = [result[1] for result in rdynamic_results if result]
+    dynamic_l2_norms = [result[1] for result in dynamic_results if result]
         
-    if l2_norms:
-        rdynamic_l2 = np.mean(l2_norms)
+    if rdynamic_l2_norms and dynamic_l2_norms:
+        rdynamic_l2 = np.mean(rdynamic_l2_norms)
+        dynamic_l2 = np.mean(dynamic_l2_norms)
             
-        # Create result row with ratios for each algorithm
+        # Create result row with ratios for each algorithm including Dynamic
         result_row = {
             'arrival_rate': arrival_rate,
             'RDYNAMIC/RR_ratio': rdynamic_l2 / phase1_row['RR_L2_Norm'],
             'RDYNAMIC/SRPT_ratio': rdynamic_l2 / phase1_row['SRPT_L2_Norm'],
             'RDYNAMIC/SETF_ratio': rdynamic_l2 / phase1_row['SETF_L2_Norm'],
             'RDYNAMIC/FCFS_ratio': rdynamic_l2 / phase1_row['FCFS_L2_Norm'],
-            'RDYNAMIC/RMLF_ratio': rdynamic_l2 / phase1_row['RMLF_L2_Norm']
+            'RDYNAMIC/RMLF_ratio': rdynamic_l2 / phase1_row['RMLF_L2_Norm'],
+            'RDYNAMIC/Dynamic_ratio': rdynamic_l2 / dynamic_l2
         }
         
         # Save results to CSV
@@ -172,10 +187,11 @@ def random_execute_phase2(arrival_rate, checkpoint):
         else:
             # Append without header
             results_df.to_csv(f"random_final_result_{checkpoint}.csv", mode='a', header=False, index=False)
+
 def execute(arrival_rate, bp_parameter, checkpoint):
     """Main execution function"""
     return execute_phase2(arrival_rate, bp_parameter, int(checkpoint))
 
 def execute_random(arrival_rate, checkpoint):
-    """Main execution function"""
+    """Main execution function for random data"""
     return random_execute_phase2(arrival_rate, int(checkpoint))
