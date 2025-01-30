@@ -47,10 +47,6 @@ def RR(initial_jobs: List[List[int]], time_quantum: int = 2) -> Tuple[float, flo
                     completed_jobs += 1
                     remaining_jobs.pop(job_index)
                     
-                    print(f"Job {job_index} completed at time {current_time}")
-                    print(f"Flow time: {flow_time}")
-                    print(f"Completed jobs: {completed_jobs}/{total_jobs}")
-                    print("---")
             else:
                 # No job available, advance time
                 current_time = execution_time
@@ -59,19 +55,4 @@ def RR(initial_jobs: List[List[int]], time_quantum: int = 2) -> Tuple[float, flo
     avg_flow_time = total_flow_time / total_jobs
     l2_norm = l2_norm_sum ** 0.5
     
-    print("\nFinal Results:")
-    print(f"Average Flow Time: {avg_flow_time}")
-    print(f"L2 Norm: {l2_norm}")
-    
     return avg_flow_time, l2_norm
-
-# if __name__ == "__main__":
-#     # Example jobs: [arrival_time, job_size]
-#     initial_jobs = [
-#         [0, 5],  # Job 1: arrives at time 0, needs 5 time units
-#         [1, 3],  # Job 2: arrives at time 1, needs 3 time units
-#         [2, 4]   # Job 3: arrives at time 2, needs 4 time units
-#     ]
-    
-#     # Start the Round Robin scheduler
-#     avg_flow_time, l2_norm = RR(initial_jobs, time_quantum=2)

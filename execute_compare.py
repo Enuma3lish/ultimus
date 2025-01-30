@@ -126,10 +126,9 @@ def execute_phase2(arrival_rate, bp_parameter, checkpoint):
         else:
             results_df.to_csv(f"final_result_{checkpoint}.csv", mode='a', header=False, index=False)
 
-def random_execute_phase2(arrival_rate, checkpoint):
+def random_execute_phase2(arrival_rate, checkpoint,Csettings: list):
     """Execute phase 2 and calculate ratios for random data"""
     logger.info(f"Starting phase 2 with arrival_rate={arrival_rate}, checkpoint={checkpoint}")
-    Csettings = [1,25,50,100,200,300,400,500,1000,2000,3000,4000,5000,10000]
     for i in Csettings:
         try:
             phase1_row = pd.read_csv(f"{i}_random_phase1_results_{arrival_rate}.csv").iloc[0]
@@ -168,6 +167,6 @@ def execute(arrival_rate, bp_parameter, checkpoint):
     """Main execution function"""
     return execute_phase2(arrival_rate, bp_parameter, int(checkpoint))
 
-def execute_random(arrival_rate, checkpoint):
+def execute_random(arrival_rate, checkpoint,Csettings:list):
     """Main execution function for random data"""
-    return random_execute_phase2(arrival_rate, int(checkpoint))
+    return random_execute_phase2(arrival_rate, int(checkpoint),Csettings)

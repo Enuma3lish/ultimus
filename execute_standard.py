@@ -87,7 +87,6 @@ def execute_phase1(Arrival_rate, bp_parameter):
         csv_filename = f'phase1_results_{Arrival_rate}.csv'
         df.to_csv(csv_filename, index=False)
     
-    return job_list if results else []
 
 def execute_phase1_random(Arrival_rate,random_list):
     results = []
@@ -116,4 +115,3 @@ def execute_phase1_random(Arrival_rate,random_list):
             csv_filename = f'{i}_random_phase1_results_{Arrival_rate}.csv'
             df.to_csv(csv_filename, index=False)
         
-        return job_list if results else []

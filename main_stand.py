@@ -33,7 +33,6 @@ def create_dataset():
     os.makedirs(log_dir, exist_ok=True)
     jsettings = [1,25,50,100,200,300,400,500,1000,2000,3000,4000,5000,10000]
     # Use tqdm for the outer loop to show overall progress
-    results = []
     for i in tqdm.tqdm(Arrival_rate, desc=f"Processing arrival rates", leave=False):
         try:
             execute_standard.execute_phase1(i, bp_parameter)
@@ -41,12 +40,11 @@ def create_dataset():
                 logger.error(f"Error processing arrival rate {i} : {e}")
                 continue
     for i in tqdm.tqdm(Arrival_rate, desc=f"Processing arrival rates", leave=False):
-        for j in tqdm.tqdm(jsettings, desc=f"Random", leave=False):
-            try:
-                execute_standard.execute_phase1_random(i,j)
-            except Exception as e:
-                logger.error(f"Error processing arrival rate {i} and {j} : {e}")
-                continue
+        try:
+            execute_standard.execute_phase1_random(i,jsettings)
+        except Exception as e:
+            logger.error(f"Error processing arrival rate {i} : {e}")
+            continue
 
 if __name__ == "__main__":
     create_dataset()

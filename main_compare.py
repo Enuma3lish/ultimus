@@ -6,6 +6,7 @@ import os
 def create_dataset():
     Arrival_rate = [i for i in range(20, 42, 2)]
     check = [1, 2, 4, 8, 16, 30, 32, 64,128,256]
+    Csettings = [1,25,50,100,200,300,400,500,1000,2000,3000,4000,5000,10000]
     bp_parameter = [
         {"L": 16.772, "H": pow(2, 6)},
         {"L": 7.918, "H": pow(2, 9)},
@@ -29,7 +30,7 @@ def create_dataset():
         for i in tqdm.tqdm(Arrival_rate, desc=f"Processing arrival rates for checkpoint {c}", leave=False):
             try:
                 execute_compare.execute(i, bp_parameter, c)
-                execute_compare.execute_random(i,c)
+                execute_compare.execute_random(i,c,Csettings)
             except Exception:
                 continue
 

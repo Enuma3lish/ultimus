@@ -80,16 +80,3 @@ def read_jobs_from_csv(filename):
     except csv.Error as e:
         print(f"Error reading CSV file: {e}")
     return jobs
-
-def main():
-    filename = 'data/(24, 7.918).csv'  # Replace with your input file name
-    jobs = read_jobs_from_csv(filename)
-    if jobs:
-        avg_flow_time, l2_norm = Srpt(jobs)
-        print(f"Average Flow Time: {avg_flow_time}")
-        print(f"L2 Norm of Flow Time: {l2_norm}")
-    else:
-        print("No jobs were loaded. Please check the input file.")
-
-if __name__ == "__main__":
-    main()

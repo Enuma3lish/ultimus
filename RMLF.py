@@ -88,8 +88,6 @@ def RMLF(jobs: List[Dict[str, Any]]) -> Tuple[float, float]:
                     # Log the final time slot
                     #log_execution(current_time + 1, None)
                     break
-            
-        print(mlf.get_queue_status())
     
     # Calculate metrics
     flow_times = [job['completion_time'] - job['arrival_time'] for job in completed_jobs]

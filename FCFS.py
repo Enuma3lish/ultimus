@@ -82,21 +82,3 @@ def read_jobs_from_csv(filename):
     except csv.Error as e:
         print(f"Error reading CSV file: {e}")
     return jobs
-
-# def main():
-#     filename = 'data/(30, 7.918).csv'
-#     #filename = 'data/(22, 16.772).csv'
-#     jobs = read_jobs_from_csv(filename)
-#     if jobs:
-#         avg_flow_time, l2_norm = Fcfs(jobs)
-#         print(f"Average Flow Time: {avg_flow_time}")
-#         print(f"L2 Norm of Flow Time: {l2_norm}")
-#         # Run the checker
-#         # from Checker import Checker
-#         # result = Checker(filename, 'FCFS_time_slot_log.csv')
-#         # print(f"Checker result: {result}")
-#     else:
-#         print("No jobs were loaded. Please check the input file.")
-
-# if __name__ == "__main__":
-#     main()

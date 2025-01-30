@@ -7,11 +7,6 @@ import logging
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
-
-import csv
-import math
-from SRPT_Selector import select_next_job as srpt_select_next_job
-
 def Srpt(jobs):
     current_time = 0
     completed_jobs = []
@@ -184,10 +179,6 @@ def DYNAMIC(jobs, nJobsPerRound):
                 srpt_avg, srpt_l2 = Srpt(jobs_in_round)
                 fcfs_avg, fcfs_l2 = Fcfs(jobs_in_round)
                 is_srpt_better = srpt_l2 <= fcfs_l2
-                print(f"Checkpoint reached at total of {jobs_pointer} jobs:")
-                print(f"SRPT - L2: {srpt_l2:.2f}")
-                print(f"FCFS - L2: {fcfs_l2:.2f}")
-                print(f"Switching to {'SRPT' if is_srpt_better else 'FCFS'}")
             jobs_in_round = []
             n_arrival_jobs = 0  # Reset the arrival counter
 

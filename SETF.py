@@ -3,15 +3,6 @@ from typing import List, Tuple
 from SETF_Selector import SETFSelector
 
 def Setf(jobs: List[Tuple[float, float]]) -> Tuple[float, float]:
-    """
-    Run the Shortest Elapsed Time First (SETF) scheduling algorithm.
-    
-    Args:
-        jobs: List of tuples (arrival_time, job_size)
-        
-    Returns:
-        Tuple of (average_flow_time, l2_norm_flow_time)
-    """
     current_time = 0
     total_flow_time = 0
     squared_flow_time = 0
