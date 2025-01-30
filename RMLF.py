@@ -29,9 +29,9 @@ def RMLF(jobs: List[Dict[str, Any]]) -> Tuple[float, float]:
         return 0.0, 0.0
 
     # Create log file and write header
-    with open('RMLF_time_slot_log.csv', 'w', newline='') as log_file:
-        log_writer = csv.writer(log_file)
-        log_writer.writerow(['time_slot', 'executed_job_id'])
+    # with open('RMLF_time_slot_log.csv', 'w', newline='') as log_file:
+    #     log_writer = csv.writer(log_file)
+    #     log_writer.writerow(['time_slot', 'executed_job_id'])
 
     def rmlf_selector(mlf: MLF) -> Optional[Job]:
         for queue in mlf.queues:
@@ -42,10 +42,10 @@ def RMLF(jobs: List[Dict[str, Any]]) -> Tuple[float, float]:
                         return job
         return None
 
-    def log_execution(time_slot: int, job_id: Optional[int]):
-        with open('RMLF_time_slot_log.csv', 'a', newline='') as log_file:
-            log_writer = csv.writer(log_file)
-            log_writer.writerow([time_slot, '' if job_id is None else job_id])
+    # def log_execution(time_slot: int, job_id: Optional[int]):
+    #     with open('RMLF_time_slot_log.csv', 'a', newline='') as log_file:
+    #         log_writer = csv.writer(log_file)
+    #         log_writer.writerow([time_slot, '' if job_id is None else job_id])
 
     mlf = MLF(initial_queues=1)
     completed_jobs = []
@@ -71,7 +71,7 @@ def RMLF(jobs: List[Dict[str, Any]]) -> Tuple[float, float]:
         selected_job = rmlf_selector(mlf)
         if selected_job:
             # Log the execution
-            log_execution(current_time, selected_job.id)
+            #log_execution(current_time, selected_job.id)
             
             # Process the job
             mlf.increase(selected_job)   
@@ -86,11 +86,8 @@ def RMLF(jobs: List[Dict[str, Any]]) -> Tuple[float, float]:
                 n_completed_jobs += 1
                 if n_completed_jobs == n_jobs:
                     # Log the final time slot
-                    log_execution(current_time + 1, None)
+                    #log_execution(current_time + 1, None)
                     break
-        else:
-            # Log empty time slot
-            log_execution(current_time, None)
             
         print(mlf.get_queue_status())
     

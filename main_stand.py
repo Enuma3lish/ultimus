@@ -1,4 +1,4 @@
-import execute_phase1
+import execute_standard
 import tqdm
 import pandas as pd
 import logging
@@ -31,14 +31,21 @@ def create_dataset():
     # Create the log directory if it doesn't exist
     log_dir = "log"
     os.makedirs(log_dir, exist_ok=True)
+    jsettings = [1,25,50,100,200,300,400,500,1000,2000,3000,4000,5000,10000]
     # Use tqdm for the outer loop to show overall progress
     results = []
     for i in tqdm.tqdm(Arrival_rate, desc=f"Processing arrival rates", leave=False):
         try:
-            execute_phase1.execute_phase1(i, bp_parameter)
-            execute_phase1.execute_phase1_random(i)
+            execute_standard.execute_phase1(i, bp_parameter)
         except Exception as e:
                 logger.error(f"Error processing arrival rate {i} : {e}")
+                continue
+    for i in tqdm.tqdm(Arrival_rate, desc=f"Processing arrival rates", leave=False):
+        for j in tqdm.tqdm(jsettings, desc=f"Random", leave=False):
+            try:
+                execute_standard.execute_phase1_random(i,j)
+            except Exception as e:
+                logger.error(f"Error processing arrival rate {i} and {j} : {e}")
                 continue
 
 if __name__ == "__main__":

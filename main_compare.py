@@ -1,11 +1,11 @@
-import execute_comp_RDYNAMIC
+import execute_compare
 import tqdm
 import pandas as pd
 import os
 
 def create_dataset():
     Arrival_rate = [i for i in range(20, 42, 2)]
-    check = [1, 2, 4, 8, 16, 30, 32, 64]
+    check = [1, 2, 4, 8, 16, 30, 32, 64,128,256]
     bp_parameter = [
         {"L": 16.772, "H": pow(2, 6)},
         {"L": 7.918, "H": pow(2, 9)},
@@ -26,22 +26,12 @@ def create_dataset():
     os.makedirs("log", exist_ok=True)
 
     for c in tqdm.tqdm(check, desc="Processing checkpoints"):
-        results = []
         for i in tqdm.tqdm(Arrival_rate, desc=f"Processing arrival rates for checkpoint {c}", leave=False):
             try:
-                result = execute_comp_RDYNAMIC.execute(i, bp_parameter, c)
-                execute_comp_RDYNAMIC.execute_random(i,c)
-                results.extend(result)
+                execute_compare.execute(i, bp_parameter, c)
+                execute_compare.execute_random(i,c)
             except Exception:
                 continue
-
-        if results:
-            try:
-                mresults = pd.DataFrame(results)
-                output_file = f"log/result{c}.csv"
-                mresults.to_csv(output_file, index=False)
-            except Exception:
-                print(f"Error saving results for checkpoint {c}")
 
 if __name__ == "__main__":
     create_dataset()

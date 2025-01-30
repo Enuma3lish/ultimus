@@ -92,7 +92,7 @@ def calculate_final_ratios(checkpoint: int) -> None:
     output_file = f"log/final_ratio@{checkpoint}.csv"
     grouped.to_csv(output_file, index=False)
     print(f"Final averaged results saved to {output_file}")
-def RDYNAMIC(jobs: List[Dict[str, Any]], checkpoint: int, arrival_rate: float, prob_greedy: float = 1.0, run_number: int =10) -> Tuple[float, float]:
+def Rdynamic(jobs: List[Dict[str, Any]], checkpoint: int, prob_greedy: float = 1.0) -> Tuple[float, float]:
     if not jobs:
         return 0.0, 0.0
 
