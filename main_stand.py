@@ -31,7 +31,7 @@ def create_dataset():
     # Create the log directory if it doesn't exist
     log_dir = "log"
     os.makedirs(log_dir, exist_ok=True)
-    jsettings = [1,25,50,100,200,300,400,500,1000,2000,3000,4000,5000,10000]
+    jsettings = [1,25,50,100,200,400,1000,2000,4000,10000]
     # Use tqdm for the outer loop to show overall progress
     for i in tqdm.tqdm(Arrival_rate, desc=f"Processing arrival rates", leave=False):
         try:
