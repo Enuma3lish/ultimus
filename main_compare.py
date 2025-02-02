@@ -5,7 +5,7 @@ import os
 
 def create_dataset():
     Arrival_rate = [i for i in range(20, 42, 2)]
-    check = [1, 2, 4, 8, 16, 30, 32, 64,128,256]
+    check = [1, 2, 4, 8, 16, 30, 32, 64,128,256,1024,4096,10000]
     jsettings = [1,25,50,100,200,400,1000,2000,4000,10000]
     bp_parameter = [
         {"L": 16.772, "H": pow(2, 6)},
