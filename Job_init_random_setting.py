@@ -90,6 +90,7 @@ def Save_file(total_jobs, jobs_per_random):
 
 if __name__ == "__main__":
     # Example: 1000 total jobs, with 50 jobs per random selection
-    Csettings = [1,25,50,100,200,300,400,500,1000,2000,3000,4000,5000,10000]
-    for i in Csettings:
-        Save_file(10000, i)
+    jsettings = [1,25,50,100]
+    # 100,200,400,1000,2000,4000,10000]
+    for i in jsettings:
+        Save_file(100, i)
