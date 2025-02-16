@@ -119,7 +119,7 @@ def execute_single_run(algorithm_func, job_list, checkpoint, arrival_rate, run_n
     
     return result
 
-def run_algorithm(algorithm_func, job_list, checkpoint, arrival_rate, num_runs=10, algorithm_name="Algorithm"):
+def run_algorithm(algorithm_func, job_list, checkpoint, arrival_rate, num_runs=3, algorithm_name="Algorithm"):
     """Run an algorithm multiple times and collect results"""
     results = []
     for run_number in range(1, num_runs + 1):

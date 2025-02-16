@@ -1,0 +1,93 @@
+/bin/sh: line 1: 88990 Terminated: 15          nohup python3 main_compare.py > main_compare.log 2>&1
+Starting execution at: 2025-02-09 20:17:48
+main_stand.py completed successfully
+main_compare.py failed with return code 143
+Execution finished at: 2025-02-15 15:56:42
+Processing checkpoints:   0%|          | 0/10 [00:00<?, ?it/s]
+Processing arrival rates for checkpoint 1:   0%|          | 0/11 [00:00<?, ?it/s][A2025-02-15 16:01:17,997 - INFO - Starting phase 2 with arrival_rate=20, checkpoint=1
+2025-02-15 16:01:17,997 - INFO - Number of bp_parameters to process: 14
+2025-02-15 16:01:17,999 - INFO - Processing bp_parameter: {'L': 16.772, 'H': 64}
+2025-02-15 16:01:18,000 - INFO - Starting RDYNAMIC run 1 for arrival rate 20
+2025-02-15 16:01:43,066 - INFO - Starting RDYNAMIC run 2 for arrival rate 20
+2025-02-15 16:02:08,098 - INFO - Starting RDYNAMIC run 3 for arrival rate 20
+2025-02-15 16:02:33,338 - INFO - Starting Dynamic run 1 for arrival rate 20
+2025-02-15 16:05:02,959 - INFO - Starting Dynamic run 2 for arrival rate 20
+2025-02-15 16:07:30,112 - INFO - Starting Dynamic run 3 for arrival rate 20
+2025-02-15 16:09:57,458 - INFO - Processing bp_parameter: {'L': 7.918, 'H': 512}
+2025-02-15 16:09:57,459 - INFO - Starting RDYNAMIC run 1 for arrival rate 20
+2025-02-15 16:10:17,566 - INFO - Starting RDYNAMIC run 2 for arrival rate 20
+2025-02-15 16:10:37,514 - INFO - Starting RDYNAMIC run 3 for arrival rate 20
+2025-02-15 16:10:57,200 - INFO - Starting Dynamic run 1 for arrival rate 20
+2025-02-15 16:13:04,923 - INFO - Starting Dynamic run 2 for arrival rate 20
+2025-02-15 16:47:37,699 - INFO - Starting Dynamic run 3 for arrival rate 20
+2025-02-15 17:21:32,065 - INFO - Processing bp_parameter: {'L': 5.649, 'H': 4096}
+2025-02-15 17:21:32,066 - INFO - Starting RDYNAMIC run 1 for arrival rate 20
+2025-02-15 17:21:37,183 - INFO - Starting RDYNAMIC run 2 for arrival rate 20
+2025-02-15 17:21:42,281 - INFO - Starting RDYNAMIC run 3 for arrival rate 20
+2025-02-15 17:21:47,400 - INFO - Starting Dynamic run 1 for arrival rate 20
+2025-02-15 17:23:45,394 - INFO - Starting Dynamic run 2 for arrival rate 20
+2025-02-15 18:13:23,180 - INFO - Starting Dynamic run 3 for arrival rate 20
+2025-02-15 18:45:54,921 - INFO - Processing bp_parameter: {'L': 4.639, 'H': 32768}
+2025-02-15 18:45:54,923 - INFO - Starting RDYNAMIC run 1 for arrival rate 20
+2025-02-15 18:56:55,038 - INFO - Starting RDYNAMIC run 2 for arrival rate 20
+2025-02-15 18:56:56,046 - INFO - Starting RDYNAMIC run 3 for arrival rate 20
+2025-02-15 18:56:57,043 - INFO - Starting Dynamic run 1 for arrival rate 20
+2025-02-15 19:29:16,698 - INFO - Starting Dynamic run 2 for arrival rate 20
+2025-02-15 19:31:12,878 - INFO - Starting Dynamic run 3 for arrival rate 20
+2025-02-15 19:48:43,816 - INFO - Processing bp_parameter: {'L': 4.073, 'H': 262144}
+2025-02-15 19:48:43,818 - INFO - Starting RDYNAMIC run 1 for arrival rate 20
+2025-02-15 19:48:44,763 - INFO - Starting RDYNAMIC run 2 for arrival rate 20
+2025-02-15 19:48:45,702 - INFO - Starting RDYNAMIC run 3 for arrival rate 20
+2025-02-15 19:48:46,641 - INFO - Starting Dynamic run 1 for arrival rate 20
+2025-02-15 20:30:53,466 - INFO - Starting Dynamic run 2 for arrival rate 20
+2025-02-15 21:05:09,704 - INFO - Starting Dynamic run 3 for arrival rate 20
+2025-02-15 21:32:11,521 - INFO - Processing bp_parameter: {'L': 56.3, 'H': 64}
+2025-02-15 21:32:11,523 - INFO - Starting RDYNAMIC run 1 for arrival rate 20
+2025-02-15 21:49:08,180 - INFO - Starting RDYNAMIC run 2 for arrival rate 20
+2025-02-15 22:16:22,606 - INFO - Starting RDYNAMIC run 3 for arrival rate 20
+2025-02-15 22:34:05,907 - INFO - Starting Dynamic run 1 for arrival rate 20
+2025-02-15 23:51:36,311 - INFO - Starting Dynamic run 2 for arrival rate 20
+2025-02-16 01:08:13,448 - INFO - Starting Dynamic run 3 for arrival rate 20
+2025-02-16 01:42:55,799 - INFO - Processing bp_parameter: {'L': 18.9, 'H': 512}
+2025-02-16 01:42:55,800 - INFO - Starting RDYNAMIC run 1 for arrival rate 20
+2025-02-16 02:17:37,131 - INFO - Starting RDYNAMIC run 2 for arrival rate 20
+2025-02-16 02:36:39,556 - INFO - Starting RDYNAMIC run 3 for arrival rate 20
+2025-02-16 03:10:50,188 - INFO - Starting Dynamic run 1 for arrival rate 20
+2025-02-16 03:55:43,047 - INFO - Starting Dynamic run 2 for arrival rate 20
+2025-02-16 04:57:09,018 - INFO - Starting Dynamic run 3 for arrival rate 20
+2025-02-16 05:39:52,590 - INFO - Processing bp_parameter: {'L': 12.4, 'H': 4096}
+2025-02-16 05:39:52,592 - INFO - Starting RDYNAMIC run 1 for arrival rate 20
+2025-02-16 06:12:23,336 - INFO - Starting RDYNAMIC run 2 for arrival rate 20
+2025-02-16 06:24:36,380 - INFO - Starting RDYNAMIC run 3 for arrival rate 20
+2025-02-16 06:43:15,365 - INFO - Starting Dynamic run 1 for arrival rate 20
+2025-02-16 07:20:22,713 - INFO - Starting Dynamic run 2 for arrival rate 20
+2025-02-16 08:00:06,639 - INFO - Starting Dynamic run 3 for arrival rate 20
+2025-02-16 08:26:27,638 - INFO - Processing bp_parameter: {'L': 9.8, 'H': 32768}
+2025-02-16 08:26:27,640 - INFO - Starting RDYNAMIC run 1 for arrival rate 20
+2025-02-16 08:42:52,782 - INFO - Starting RDYNAMIC run 2 for arrival rate 20
+2025-02-16 08:43:30,928 - INFO - Starting RDYNAMIC run 3 for arrival rate 20
+2025-02-16 09:00:48,611 - INFO - Starting Dynamic run 1 for arrival rate 20
+2025-02-16 09:27:52,040 - INFO - Starting Dynamic run 2 for arrival rate 20
+2025-02-16 10:17:52,217 - INFO - Starting Dynamic run 3 for arrival rate 20
+2025-02-16 10:44:50,681 - INFO - Processing bp_parameter: {'L': 8.5, 'H': 262144}
+2025-02-16 10:44:50,682 - INFO - Starting RDYNAMIC run 1 for arrival rate 20
+2025-02-16 11:00:49,743 - INFO - Starting RDYNAMIC run 2 for arrival rate 20
+2025-02-16 11:18:24,000 - INFO - Starting RDYNAMIC run 3 for arrival rate 20
+2025-02-16 11:19:00,190 - INFO - Starting Dynamic run 1 for arrival rate 20
+2025-02-16 12:01:09,315 - INFO - Starting Dynamic run 2 for arrival rate 20
+2025-02-16 12:03:13,678 - INFO - Starting Dynamic run 3 for arrival rate 20
+2025-02-16 12:30:31,668 - INFO - Processing bp_parameter: {'L': 32.3, 'H': 512}
+2025-02-16 12:30:31,669 - INFO - Starting RDYNAMIC run 1 for arrival rate 20
+2025-02-16 13:05:16,455 - INFO - Starting RDYNAMIC run 2 for arrival rate 20
+2025-02-16 13:08:02,891 - INFO - Starting RDYNAMIC run 3 for arrival rate 20
+2025-02-16 13:10:52,838 - INFO - Starting Dynamic run 1 for arrival rate 20
+2025-02-16 13:15:13,127 - INFO - Starting Dynamic run 2 for arrival rate 20
+2025-02-16 13:19:35,897 - INFO - Starting Dynamic run 3 for arrival rate 20
+2025-02-16 13:23:59,925 - INFO - Processing bp_parameter: {'L': 19.7, 'H': 4096}
+2025-02-16 13:23:59,927 - INFO - Starting RDYNAMIC run 1 for arrival rate 20
+2025-02-16 13:26:04,083 - INFO - Starting RDYNAMIC run 2 for arrival rate 20
+2025-02-16 13:28:08,623 - INFO - Starting RDYNAMIC run 3 for arrival rate 20
+2025-02-16 13:30:13,277 - INFO - Starting Dynamic run 1 for arrival rate 20
+2025-02-16 13:33:29,720 - INFO - Starting Dynamic run 2 for arrival rate 20
+/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/multiprocessing/resource_tracker.py:276: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown: {'/mp-qp2ar87q'}
+  warnings.warn(
