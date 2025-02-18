@@ -217,53 +217,84 @@ def execute_phase2(arrival_rate, bp_parameter, checkpoint):
             mode='a'
         )
 
+def process_single_setting(args):
+    """Process a single random setting"""
+    arrival_rate, checkpoint, setting = args
+    
+    # Read phase1 results
+    phase1_row = FileHandler.read_phase1_results(arrival_rate, is_random=True, prefix=setting)
+    if phase1_row is None:
+        return None
+
+    # Get job list
+    source_folder = f'{setting}_random_data'
+    job_list = Read_csv.Read_csv(f'{source_folder}/inter_arrival_{arrival_rate}.csv')
+
+    # Run algorithms
+    rdynamic_l2_norms = run_algorithm(
+        Rdynamic.Rdynamic, 
+        job_list, 
+        checkpoint, 
+        arrival_rate,
+        algorithm_name="RDYNAMIC"
+    )
+    dynamic_l2_norms = run_algorithm(
+        Dynamic.DYNAMIC, 
+        job_list, 
+        checkpoint, 
+        arrival_rate,
+        algorithm_name="Dynamic"
+    )
+
+    if rdynamic_l2_norms and dynamic_l2_norms:
+        rdynamic_l2 = np.mean(rdynamic_l2_norms)
+        dynamic_l2 = np.mean(dynamic_l2_norms)
+    
+        # For random data, we don't include bp_parameter
+        result_row = {
+            'arrival_rate': arrival_rate,
+            **calculate_ratios(rdynamic_l2, dynamic_l2, phase1_row.iloc[0])
+        }
+    
+        results_df = pd.DataFrame([result_row])
+        FileHandler.save_results(
+            results_df,
+            source_folder,
+            checkpoint,
+            mode='a'
+        )
+        return True
+    return None
+
 def random_execute_phase2(arrival_rate, checkpoint, Csettings: list):
-    """Execute phase 2 and calculate ratios for random data"""
-    logger.info(f"Starting random phase 2 with arrival_rate={arrival_rate}, checkpoint={checkpoint}")
+    """Execute phase 2 and calculate ratios for random data in parallel"""
+    logger.info(f"Starting parallel random phase 2 with arrival_rate={arrival_rate}, checkpoint={checkpoint}")
     
-    for i in Csettings:
-        # Read phase1 results
-        phase1_row = FileHandler.read_phase1_results(arrival_rate, is_random=True, prefix=i)
-        if phase1_row is None:
-            continue
-
-        # Get job list
-        source_folder = f'{i}_random_data'
-        job_list = Read_csv.Read_csv(f'{source_folder}/inter_arrival_{arrival_rate}.csv')
+    # Create a pool of workers
+    num_cores = multiprocessing.cpu_count()
+    pool = multiprocessing.Pool(processes=min(len(Csettings), num_cores))
     
-        # Run algorithms
-        rdynamic_l2_norms = run_algorithm(
-            Rdynamic.Rdynamic, 
-            job_list, 
-            checkpoint, 
-            arrival_rate,
-            algorithm_name="RDYNAMIC"
-        )
-        dynamic_l2_norms = run_algorithm(
-            Dynamic.DYNAMIC, 
-            job_list, 
-            checkpoint, 
-            arrival_rate,
-            algorithm_name="Dynamic"
-        )
-
-        if rdynamic_l2_norms and dynamic_l2_norms:
-            rdynamic_l2 = np.mean(rdynamic_l2_norms)
-            dynamic_l2 = np.mean(dynamic_l2_norms)
+    try:
+        # Prepare arguments for each setting
+        args = [(arrival_rate, checkpoint, setting) for setting in Csettings]
         
-            # For random data, we don't include bp_parameter
-            result_row = {
-                'arrival_rate': arrival_rate,
-                **calculate_ratios(rdynamic_l2, dynamic_l2, phase1_row.iloc[0])
-            }
+        # Execute processes in parallel
+        results = pool.map(process_single_setting, args)
         
-            results_df = pd.DataFrame([result_row])
-            FileHandler.save_results(
-                results_df,
-                source_folder,
-                checkpoint,
-                mode='a'
-            )
+        # Close the pool and wait for all processes to complete
+        pool.close()
+        pool.join()
+        
+        # Count successful executions
+        successful = sum(1 for r in results if r is not None)
+        logger.info(f"Completed {successful}/{len(Csettings)} settings successfully")
+        
+    except Exception as e:
+        logger.error(f"Error in parallel execution: {e}")
+        pool.terminate()
+        raise
+    finally:
+        pool.join()
 
 def execute(arrival_rate, bp_parameter, checkpoint):
     """Main execution function"""
