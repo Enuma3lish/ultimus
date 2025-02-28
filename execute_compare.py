@@ -1,4 +1,5 @@
-import multiprocessing
+import multiprocessing as mp
+from multiprocessing import Manager
 import Read_csv
 import Rdynamic
 import Dynamic
@@ -15,73 +16,86 @@ from pathlib import Path
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-class FileHandler:
-    """Class to handle all file operations"""
+class SynchronizedFileHandler:
+    """Thread-safe file handler for parallel processing"""
+    def __init__(self):
+        manager = Manager()
+        self._lock = manager.Lock()
+    
     @staticmethod
     def ensure_directory_exists(directory_path):
         """Create directory if it doesn't exist"""
         Path(directory_path).mkdir(parents=True, exist_ok=True)
     
-    @staticmethod
-    def save_results(results_df, source_folder, checkpoint, mode='w'):
-        """Save results to CSV file"""
-        try:
-            # Determine result folder name based on source folder
-            if source_folder == 'data':
-                result_folder = 'result'
-                result_file = 'all_result.csv'
-            else:
-                # For random data (e.g., '1_random_data')
-                prefix = source_folder.split('_')[0]
-                result_folder = f'{prefix}_random_result'
-                result_file = f'all_result_{prefix}.csv'
-            
-            # Create result folder
-            FileHandler.ensure_directory_exists(result_folder)
-            
-            # Save checkpoint specific results
-            checkpoint_file = os.path.join(result_folder, f"result_{checkpoint}.csv")
-            if not os.path.exists(checkpoint_file):
-                results_df.to_csv(checkpoint_file, index=False)
-            else:
-                existing_df = pd.read_csv(checkpoint_file)
-                existing_df = existing_df[~existing_df['arrival_rate'].isin(results_df['arrival_rate'])]
-                combined_df = pd.concat([existing_df, results_df], ignore_index=True)
-                combined_df = combined_df.sort_values('arrival_rate')
-                combined_df.to_csv(checkpoint_file, index=False)
-            
-            # Update combined results file
-            combined_file = os.path.join(result_folder, result_file)
-            if os.path.exists(combined_file):
-                all_results_df = pd.read_csv(combined_file)
-                all_results_df = all_results_df[~all_results_df['arrival_rate'].isin(results_df['arrival_rate'])]
-                all_results_df = pd.concat([all_results_df, results_df], ignore_index=True)
-            else:
-                all_results_df = results_df.copy()
-            
-            all_results_df = all_results_df.sort_values('arrival_rate')
-            all_results_df.to_csv(combined_file, index=False)
-            
-            logger.info(f"Results saved to checkpoint file: {checkpoint_file}")
-            logger.info(f"Results saved to combined file: {combined_file}")
-            return True
-            
-        except Exception as e:
-            logger.error(f"Error saving results: {e}")
-            return False
+    def save_results(self, results_df, source_folder, checkpoint, mode='w'):
+        """Thread-safe method to save results"""
+        with self._lock:
+            try:
+                # Determine result folder name based on source folder
+                if source_folder == 'data':
+                    result_folder = 'result'
+                    result_file = 'all_result.csv'
+                else:
+                    prefix = source_folder.split('_')[0]
+                    result_folder = f'{prefix}_random_result'
+                    result_file = f'all_result_{prefix}.csv'
+                
+                # Create result folder
+                self.ensure_directory_exists(result_folder)
+                
+                # Save checkpoint specific results
+                checkpoint_file = os.path.join(result_folder, f"result_{checkpoint}.csv")
+                temp_checkpoint = f"{checkpoint_file}.tmp"
+                
+                if os.path.exists(checkpoint_file):
+                    existing_df = pd.read_csv(checkpoint_file)
+                    existing_df = existing_df[~existing_df['arrival_rate'].isin(results_df['arrival_rate'])]
+                    combined_df = pd.concat([existing_df, results_df], ignore_index=True)
+                    combined_df = combined_df.sort_values('arrival_rate')
+                else:
+                    combined_df = results_df.copy()
+                
+                # Atomic write to checkpoint file
+                combined_df.to_csv(temp_checkpoint, index=False)
+                os.replace(temp_checkpoint, checkpoint_file)
+                
+                # Update combined results file
+                combined_file = os.path.join(result_folder, result_file)
+                temp_combined = f"{combined_file}.tmp"
+                
+                if os.path.exists(combined_file):
+                    all_results_df = pd.read_csv(combined_file)
+                    all_results_df = all_results_df[~all_results_df['arrival_rate'].isin(results_df['arrival_rate'])]
+                    all_results_df = pd.concat([all_results_df, results_df], ignore_index=True)
+                else:
+                    all_results_df = results_df.copy()
+                
+                all_results_df = all_results_df.sort_values('arrival_rate')
+                
+                # Atomic write to combined file
+                all_results_df.to_csv(temp_combined, index=False)
+                os.replace(temp_combined, combined_file)
+                
+                logger.info(f"Results saved to checkpoint file: {checkpoint_file}")
+                logger.info(f"Results saved to combined file: {combined_file}")
+                return True
+                
+            except Exception as e:
+                logger.error(f"Error saving results: {e}")
+                return False
     
-    @staticmethod
-    def read_phase1_results(arrival_rate, is_random=False, prefix=''):
-        """Read phase1 results from CSV"""
-        try:
-            file_name = f"{prefix}_random_phase1_results_{arrival_rate}.csv" if is_random else f"phase1_results_{arrival_rate}.csv"
-            df = pd.read_csv(file_name)
-            if not is_random:
-                df['bp_parameter'] = df['bp_parameter'].apply(ast.literal_eval)
-            return df
-        except Exception as e:
-            logger.error(f"Error reading phase1 results: {e}")
-            return None
+    def read_phase1_results(self, arrival_rate, is_random=False, prefix=''):
+        """Thread-safe method to read phase1 results"""
+        with self._lock:
+            try:
+                file_name = f"{prefix}_random_phase1_results_{arrival_rate}.csv" if is_random else f"phase1_results_{arrival_rate}.csv"
+                df = pd.read_csv(file_name)
+                if not is_random:
+                    df['bp_parameter'] = df['bp_parameter'].apply(ast.literal_eval)
+                return df
+            except Exception as e:
+                logger.error(f"Error reading phase1 results: {e}")
+                return None
 
 def convert_jobs(jobs, include_index=False, as_list=False):
     """Convert jobs to appropriate format"""
@@ -147,13 +161,13 @@ def calculate_ratios(rdynamic_l2, dynamic_l2, phase1_row):
         'Rdynamic/Dynamic_ratio': rdynamic_l2 / dynamic_l2
     }
 
-def execute_phase2(arrival_rate, bp_parameter, checkpoint):
+def execute_phase2(arrival_rate, bp_parameter, checkpoint, file_handler):
     """Execute phase 2 and calculate ratios"""
     logger.info(f"Starting phase 2 with arrival_rate={arrival_rate}, checkpoint={checkpoint}")
     logger.info(f"Number of bp_parameters to process: {len(bp_parameter)}")
     
     # Read phase1 results
-    phase1_df = FileHandler.read_phase1_results(arrival_rate)
+    phase1_df = file_handler.read_phase1_results(arrival_rate)
     if phase1_df is None:
         return None
 
@@ -210,7 +224,7 @@ def execute_phase2(arrival_rate, bp_parameter, checkpoint):
             'Rdynamic/Dynamic_ratio'
         ]
         results_df = results_df[column_order]
-        FileHandler.save_results(
+        file_handler.save_results(
             results_df, 
             'data',  # Source folder
             checkpoint,
@@ -218,11 +232,11 @@ def execute_phase2(arrival_rate, bp_parameter, checkpoint):
         )
 
 def process_single_setting(args):
-    """Process a single random setting"""
-    arrival_rate, checkpoint, setting = args
+    """Process a single random setting with synchronized file handling"""
+    arrival_rate, checkpoint, setting, file_handler = args
     
     # Read phase1 results
-    phase1_row = FileHandler.read_phase1_results(arrival_rate, is_random=True, prefix=setting)
+    phase1_row = file_handler.read_phase1_results(arrival_rate, is_random=True, prefix=setting)
     if phase1_row is None:
         return None
 
@@ -257,26 +271,28 @@ def process_single_setting(args):
         }
     
         results_df = pd.DataFrame([result_row])
-        FileHandler.save_results(
+        return file_handler.save_results(
             results_df,
             source_folder,
             checkpoint,
             mode='a'
         )
-        return True
     return None
 
 def random_execute_phase2(arrival_rate, checkpoint, Csettings: list):
     """Execute phase 2 and calculate ratios for random data in parallel"""
     logger.info(f"Starting parallel random phase 2 with arrival_rate={arrival_rate}, checkpoint={checkpoint}")
     
+    # Create shared file handler before creating the pool
+    file_handler = SynchronizedFileHandler()
+    
     # Create a pool of workers
-    num_cores = multiprocessing.cpu_count()
-    pool = multiprocessing.Pool(processes=min(len(Csettings), num_cores))
+    num_cores = mp.cpu_count()
+    pool = mp.Pool(processes=min(len(Csettings), num_cores))
     
     try:
-        # Prepare arguments for each setting
-        args = [(arrival_rate, checkpoint, setting) for setting in Csettings]
+        # Include file_handler in arguments
+        args = [(arrival_rate, checkpoint, setting, file_handler) for setting in Csettings]
         
         # Execute processes in parallel
         results = pool.map(process_single_setting, args)
@@ -286,7 +302,7 @@ def random_execute_phase2(arrival_rate, checkpoint, Csettings: list):
         pool.join()
         
         # Count successful executions
-        successful = sum(1 for r in results if r is not None)
+        successful = sum(1 for r in results if r)
         logger.info(f"Completed {successful}/{len(Csettings)} settings successfully")
         
     except Exception as e:
@@ -298,7 +314,8 @@ def random_execute_phase2(arrival_rate, checkpoint, Csettings: list):
 
 def execute(arrival_rate, bp_parameter, checkpoint):
     """Main execution function"""
-    return execute_phase2(arrival_rate, bp_parameter, int(checkpoint))
+    file_handler = SynchronizedFileHandler()
+    return execute_phase2(arrival_rate, bp_parameter, int(checkpoint), file_handler)
 
 def execute_random(arrival_rate, checkpoint, Csettings: list):
     """Main execution function for random data"""
