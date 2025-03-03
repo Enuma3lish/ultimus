@@ -1,4 +1,3 @@
-# MLF.py
 from dataclasses import dataclass
 from typing import Optional, List, Set
 import math
@@ -64,11 +63,12 @@ class MLFQueue:
 class MLF:
     TAU = 12
     
-    def __init__(self, initial_queues: int = 1):
+    def __init__(self, initial_queues: int = 1, first_level_quantum: float = 2.0):
         self.queues = [MLFQueue(level) for level in range(initial_queues)]
         self.active_jobs: Set[Job] = set()
         self.finished_jobs: List[Job] = []
         self.total_jobs = 0
+        self.first_level_quantum = first_level_quantum
     
     def insert(self, job: Job):
         """Insert job into lowest queue"""
@@ -119,8 +119,16 @@ class MLF:
         return -math.log(1 - random.random()) / (self.TAU * math.log(job_index))
     
     def calculate_target(self, job: Job) -> float:
-        base_target = max(1, 2 - job.beta)
-        return 2 ** job.current_queue * base_target
+        if job.current_queue == 0:
+            base_target = max(1, self.first_level_quantum - job.beta)
+        else:
+            base_target = max(1, 2 - job.beta)
+        
+        # Apply exponential growth for lower priority queues
+        if job.current_queue == 0:
+            return base_target
+        else:
+            return 2 ** (job.current_queue - 1) * base_target * 2
     
     def get_queue_status(self) -> str:
         status = []
