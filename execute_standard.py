@@ -4,6 +4,7 @@ import RR, SRPT, SETF, FCFS, RMLF
 import time
 import pandas as pd
 import numpy as np
+import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from concurrent.futures import TimeoutError
 
@@ -57,78 +58,120 @@ def run_all_algorithms_parallel(job_list, algorithms):
     return results if len(results) == len(algorithms) else None
 
 def execute_phase1(Arrival_rate, bp_parameter):
-    """Execute phase 1 for normal data"""
-    results = []
-    for i in bp_parameter:
-        try:
-            # Read job list
-            job_list = Read_csv.Read_csv('data/'+str((Arrival_rate,i["L"]))+".csv")
-            if not job_list:
+    """Execute phase 1 for normal data with modified path structure"""
+    avg_statuses = ["avg_30", "avg_60", "avg_90"]
+    
+    for avg_status in avg_statuses:
+        results = []
+        for i in bp_parameter:
+            try:
+                # Modified file path to include avg_status directory
+                file_path = f'data/{avg_status}/({Arrival_rate}, {i["L"]}).csv'
+                
+                # Read job list
+                job_list = Read_csv.Read_csv(file_path)
+                if not job_list:
+                    continue
+
+                # Set up algorithms
+                algorithms = [
+                    (RR.RR, job_list.copy(), False, True), # type: ignore
+                    (SRPT.Srpt, job_list.copy(), False, False),
+                    (SETF.Setf, job_list.copy(), False, True),
+                    (FCFS.Fcfs, job_list.copy(), False, False),
+                    (RMLF.RMLF, job_list.copy(), True, False)
+                ]
+                
+                # Run algorithms and collect results
+                algorithm_results = run_all_algorithms_parallel(job_list, algorithms)
+                if algorithm_results and all(v is not None for v in algorithm_results.values()):
+                    results.append({
+                        "arrival_rate": Arrival_rate,
+                        "bp_parameter": i["L"],  # Store just the L value for cleaner data
+                        "RR_L2_Norm": algorithm_results['RR'],
+                        "SRPT_L2_Norm": algorithm_results['Srpt'],
+                        "SETF_L2_Norm": algorithm_results['Setf'],
+                        "FCFS_L2_Norm": algorithm_results['Fcfs'],
+                        "RMLF_L2_Norm": algorithm_results['RMLF']
+                    })
+            except Exception as e:
+                print(f"Error processing {file_path}: {str(e)}")
                 continue
 
-            # Set up algorithms
-            algorithms = [
-                (RR.RR, job_list.copy(), False, True),
-                (SRPT.Srpt, job_list.copy(), False, False),
-                (SETF.Setf, job_list.copy(), False, True),
-                (FCFS.Fcfs, job_list.copy(), False, False),
-                (RMLF.RMLF, job_list.copy(), True, False)
-            ]
+        # Save results
+        if results:
+            # Create directory if it doesn't exist
+            os.makedirs('phase1', exist_ok=True)
             
-            # Run algorithms and collect results
-            algorithm_results = run_all_algorithms_parallel(job_list, algorithms)
-            if algorithm_results and all(v is not None for v in algorithm_results.values()):
-                results.append({
-                    "arrival_rate": Arrival_rate,
-                    "bp_parameter": i,
-                    "RR_L2_Norm": algorithm_results['RR'],
-                    "SRPT_L2_Norm": algorithm_results['Srpt'],
-                    "SETF_L2_Norm": algorithm_results['Setf'],
-                    "FCFS_L2_Norm": algorithm_results['Fcfs'],
-                    "RMLF_L2_Norm": algorithm_results['RMLF']
-                })
-        except:
-            continue
+            df = pd.DataFrame(results)
+            csv_filename = f'phase1/phase1_results_{avg_status}_{Arrival_rate}.csv'
+            df.to_csv(csv_filename, index=False)
 
-    # Save results
-    if results:
-        df = pd.DataFrame(results)
-        csv_filename = f'phase1_results_{Arrival_rate}.csv'
-        df.to_csv(csv_filename, index=False)
-
-def execute_phase1_random(Arrival_rate, random_list):
-    """Execute phase 1 for random data"""
-    for i in random_list:
-        # Reset results for each random list item
-        results = []
+def execute_phase1_random(Arrival_rates):
+    """
+    Execute phase 1 for frequency-based random data, combining results from 
+    the same frequency but different arrival times
+    
+    Args:
+        Arrival_rates: List of arrival rates to process
+    """
+    # Frequency folders from 2^0 to 2^10
+    freq_folders = [f"freq_{2**i}" for i in range(11)]
+    
+    # Dictionary to store results for each frequency
+    freq_results = {freq: [] for freq in freq_folders}
+    
+    # Process each frequency folder
+    for freq_folder in freq_folders:
+        print(f"Processing {freq_folder}...")
         
-        # Read job list
-        job_list = Read_csv.Read_csv(f'{i}_random_data/inter_arrival_{Arrival_rate}.csv')
-        
-        # Set up algorithms
-        algorithms = [
-            (RR.RR, job_list.copy(), False, True),
-            (SRPT.Srpt, job_list.copy(), False, False),
-            (SETF.Setf, job_list.copy(), False, True),
-            (FCFS.Fcfs, job_list.copy(), False, False),
-            (RMLF.RMLF, job_list.copy(), True, False)
-        ]
-        
-        # Run algorithms and collect results
-        algorithm_results = run_all_algorithms_parallel(job_list, algorithms)
-        if algorithm_results and all(v is not None for v in algorithm_results.values()):
-            result_row = {
-                "arrival_rate": Arrival_rate,
-                "RR_L2_Norm": algorithm_results['RR'],
-                "SRPT_L2_Norm": algorithm_results['Srpt'],
-                "SETF_L2_Norm": algorithm_results['Setf'],
-                "FCFS_L2_Norm": algorithm_results['Fcfs'],
-                "RMLF_L2_Norm": algorithm_results['RMLF']
-            }
-            results.append(result_row)
+        # Process each arrival rate for this frequency
+        for Arrival_rate in Arrival_rates:
+            try:
+                # Modified file path to include freq folder
+                file_path = f'data/{freq_folder}/({Arrival_rate}).csv'
+                
+                # Read job list
+                job_list = Read_csv.Read_csv(file_path)
+                if not job_list:
+                    print(f"No data found for {file_path}")
+                    continue
+                
+                # Set up algorithms
+                algorithms = [
+                    (RR.RR, job_list.copy(), False, True),
+                    (SRPT.Srpt, job_list.copy(), False, False),
+                    (SETF.Setf, job_list.copy(), False, True),
+                    (FCFS.Fcfs, job_list.copy(), False, False),
+                    (RMLF.RMLF, job_list.copy(), True, False)
+                ]
+                
+                # Run algorithms and collect results
+                algorithm_results = run_all_algorithms_parallel(job_list, algorithms)
+                if algorithm_results and all(v is not None for v in algorithm_results.values()):
+                    result_row = {
+                        "arrival_rate": Arrival_rate,
+                        "RR_L2_Norm": algorithm_results['RR'],
+                        "SRPT_L2_Norm": algorithm_results['Srpt'],
+                        "SETF_L2_Norm": algorithm_results['Setf'],
+                        "FCFS_L2_Norm": algorithm_results['Fcfs'],
+                        "RMLF_L2_Norm": algorithm_results['RMLF']
+                    }
+                    
+                    # Add result to the corresponding frequency list
+                    freq_results[freq_folder].append(result_row)
+                    print(f"Successfully processed {file_path}")
+            except Exception as e:
+                print(f"Error processing {file_path}: {str(e)}")
+                continue
+    
+    # Save combined results for each frequency
+    for freq_folder, results in freq_results.items():
+        if results:
+            # Create directory if it doesn't exist
+            os.makedirs('freq', exist_ok=True)
             
-            # Create and save DataFrame immediately after getting results
-            if results:
-                df = pd.DataFrame(results)
-                csv_filename = f'{i}_random_phase1_results_{Arrival_rate}.csv'
-                df.to_csv(csv_filename, index=False)
+            df = pd.DataFrame(results)
+            csv_filename = f'freq/{freq_folder}_combined_results.csv'
+            df.to_csv(csv_filename, index=False)
+            print(f"Saved combined results for {freq_folder} with {len(results)} arrival rates")
