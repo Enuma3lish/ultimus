@@ -87,7 +87,7 @@ def execute_phase1(Arrival_rate, bp_parameter):
                 if algorithm_results and all(v is not None for v in algorithm_results.values()):
                     results.append({
                         "arrival_rate": Arrival_rate,
-                        "bp_parameter": i["L"],  # Store just the L value for cleaner data
+                        "bp_parameter": {"L": i["L"], "H": i["H"]},  # Include both L and H values
                         "RR_L2_Norm": algorithm_results['RR'],
                         "SRPT_L2_Norm": algorithm_results['Srpt'],
                         "SETF_L2_Norm": algorithm_results['Setf'],
@@ -116,7 +116,7 @@ def execute_phase1_random(Arrival_rates):
         Arrival_rates: List of arrival rates to process
     """
     # Frequency folders from 2^0 to 2^10
-    freq_folders = [f"freq_{2**i}" for i in range(11)]
+    freq_folders = [f"freq_{i}" for i in [1,10,100,500,1000,10000]]
     
     # Dictionary to store results for each frequency
     freq_results = {freq: [] for freq in freq_folders}

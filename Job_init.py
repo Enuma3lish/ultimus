@@ -104,9 +104,9 @@ def Save_file(num_jobs):
     os.makedirs("data", exist_ok=True)
     
     # Create frequency folders (2^0 to 2^10)
-    for i in range(11):
-        frequency = 2**i
-        freq_folder = f"data/freq_{frequency}"
+    folder_name = [1,10,100,500,1000,10000]
+    for i in folder_name:
+        freq_folder = f"data/freq_{i}"
         os.makedirs(freq_folder, exist_ok=True)
     
     # Process normal parameter sets (30, 60, 90)
@@ -132,16 +132,17 @@ def Save_file(num_jobs):
         # Save to random folder
         filename = f"data/random/({avg_inter_arrival}).csv"
         Write_csv.Write_raw(filename, job_list)
-        
+        folder_name = [1,10,100,500,1000,10000]
+        for i in folder_name:
+            freq_folder = f"data/freq_{i}"
+            os.makedirs(freq_folder, exist_ok=True)
         # Also save to each frequency folder
-        for i in range(11):
-            frequency = 2**i
             # Create a copy of the job list that you can modify for each frequency
             freq_job_list = job_list.copy()
             # You might want to adjust the job list based on frequency here
             # For now, just saving the same job list to each frequency folder
-            filename = f"data/freq_{frequency}/({avg_inter_arrival}).csv"
+            filename = f"data/freq_{i}/({avg_inter_arrival}).csv"
             Write_csv.Write_raw(filename, freq_job_list)
 
 if __name__ == "__main__":
-    Save_file(1000)
+    Save_file(10000)
