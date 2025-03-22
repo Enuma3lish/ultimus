@@ -1,7 +1,7 @@
 import multiprocessing as mp
 from multiprocessing import Manager
 import Read_csv
-import Rdynamic_sqrt_6, Rdynamic_sqrt_8, Rdynamic_sqrt_10
+import Rdynamic_sqrt_6, Rdynamic_sqrt_8, Rdynamic_sqrt_10, Rdynamic_sqrt_2
 import Dynamic
 import logging
 import time
@@ -25,6 +25,7 @@ PROCESS_TIMEOUT = 600    # 10 minutes timeout for each process
 
 # Configurable checkpoints (can be modified by the caller)
 CHECKPOINTS = {
+    "RDYNAMIC_SQRT_2": 20,  # Added checkpoint for Rdynamic_sqrt_2
     "RDYNAMIC_SQRT_6": 60,
     "RDYNAMIC_SQRT_8": 80,
     "RDYNAMIC_SQRT_10": 100,
@@ -230,9 +231,19 @@ def run_algorithm(algorithm_func, job_list, checkpoint, arrival_rate, num_runs=3
             results.append(result[1])  # Append L2 norm
     return results if results else None
 
-def calculate_ratios(rdynamic_sqrt_6_l2, rdynamic_sqrt_8_l2, rdynamic_sqrt_10_l2, dynamic_l2, phase1_row):
+def calculate_ratios(rdynamic_sqrt_2_l2, rdynamic_sqrt_6_l2, rdynamic_sqrt_8_l2, rdynamic_sqrt_10_l2, dynamic_l2, phase1_row):
     """Calculate performance ratios between all algorithms"""
     ratios = {}
+    
+    # Rdynamic_sqrt_2 ratios
+    ratios.update({
+        'Rdynamic_sqrt_2/RR_ratio': rdynamic_sqrt_2_l2 / phase1_row['RR_L2_Norm'],
+        'Rdynamic_sqrt_2/SRPT_ratio': rdynamic_sqrt_2_l2 / phase1_row['SRPT_L2_Norm'],
+        'Rdynamic_sqrt_2/SETF_ratio': rdynamic_sqrt_2_l2 / phase1_row['SETF_L2_Norm'],
+        'Rdynamic_sqrt_2/FCFS_ratio': rdynamic_sqrt_2_l2 / phase1_row['FCFS_L2_Norm'],
+        'Rdynamic_sqrt_2/RMLF_ratio': rdynamic_sqrt_2_l2 / phase1_row['RMLF_L2_Norm'],
+        'Rdynamic_sqrt_2/Dynamic_ratio': rdynamic_sqrt_2_l2 / dynamic_l2
+    })
     
     # Rdynamic_sqrt_6 ratios
     ratios.update({
@@ -271,6 +282,9 @@ def calculate_ratios(rdynamic_sqrt_6_l2, rdynamic_sqrt_8_l2, rdynamic_sqrt_10_l2
     
     # Comparisons between Rdynamic variants
     ratios.update({
+        'Rdynamic_sqrt_2/Rdynamic_sqrt_6_ratio': rdynamic_sqrt_2_l2 / rdynamic_sqrt_6_l2,
+        'Rdynamic_sqrt_2/Rdynamic_sqrt_8_ratio': rdynamic_sqrt_2_l2 / rdynamic_sqrt_8_l2,
+        'Rdynamic_sqrt_2/Rdynamic_sqrt_10_ratio': rdynamic_sqrt_2_l2 / rdynamic_sqrt_10_l2,
         'Rdynamic_sqrt_6/Rdynamic_sqrt_8_ratio': rdynamic_sqrt_6_l2 / rdynamic_sqrt_8_l2,
         'Rdynamic_sqrt_6/Rdynamic_sqrt_10_ratio': rdynamic_sqrt_6_l2 / rdynamic_sqrt_10_l2,
         'Rdynamic_sqrt_8/Rdynamic_sqrt_10_ratio': rdynamic_sqrt_8_l2 / rdynamic_sqrt_10_l2
@@ -278,6 +292,7 @@ def calculate_ratios(rdynamic_sqrt_6_l2, rdynamic_sqrt_8_l2, rdynamic_sqrt_10_l2
     
     # Add checkpoint value to results
     ratios.update({
+        'Rdynamic_sqrt_2_checkpoint': CHECKPOINTS["RDYNAMIC_SQRT_2"],
         'Rdynamic_sqrt_6_checkpoint': CHECKPOINTS["RDYNAMIC_SQRT_6"],
         'Rdynamic_sqrt_8_checkpoint': CHECKPOINTS["RDYNAMIC_SQRT_8"],
         'Rdynamic_sqrt_10_checkpoint': CHECKPOINTS["RDYNAMIC_SQRT_10"],
@@ -286,12 +301,13 @@ def calculate_ratios(rdynamic_sqrt_6_l2, rdynamic_sqrt_8_l2, rdynamic_sqrt_10_l2
     
     return ratios
 
-def calculate_ratios_without_phase1(rdynamic_sqrt_6_l2, rdynamic_sqrt_8_l2, rdynamic_sqrt_10_l2, dynamic_l2):
+def calculate_ratios_without_phase1(rdynamic_sqrt_2_l2, rdynamic_sqrt_6_l2, rdynamic_sqrt_8_l2, rdynamic_sqrt_10_l2, dynamic_l2):
     """Calculate performance ratios between algorithms without requiring phase1 results"""
     ratios = {}
     
     # Ratios between Dynamic and Rdynamic variants
     ratios.update({
+        'Rdynamic_sqrt_2/Dynamic_ratio': rdynamic_sqrt_2_l2 / dynamic_l2,
         'Rdynamic_sqrt_6/Dynamic_ratio': rdynamic_sqrt_6_l2 / dynamic_l2,
         'Rdynamic_sqrt_8/Dynamic_ratio': rdynamic_sqrt_8_l2 / dynamic_l2,
         'Rdynamic_sqrt_10/Dynamic_ratio': rdynamic_sqrt_10_l2 / dynamic_l2
@@ -299,6 +315,9 @@ def calculate_ratios_without_phase1(rdynamic_sqrt_6_l2, rdynamic_sqrt_8_l2, rdyn
     
     # Comparisons between Rdynamic variants
     ratios.update({
+        'Rdynamic_sqrt_2/Rdynamic_sqrt_6_ratio': rdynamic_sqrt_2_l2 / rdynamic_sqrt_6_l2,
+        'Rdynamic_sqrt_2/Rdynamic_sqrt_8_ratio': rdynamic_sqrt_2_l2 / rdynamic_sqrt_8_l2,
+        'Rdynamic_sqrt_2/Rdynamic_sqrt_10_ratio': rdynamic_sqrt_2_l2 / rdynamic_sqrt_10_l2,
         'Rdynamic_sqrt_6/Rdynamic_sqrt_8_ratio': rdynamic_sqrt_6_l2 / rdynamic_sqrt_8_l2,
         'Rdynamic_sqrt_6/Rdynamic_sqrt_10_ratio': rdynamic_sqrt_6_l2 / rdynamic_sqrt_10_l2,
         'Rdynamic_sqrt_8/Rdynamic_sqrt_10_ratio': rdynamic_sqrt_8_l2 / rdynamic_sqrt_10_l2
@@ -306,6 +325,7 @@ def calculate_ratios_without_phase1(rdynamic_sqrt_6_l2, rdynamic_sqrt_8_l2, rdyn
     
     # Add raw L2 norms for reference
     ratios.update({
+        'Rdynamic_sqrt_2_L2': rdynamic_sqrt_2_l2,
         'Rdynamic_sqrt_6_L2': rdynamic_sqrt_6_l2,
         'Rdynamic_sqrt_8_L2': rdynamic_sqrt_8_l2,
         'Rdynamic_sqrt_10_L2': rdynamic_sqrt_10_l2,
@@ -314,6 +334,7 @@ def calculate_ratios_without_phase1(rdynamic_sqrt_6_l2, rdynamic_sqrt_8_l2, rdyn
     
     # Add checkpoint value to results
     ratios.update({
+        'Rdynamic_sqrt_2_checkpoint': CHECKPOINTS["RDYNAMIC_SQRT_2"],
         'Rdynamic_sqrt_6_checkpoint': CHECKPOINTS["RDYNAMIC_SQRT_6"],
         'Rdynamic_sqrt_8_checkpoint': CHECKPOINTS["RDYNAMIC_SQRT_8"],
         'Rdynamic_sqrt_10_checkpoint': CHECKPOINTS["RDYNAMIC_SQRT_10"],
@@ -353,6 +374,14 @@ def execute_phase2(arrival_rate, bp_parameter, file_handler):
         job_list = Read_csv.Read_csv(job_file)
         
         # Run algorithms using the checkpoint constants
+        rdynamic_sqrt_2_l2_norms = run_algorithm(
+            Rdynamic_sqrt_2.Rdynamic, 
+            job_list, 
+            CHECKPOINTS["RDYNAMIC_SQRT_2"], 
+            arrival_rate,
+            algorithm_name="RDYNAMIC_SQRT_2"
+        )
+        
         rdynamic_sqrt_6_l2_norms = run_algorithm(
             Rdynamic_sqrt_6.Rdynamic, 
             job_list, 
@@ -385,9 +414,11 @@ def execute_phase2(arrival_rate, bp_parameter, file_handler):
             algorithm_name="Dynamic"
         )
         
-        if (rdynamic_sqrt_6_l2_norms and rdynamic_sqrt_8_l2_norms and 
-            rdynamic_sqrt_10_l2_norms and dynamic_l2_norms):
+        if (rdynamic_sqrt_2_l2_norms and rdynamic_sqrt_6_l2_norms and 
+            rdynamic_sqrt_8_l2_norms and rdynamic_sqrt_10_l2_norms and 
+            dynamic_l2_norms):
             
+            rdynamic_sqrt_2_l2 = np.mean(rdynamic_sqrt_2_l2_norms)
             rdynamic_sqrt_6_l2 = np.mean(rdynamic_sqrt_6_l2_norms)
             rdynamic_sqrt_8_l2 = np.mean(rdynamic_sqrt_8_l2_norms)
             rdynamic_sqrt_10_l2 = np.mean(rdynamic_sqrt_10_l2_norms)
@@ -407,7 +438,7 @@ def execute_phase2(arrival_rate, bp_parameter, file_handler):
                 result_row = {
                     'arrival_rate': arrival_rate,
                     'bp_parameter': str(bp_param),
-                    **calculate_ratios(rdynamic_sqrt_6_l2, rdynamic_sqrt_8_l2, rdynamic_sqrt_10_l2, dynamic_l2, phase1_row)
+                    **calculate_ratios(rdynamic_sqrt_2_l2, rdynamic_sqrt_6_l2, rdynamic_sqrt_8_l2, rdynamic_sqrt_10_l2, dynamic_l2, phase1_row)
                 }
                 results.append(result_row)
             else:
@@ -465,6 +496,14 @@ def process_single_setting(args):
         logger.info(f"Using checkpoints for setting {setting}: {CHECKPOINTS}")
 
         # Run algorithms using the checkpoint constants
+        rdynamic_sqrt_2_l2_norms = run_algorithm(
+            Rdynamic_sqrt_2.Rdynamic, 
+            job_list, 
+            CHECKPOINTS["RDYNAMIC_SQRT_2"], 
+            arrival_rate,
+            algorithm_name="RDYNAMIC_SQRT_2"
+        )
+        
         rdynamic_sqrt_6_l2_norms = run_algorithm(
             Rdynamic_sqrt_6.Rdynamic, 
             job_list, 
@@ -503,9 +542,11 @@ def process_single_setting(args):
             logger.warning(f"Process timeout approaching for arrival_rate={arrival_rate}, setting={setting}")
             return None
 
-        if (rdynamic_sqrt_6_l2_norms and rdynamic_sqrt_8_l2_norms and 
-            rdynamic_sqrt_10_l2_norms and dynamic_l2_norms):
+        if (rdynamic_sqrt_2_l2_norms and rdynamic_sqrt_6_l2_norms and 
+            rdynamic_sqrt_8_l2_norms and rdynamic_sqrt_10_l2_norms and 
+            dynamic_l2_norms):
             
+            rdynamic_sqrt_2_l2 = np.mean(rdynamic_sqrt_2_l2_norms)
             rdynamic_sqrt_6_l2 = np.mean(rdynamic_sqrt_6_l2_norms)
             rdynamic_sqrt_8_l2 = np.mean(rdynamic_sqrt_8_l2_norms)
             rdynamic_sqrt_10_l2 = np.mean(rdynamic_sqrt_10_l2_norms)
@@ -519,13 +560,13 @@ def process_single_setting(args):
                 # Calculate full ratios
                 result_row = {
                     'arrival_rate': arrival_rate,
-                    **calculate_ratios(rdynamic_sqrt_6_l2, rdynamic_sqrt_8_l2, rdynamic_sqrt_10_l2, dynamic_l2, phase1_row)
+                    **calculate_ratios(rdynamic_sqrt_2_l2, rdynamic_sqrt_6_l2, rdynamic_sqrt_8_l2, rdynamic_sqrt_10_l2, dynamic_l2, phase1_row)
                 }
             else:
                 # If no phase1 data, use limited comparison
                 result_row = {
                     'arrival_rate': arrival_rate,
-                    **calculate_ratios_without_phase1(rdynamic_sqrt_6_l2, rdynamic_sqrt_8_l2, rdynamic_sqrt_10_l2, dynamic_l2)
+                    **calculate_ratios_without_phase1(rdynamic_sqrt_2_l2, rdynamic_sqrt_6_l2, rdynamic_sqrt_8_l2, rdynamic_sqrt_10_l2, dynamic_l2)
                 }
         
             results_df = pd.DataFrame([result_row])
@@ -614,6 +655,14 @@ def process_compare_setting(args):
                 logger.info(f"Using checkpoints for setting {setting}: {CHECKPOINTS}")
                 
                 # Run algorithms using the checkpoint constants
+                rdynamic_sqrt_2_l2_norms = run_algorithm(
+                    Rdynamic_sqrt_2.Rdynamic, 
+                    job_list, 
+                    CHECKPOINTS["RDYNAMIC_SQRT_2"], 
+                    arrival_rate,
+                    algorithm_name="RDYNAMIC_SQRT_2"
+                )
+                
                 rdynamic_sqrt_6_l2_norms = run_algorithm(
                     Rdynamic_sqrt_6.Rdynamic, 
                     job_list, 
@@ -646,9 +695,11 @@ def process_compare_setting(args):
                     algorithm_name="Dynamic"
                 )
 
-                if (rdynamic_sqrt_6_l2_norms and rdynamic_sqrt_8_l2_norms and 
-                    rdynamic_sqrt_10_l2_norms and dynamic_l2_norms):
+                if (rdynamic_sqrt_2_l2_norms and rdynamic_sqrt_6_l2_norms and 
+                    rdynamic_sqrt_8_l2_norms and rdynamic_sqrt_10_l2_norms and 
+                    dynamic_l2_norms):
                     
+                    rdynamic_sqrt_2_l2 = np.mean(rdynamic_sqrt_2_l2_norms)
                     rdynamic_sqrt_6_l2 = np.mean(rdynamic_sqrt_6_l2_norms)
                     rdynamic_sqrt_8_l2 = np.mean(rdynamic_sqrt_8_l2_norms)
                     rdynamic_sqrt_10_l2 = np.mean(rdynamic_sqrt_10_l2_norms)
@@ -668,7 +719,7 @@ def process_compare_setting(args):
                         result_row = {
                             'arrival_rate': arrival_rate,
                             'bp_parameter': str(bp_param),
-                            **calculate_ratios(rdynamic_sqrt_6_l2, rdynamic_sqrt_8_l2, rdynamic_sqrt_10_l2, dynamic_l2, phase1_row)
+                            **calculate_ratios(rdynamic_sqrt_2_l2, rdynamic_sqrt_6_l2, rdynamic_sqrt_8_l2, rdynamic_sqrt_10_l2, dynamic_l2, phase1_row)
                         }
                         results_for_all_params.append(result_row)
                     else:
