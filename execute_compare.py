@@ -81,7 +81,15 @@ class SynchronizedFileHandler:
                 
                 if os.path.exists(combined_file):
                     all_results_df = pd.read_csv(combined_file)
-                    all_results_df = all_results_df[~all_results_df['arrival_rate'].isin(results_df['arrival_rate'])]
+                    
+                    # FIXED: Instead of filtering just by arrival_rate, filter by both arrival_rate AND bp_parameter
+                    # This ensures we don't remove results for different BP parameters with the same arrival rate
+                    for _, new_row in results_df.iterrows():
+                        mask = ((all_results_df['arrival_rate'] == new_row['arrival_rate']) & 
+                                (all_results_df['bp_parameter'] == new_row['bp_parameter']))
+                        all_results_df = all_results_df[~mask]
+                    
+                    # Combine with new data
                     all_results_df = pd.concat([all_results_df, results_df], ignore_index=True)
                 else:
                     all_results_df = results_df.copy()
