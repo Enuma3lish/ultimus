@@ -64,8 +64,17 @@ def job_init(num_jobs, avg_inter_arrival_time, xmin, xmax):
         samples.append({"arrival_time": arrival_times[k], "job_size": jb[k]})
     return samples
 
-def random_job_init(num_jobs, avg_inter_arrival_time):
-    """Create jobs with randomly selected parameters from 30, 60, or 90 sets"""
+def random_job_init(num_jobs, avg_inter_arrival_time, coherence_time=1):
+    """
+    Create jobs with randomly selected parameters from 30, 60, or 90 sets
+    according to the specified coherence time.
+    
+    Parameters:
+    num_jobs (int): Number of jobs to generate
+    avg_inter_arrival_time (float): Average inter-arrival time
+    coherence_time (int): Number of consecutive jobs that use the same parameter set
+                         Values: 1, 10, 100, 500, 1000, 10000
+    """
     samples = []
     jb = []
     alpha = 1.1
@@ -74,14 +83,22 @@ def random_job_init(num_jobs, avg_inter_arrival_time):
     all_parameters = bp_parameter_30 + bp_parameter_60 + bp_parameter_90
     
     # Generate job sizes by randomly selecting parameter sets
+    # but maintain coherence for 'coherence_time' consecutive jobs
+    current_param = None
+    param_jobs_count = 0
+    
     while len(jb) < num_jobs:
-        # Randomly select parameter set for this job
-        param = random.choice(all_parameters)
-        xmin, xmax = param["L"], param["H"]
+        # Check if we need to select a new parameter set based on coherence time
+        if current_param is None or param_jobs_count >= coherence_time:
+            current_param = random.choice(all_parameters)
+            param_jobs_count = 0
+        
+        xmin, xmax = current_param["L"], current_param["H"]
         
         raw_sample = math.ceil(pareto.rvs(size=1)[0])
         if xmin <= raw_sample <= xmax:
             jb.append(raw_sample)
+            param_jobs_count += 1
     
     # Generate integer arrival times
     current_time = 0
@@ -103,10 +120,10 @@ def Save_file(num_jobs):
     # Create base data directory if it doesn't exist
     os.makedirs("data", exist_ok=True)
     
-    # Create frequency folders (2^0 to 2^10)
-    folder_name = [1,10,100,500,1000,10000]
-    for i in folder_name:
-        freq_folder = f"data/freq_{i}"
+    # Create frequency/coherence time folders
+    coherence_times = [1, 10, 100, 500, 1000, 10000]
+    for ct in coherence_times:
+        freq_folder = f"data/freq_{ct}"
         os.makedirs(freq_folder, exist_ok=True)
     
     # Process normal parameter sets (30, 60, 90)
@@ -125,24 +142,21 @@ def Save_file(num_jobs):
     # Create random folder
     os.makedirs("data/random", exist_ok=True)
     
-    # Process random parameter selection
+    # Generate and save job lists for each coherence time
+    for ct in coherence_times:
+        for avg_inter_arrival in inter_arrival_time:
+            # Generate job list with random parameters and specified coherence time
+            job_list = random_job_init(num_jobs, avg_inter_arrival, coherence_time=ct)
+            
+            # Save to the frequency-specific folder
+            filename = f"data/freq_{ct}/({avg_inter_arrival}).csv"
+            Write_csv.Write_raw(filename, job_list)
+    
+    # Also generate a general random set without coherence for the random folder
     for avg_inter_arrival in inter_arrival_time:
-        # Generate job list with random parameters
-        job_list = random_job_init(num_jobs, avg_inter_arrival)
-        # Save to random folder
+        job_list = random_job_init(num_jobs, avg_inter_arrival, coherence_time=1)
         filename = f"data/random/({avg_inter_arrival}).csv"
         Write_csv.Write_raw(filename, job_list)
-        folder_name = [1,10,100,500,1000,10000]
-        for i in folder_name:
-            freq_folder = f"data/freq_{i}"
-            os.makedirs(freq_folder, exist_ok=True)
-        # Also save to each frequency folder
-            # Create a copy of the job list that you can modify for each frequency
-            freq_job_list = job_list.copy()
-            # You might want to adjust the job list based on frequency here
-            # For now, just saving the same job list to each frequency folder
-            filename = f"data/freq_{i}/({avg_inter_arrival}).csv"
-            Write_csv.Write_raw(filename, freq_job_list)
 
 if __name__ == "__main__":
     Save_file(10000)

@@ -3,40 +3,60 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Define specific comparison sets for each avg value
+# Define expanded comparison sets for all avg values
+# Using the full set of columns for all avg values
+new_comparison_columns = [
+    "Rdynamic_sqrt_6/RR_ratio",
+    "Rdynamic_sqrt_6/SRPT_ratio",
+    "Rdynamic_sqrt_6/SETF_ratio",
+    "Rdynamic_sqrt_6/FCFS_ratio",
+    "Rdynamic_sqrt_6/RMLF_ratio",
+    "Rdynamic_sqrt_6/Dynamic_ratio",
+    "Rdynamic_sqrt_8/RR_ratio",
+    "Rdynamic_sqrt_8/SRPT_ratio",
+    "Rdynamic_sqrt_8/SETF_ratio",
+    "Rdynamic_sqrt_8/FCFS_ratio",
+    "Rdynamic_sqrt_8/RMLF_ratio",
+    "Rdynamic_sqrt_8/Dynamic_ratio",
+    "Rdynamic_sqrt_10/RR_ratio",
+    "Rdynamic_sqrt_10/SRPT_ratio",
+    "Rdynamic_sqrt_10/SETF_ratio",
+    "Rdynamic_sqrt_10/FCFS_ratio",
+    "Rdynamic_sqrt_10/RMLF_ratio",
+    "Rdynamic_sqrt_10/Dynamic_ratio",
+    "Dynamic/SRPT_ratio",
+    "Rdynamic_sqrt_6/Rdynamic_sqrt_8_ratio",
+    "Rdynamic_sqrt_6/Rdynamic_sqrt_10_ratio",
+    "Rdynamic_sqrt_8/Rdynamic_sqrt_10_ratio",
+    "Rdynamic_sqrt_2/RR_ratio",
+    "Rdynamic_sqrt_2/SRPT_ratio",
+    "Rdynamic_sqrt_2/SETF_ratio",
+    "Rdynamic_sqrt_2/FCFS_ratio",
+    "Rdynamic_sqrt_2/RMLF_ratio",
+    "Rdynamic_sqrt_2/Dynamic_ratio",
+    "Rdynamic_sqrt_2/Rdynamic_sqrt_6_ratio",
+    "Rdynamic_sqrt_2/Rdynamic_sqrt_8_ratio",
+    "Rdynamic_sqrt_2/Rdynamic_sqrt_10_ratio",
+    "RMLF/FCFS_ratio"
+]
+
+# Checkpoint columns removed as requested
+
 comparison_sets = {
-    "30": [
-        "Rdynamic_sqrt_6/RR_ratio",
-        "Rdynamic_sqrt_6/SRPT_ratio",
-        "Rdynamic_sqrt_6/SETF_ratio",
-        "Rdynamic_sqrt_6/FCFS_ratio",
-        "Rdynamic_sqrt_6/RMLF_ratio",
-        "Rdynamic_sqrt_6/Dynamic_ratio",
-        "Dynamic/SRPT_ratio",
-        "Rdynamic_sqrt_6/Rdynamic_sqrt_8_ratio",
-        "Rdynamic_sqrt_6/Rdynamic_sqrt_10_ratio"
-    ],
-    "60": [
-        "Rdynamic_sqrt_8/RR_ratio",
-        "Rdynamic_sqrt_8/SRPT_ratio",
-        "Rdynamic_sqrt_8/SETF_ratio",
-        "Rdynamic_sqrt_8/FCFS_ratio",
-        "Rdynamic_sqrt_8/RMLF_ratio",
-        "Rdynamic_sqrt_8/Dynamic_ratio",
-        "Dynamic/SRPT_ratio",
-        "Rdynamic_sqrt_8/Rdynamic_sqrt_10_ratio"
-    ],
-    "90": [
-        "Rdynamic_sqrt_10/RR_ratio",
-        "Rdynamic_sqrt_10/SRPT_ratio",
-        "Rdynamic_sqrt_10/SETF_ratio",
-        "Rdynamic_sqrt_10/FCFS_ratio",
-        "Rdynamic_sqrt_10/RMLF_ratio",
-        "Rdynamic_sqrt_10/Dynamic_ratio"
-    ]
+    "30": new_comparison_columns,
+    "60": new_comparison_columns,
+    "90": new_comparison_columns
 }
 
 # Load the parameters
+bp_parameter_30 = [
+    {"L": 16.772, "H": pow(2, 6)},
+    {"L": 7.918, "H": pow(2, 9)},
+    {"L": 5.649, "H": pow(2, 12)},
+    {"L": 4.639, "H": pow(2, 15)},
+    {"L": 4.073, "H": pow(2, 18)}
+]
+
 bp_parameter_60 = [
     {"L": 56.300, "H": pow(2, 6)},
     {"L": 18.900, "H": pow(2, 9)},
@@ -44,18 +64,12 @@ bp_parameter_60 = [
     {"L": 9.800, "H": pow(2, 15)},
     {"L": 8.500, "H": pow(2, 18)}
 ]
+
 bp_parameter_90 = [
     {"L": 32.300, "H": pow(2, 9)},
     {"L": 19.700, "H": pow(2, 12)},
     {"L": 15.300, "H": pow(2, 15)},
     {"L": 13.000, "H": pow(2, 18)}
-]
-bp_parameter_30 = [
-    {"L": 16.772, "H": pow(2, 6)},
-    {"L": 7.918, "H": pow(2, 9)},
-    {"L": 5.649, "H": pow(2, 12)},
-    {"L": 4.639, "H": pow(2, 15)},
-    {"L": 4.073, "H": pow(2, 18)}
 ]
 
 # Map the avg values to their respective bp_parameter lists
@@ -67,22 +81,64 @@ bp_parameter_map = {
 
 # Define markers and line styles
 markers = [
-    {'marker': '^', 'size': 10},  # Large upward triangle
-    {'marker': '^', 'size': 6},   # Small upward triangle
     {'marker': 'o', 'size': 8},   # Circle
-    {'marker': 'v', 'size': 6},   # Small downward triangle
-    {'marker': 'v', 'size': 10}   # Large downward triangle
+    {'marker': '^', 'size': 10},  # Large upward triangle
+    {'marker': 's', 'size': 8},   # Square
+    {'marker': 'v', 'size': 10},  # Large downward triangle
+    {'marker': 'D', 'size': 8},   # Diamond
+    {'marker': '*', 'size': 10},  # Star
+    {'marker': 'p', 'size': 8},   # Pentagon
+    {'marker': 'h', 'size': 10}   # Hexagon
 ]
 
-# Define colors for different algorithms
-algorithm_colors = {
-    'RR': 'red',
-    'SRPT': 'blue',
-    'SETF': 'green',
-    'FCFS': 'purple',
-    'RMLF': 'orange',
-    'Dynamic': 'brown'
+# Define line styles for algorithms
+line_styles = {
+    'RR': '-',
+    'SRPT': '--',
+    'SETF': '-.',
+    'FCFS': ':',
+    'RMLF': '-',
+    'Dynamic': '--',
+    'Rdynamic_sqrt_2': '-',
+    'Rdynamic_sqrt_6': '--',
+    'Rdynamic_sqrt_8': '-.',
+    'Rdynamic_sqrt_10': ':'
 }
+
+# Enhanced color scheme for better visibility
+algorithm_colors = {
+    'RR': '#FF0000',         # Red
+    'SRPT': '#0000FF',       # Blue
+    'SETF': '#00CC00',       # Green
+    'FCFS': '#9900CC',       # Purple
+    'RMLF': '#FF6600',       # Orange
+    'Dynamic': '#996633',    # Brown
+    'Rdynamic_sqrt_2': '#FF00FF',  # Magenta
+    'Rdynamic_sqrt_6': '#00CCCC',  # Teal
+    'Rdynamic_sqrt_8': '#FFCC00',  # Gold
+    'Rdynamic_sqrt_10': '#00FF00'  # Lime
+}
+
+# Create mapping for short names (for display purposes only)
+algorithm_display_names = {
+    'Rdynamic_sqrt_2': 'RDY_2',
+    'Rdynamic_sqrt_6': 'RDY_6',
+    'Rdynamic_sqrt_8': 'RDY_8',
+    'Rdynamic_sqrt_10': 'RDY_10',
+}
+
+# Create a mapping function to convert any Rdynamic name to RDY format
+def get_rdy_display_name(name):
+    """Convert any Rdynamic_sqrt_X name to RDY_X format"""
+    if 'Rdynamic_sqrt_' in name:
+        # Extract the number at the end
+        try:
+            num = name.split('_')[-1]
+            return f"RDY_{num}"
+        except:
+            pass
+    # Return from mapping if available, otherwise return original
+    return algorithm_display_names.get(name, name)
 
 # Ensure directory for plots exists or is created
 plots_dir = "log/img/"
@@ -126,7 +182,7 @@ def get_bp_index(bp_param, param_list):
     return 0  # Return first index as default instead of max
 
 # Function to create individual plots for each bp_parameter showing specific algorithm ratios
-def create_individual_bp_plots(data, bp_parameter, output_dir, avg_value, cp_value):
+def create_individual_bp_plots(data, bp_parameter, output_dir, avg_value):
     # Use only the specific comparison set for this avg value
     ratio_columns = comparison_sets.get(avg_value, [])
     
@@ -153,6 +209,16 @@ def create_individual_bp_plots(data, bp_parameter, output_dir, avg_value, cp_val
         print("Warning: 'bp_parameter' column not found in data")
         return
     
+    # Group the ratio columns by algorithm type
+    algorithm_groups = {}
+    for col in ratio_columns:
+        parts = col.split('/')
+        if len(parts) >= 2:
+            numerator = parts[0]
+            if numerator not in algorithm_groups:
+                algorithm_groups[numerator] = []
+            algorithm_groups[numerator].append(col)
+    
     # Create a separate plot for each BP parameter
     for bp_param in unique_bp_params:
         plt.figure(figsize=(14, 10))
@@ -163,49 +229,45 @@ def create_individual_bp_plots(data, bp_parameter, output_dir, avg_value, cp_val
             plt.close()
             continue
         
-        # Define line styles based on ratio type
-        line_styles = {
-            'RR': {'style': '-', 'color': algorithm_colors['RR']},
-            'SRPT': {'style': '-', 'color': algorithm_colors['SRPT']},
-            'SETF': {'style': '-', 'color': algorithm_colors['SETF']},
-            'FCFS': {'style': '-', 'color': algorithm_colors['FCFS']},
-            'RMLF': {'style': '-', 'color': algorithm_colors['RMLF']},
-            'Dynamic': {'style': '-', 'color': algorithm_colors['Dynamic']},
-            'Rdynamic_sqrt_8': {'style': '--', 'color': 'blue'},
-            'Rdynamic_sqrt_10': {'style': ':', 'color': 'green'}
-        }
-        
         # Plot each ratio column
+        marker_idx = 0
         for col in ratio_columns:
-            # Skip if column doesn't exist
-            if col not in specific_data.columns:
+            # Skip if column doesn't exist or has no data
+            if col not in specific_data.columns or specific_data[col].isnull().all():
                 continue
             
             # Parse the ratio column to determine style and label
             parts = col.split('/')
+            if len(parts) < 2:
+                continue
+                
             numerator = parts[0]
-            denominator = parts[1].split('_')[0] if '_ratio' in parts[1] else parts[1]
             
-            # Determine color and style
-            if denominator in algorithm_colors:
+            # Extract full denominator name before _ratio suffix
+            if '_ratio' in parts[1]:
+                denominator = parts[1].split('_ratio')[0]  # Gets the full algorithm name
+            else:
+                denominator = parts[1]
+            
+            # Choose marker style
+            marker_style = markers[marker_idx % len(markers)]
+            marker_idx += 1
+            
+            # Determine color and line style
+            if numerator in algorithm_colors:
+                color = algorithm_colors[numerator]
+                linestyle = line_styles.get(numerator, '-')
+            elif denominator in algorithm_colors:
                 color = algorithm_colors[denominator]
-                style_key = denominator
-            elif numerator == 'Dynamic' and denominator == 'SRPT':
-                color = 'black'  # Special case for Dynamic/SRPT
-                style_key = 'SRPT'
+                linestyle = line_styles.get(denominator, '-')
             else:
                 color = 'black'  # Default
-                style_key = 'RR'
+                linestyle = '-'
             
-            linestyle = line_styles.get(style_key, {}).get('style', '-')
-            
-            # Format label
-            if 'Rdynamic' in numerator and 'Rdynamic' in denominator:
-                label = f"{numerator.replace('Rdynamic_', '')} vs {denominator.replace('Rdynamic_', '')}"
-            elif numerator == 'Dynamic' and denominator == 'SRPT':
-                label = 'Dynamic vs SRPT'
-            else:
-                label = f"{numerator} vs {denominator}"
+            # Format label with short names for all cases
+            num_display = get_rdy_display_name(numerator)
+            denom_display = get_rdy_display_name(denominator)
+            label = f"{num_display} vs {denom_display}"
             
             # Sort and plot valid data
             valid_data = specific_data.dropna(subset=[col, 'arrival_rate']).sort_values('arrival_rate')
@@ -216,12 +278,14 @@ def create_individual_bp_plots(data, bp_parameter, output_dir, avg_value, cp_val
             plt.plot(
                 valid_data['arrival_rate'],
                 valid_data[col],
-                marker='o',
-                markersize=6,
+                marker=marker_style['marker'],
+                markersize=marker_style['size'],
                 linestyle=linestyle,
                 label=label,
                 color=color
             )
+        
+        # Checkpoint data removed as requested
         
         # Add horizontal line at y=1 (indicates equal performance)
         plt.axhline(y=1, color='black', linestyle='-', alpha=0.3)
@@ -230,33 +294,23 @@ def create_individual_bp_plots(data, bp_parameter, output_dir, avg_value, cp_val
         bp_param_str = str(bp_param).replace("=", "_").replace(" ", "_").replace(".", "p")
         
         # Add titles, labels, and legend
-        plt.title(f'Algorithm Comparison Ratios for BP={bp_param} (Avg={avg_value}, CP={cp_value})', fontsize=14)
+        plt.title(f'Algorithm Comparison Ratios for BP={bp_param} (Avg={avg_value})', fontsize=14)
         plt.xlabel('Mean Interarrival Time', fontsize=12)
         plt.ylabel('Ratio (Lower is Better)', fontsize=12)
-        plt.legend(title='Comparison', loc='best', fontsize=10)
+        
+        # Handle legend - limit number of items to avoid overcrowding
+        handles, labels = plt.gca().get_legend_handles_labels()
+        if len(handles) > 15:
+            # Use a smaller font and place it outside
+            plt.legend(fontsize=8, bbox_to_anchor=(1.05, 1), loc='upper left')
+        else:
+            plt.legend(title='Comparison', loc='best', fontsize=10)
+            
         plt.grid(True, alpha=0.3)
         
-        # Set y-axis limits to focus on meaningful values
-        y_values = []
-        for line in plt.gca().get_lines():
-            y_data = line.get_ydata()
-            if len(y_data) > 0:
-                valid_y = [y for y in y_data if not np.isnan(y) and np.isfinite(y) and y <= 2]
-                y_values.extend(valid_y)
-        
-        if y_values:
-            # Set y-limit based on actual data
-            min_y = max(0.5, min(y_values) * 0.9)  # Give some margin below the minimum
-            max_y = min(2.0, max(y_values) * 1.1)  # Cap at 2.0 to avoid extreme outliers
-            plt.ylim(min_y, max_y)
-            
-            # Set appropriate y-ticks
-            tick_step = (max_y - min_y) / 10
-            plt.yticks(np.arange(min_y, max_y + tick_step, tick_step))
-        else:
-            # Default y-limits if no valid data
-            plt.ylim(0.5, 1.5)
-            plt.yticks(np.arange(0.5, 1.6, 0.1))
+        # Set fixed y-axis limits from 0.0 to 2.0 as requested
+        plt.ylim(0.0, 2.0)
+        plt.yticks(np.arange(0.0, 2.1, 0.2))  # Set y-ticks every 0.2
         
         # Set appropriate x-ticks based on data range
         x_values = specific_data['arrival_rate'].dropna().unique()
@@ -270,18 +324,21 @@ def create_individual_bp_plots(data, bp_parameter, output_dir, avg_value, cp_val
         
         # Adjust layout and save
         plt.tight_layout()
-        filename = f'{output_dir}/BP_{bp_param_str}_Algorithm_Comparison_avg{avg_value}_cp{cp_value}.pdf'
+        filename = f'{output_dir}/BP_{bp_param_str}_Algorithm_Comparison_avg{avg_value}.pdf'
         plt.savefig(filename)
         print(f"Created plot: {filename}")
         plt.close()
 
-# Function to create Rdynamic variant comparison plots
-def create_rdynamic_comparison_plots(data, bp_parameter, output_dir, avg_value, cp_value):
-    # Define Rdynamic comparison ratio columns to analyze
+# Function to create RDY variant comparison plots - focusing on sqrt comparisons
+def create_rdynamic_comparison_plots(data, bp_parameter, output_dir, avg_value):
+    # Define Rdynamic comparison ratio columns to analyze with comments for clarity
     rdynamic_comparison_columns = [
-        "Rdynamic_sqrt_6/Rdynamic_sqrt_8_ratio",
-        "Rdynamic_sqrt_6/Rdynamic_sqrt_10_ratio",
-        "Rdynamic_sqrt_8/Rdynamic_sqrt_10_ratio"
+        "Rdynamic_sqrt_6/Rdynamic_sqrt_8_ratio",    # RDY_6 vs RDY_8
+        "Rdynamic_sqrt_6/Rdynamic_sqrt_10_ratio",   # RDY_6 vs RDY_10
+        "Rdynamic_sqrt_8/Rdynamic_sqrt_10_ratio",   # RDY_8 vs RDY_10
+        "Rdynamic_sqrt_2/Rdynamic_sqrt_6_ratio",    # RDY_2 vs RDY_6
+        "Rdynamic_sqrt_2/Rdynamic_sqrt_8_ratio",    # RDY_2 vs RDY_8
+        "Rdynamic_sqrt_2/Rdynamic_sqrt_10_ratio"    # RDY_2 vs RDY_10
     ]
     
     # Check if these columns exist in the data
@@ -301,39 +358,43 @@ def create_rdynamic_comparison_plots(data, bp_parameter, output_dir, avg_value, 
         print("Warning: 'bp_parameter' column not found in data")
         return
     
-    # Create a single plot with all Rdynamic variant comparisons
-    plt.figure(figsize=(14, 10))
-    
-    # Plot each comparison for each BP parameter
+    # Create a separate plot for each BP parameter
     for bp_param in unique_bp_params:
+        plt.figure(figsize=(14, 10))
         specific_data = data[data['bp_parameter'] == bp_param]
         
         if specific_data.empty:
+            plt.close()
             continue
-            
-        bp_index = np.where(unique_bp_params == bp_param)[0][0]
-        marker_style = markers[bp_index % len(markers)]['marker']
-        marker_size = markers[bp_index % len(markers)]['size']
         
+        # Plot each comparison column
+        marker_idx = 0
         for col in available_columns:
-            # Extract the variants being compared
+            # Remove debug prints in final version
+            # Extract the variants being compared - handle the full names
             parts = col.split('/')
-            variant1 = parts[0]
-            variant2 = parts[1].split('_')[0]
+            variant1 = parts[0]  # First part (Rdynamic_sqrt_X)
             
-            # Pick a distinct color for each comparison
-            if "sqrt_6" in variant1 and "sqrt_8" in variant2:
-                color = 'blue'
-                label = "sqrt_6 vs sqrt_8"
-            elif "sqrt_6" in variant1 and "sqrt_10" in variant2:
-                color = 'green'
-                label = "sqrt_6 vs sqrt_10"
-            elif "sqrt_8" in variant1 and "sqrt_10" in variant2:
-                color = 'red'
-                label = "sqrt_8 vs sqrt_10"
+            # Extract second part and remove _ratio suffix
+            variant2_part = parts[1] 
+            if '_ratio' in variant2_part:
+                variant2 = variant2_part.split('_ratio')[0]
             else:
-                color = 'purple'
-                label = col.replace('_ratio', '')
+                variant2 = variant2_part
+            
+            # Choose marker
+            marker_style = markers[marker_idx % len(markers)]
+            marker_idx += 1
+            
+            # Pick colors based on variants
+            color1 = algorithm_colors.get(variant1, 'black')
+            color2 = algorithm_colors.get(variant2, 'black')
+            color = color1
+            
+            # Always use the more robust extraction approach for Rdynamic comparisons
+            v1_display = get_rdy_display_name(variant1)
+            v2_display = get_rdy_display_name(variant2)
+            label = f"{v1_display} vs {v2_display}"
             
             # Sort by arrival_rate and plot
             valid_data = specific_data.dropna(subset=[col, 'arrival_rate']).sort_values('arrival_rate')
@@ -342,156 +403,155 @@ def create_rdynamic_comparison_plots(data, bp_parameter, output_dir, avg_value, 
                 plt.plot(
                     valid_data['arrival_rate'],
                     valid_data[col],
-                    marker=marker_style,
-                    markersize=marker_size,
+                    marker=marker_style['marker'],
+                    markersize=marker_style['size'],
                     linestyle='-',
-                    label=f'{label} (BP={bp_param})',
+                    label=label,
                     color=color
                 )
-    
-    # Add horizontal line at y=1 (indicates equal performance)
-    plt.axhline(y=1, color='black', linestyle='-', alpha=0.3)
-    
-    # Add titles, labels, and legend
-    plt.title(f'Rdynamic Variant Comparisons (Avg={avg_value}, CP={cp_value})', fontsize=14)
-    plt.xlabel('Mean Interarrival Time', fontsize=12)
-    plt.ylabel('Ratio', fontsize=12)
-    
-    # Handle legend - limit number of items to avoid overcrowding
-    handles, labels = plt.gca().get_legend_handles_labels()
-    if len(handles) > 12:
-        plt.legend(handles[:12], labels[:12], title='Comparison', loc='best', fontsize=8)
-    else:
-        plt.legend(title='Comparison', loc='best', fontsize=9)
-    
-    plt.grid(True, alpha=0.3)
-    
-    # Set y-axis limits
-    plt.ylim(0.8, 1.2)  # Focus on values around 1.0
-    plt.yticks(np.arange(0.8, 1.21, 0.05))
-    
-    # Set appropriate x-axis ticks
-    x_values = data['arrival_rate'].dropna().unique()
-    if len(x_values) > 0:
-        min_x = max(min(x_values), 0)
-        max_x = max(x_values)
-        step = max(1, (max_x - min_x) / 10)
-        plt.xticks(np.arange(min_x, max_x + step, step))
-    
-    # Adjust layout and save
-    plt.tight_layout()
-    filename = f'{output_dir}/Rdynamic_Variant_Comparison_avg{avg_value}_cp{cp_value}.pdf'
-    plt.savefig(filename)
-    print(f"Created plot: {filename}")
-    plt.close()
-
-# Function to create comprehensive algorithm comparison plots (similar to original)
-def create_algorithm_comparison_plots(data, bp_parameter, output_dir, avg_value, cp_value):
-    # Create separate plots for different Rdynamic variants
-    variants = ["Rdynamic_sqrt_6", "Rdynamic_sqrt_8", "Rdynamic_sqrt_10"]
-    
-    for variant in variants:
-        # Find all ratio columns for this variant
-        ratio_columns = [col for col in data.columns if col.startswith(f"{variant}/") and col.endswith("_ratio")]
         
-        if not ratio_columns:
-            print(f"No ratio columns found for {variant}")
-            continue
-            
-        plt.figure(figsize=(14, 10))
-        
-        # Get unique bp_parameters and sort them
-        unique_bp_params = data['bp_parameter'].unique()
-        try:
-            unique_bp_params = sorted(unique_bp_params, key=lambda x: get_bp_index(x, bp_parameter))
-        except Exception as e:
-            print(f"Error sorting bp_parameters: {e}")
-        
-        # Plot each algorithm comparison for each BP parameter
-        for col in ratio_columns:
-            # Extract algorithm name from column name
-            algo = col.split('/')[1].split('_')[0]
-            color = algorithm_colors.get(algo, 'black')
-            
-            for bp_param in unique_bp_params:
-                specific_data = data[data['bp_parameter'] == bp_param]
-                
-                if specific_data.empty:
-                    continue
-                    
-                bp_index = list(unique_bp_params).index(bp_param)
-                marker_style = markers[bp_index % len(markers)]['marker']
-                marker_size = markers[bp_index % len(markers)]['size']
-                
-                # Sort by arrival_rate and plot
-                valid_data = specific_data.dropna(subset=[col, 'arrival_rate']).sort_values('arrival_rate')
-                
-                if not valid_data.empty:
-                    plt.plot(
-                        valid_data['arrival_rate'],
-                        valid_data[col],
-                        marker=marker_style,
-                        markersize=marker_size,
-                        linestyle='-',
-                        label=f'{algo} (BP={bp_param})',
-                        color=color
-                    )
-        
-        # Add horizontal line at y=1
+        # Add horizontal line at y=1 (indicates equal performance)
         plt.axhline(y=1, color='black', linestyle='-', alpha=0.3)
         
-        # Clean up variant name for display
-        display_variant = variant.replace('_', ' ').title()
+        # Format title and filename
+        bp_param_str = str(bp_param).replace("=", "_").replace(" ", "_").replace(".", "p")
         
-        # Add titles and labels
-        plt.title(f'{display_variant} vs Various Algorithms (Avg={avg_value}, CP={cp_value})', fontsize=14)
+        # Add titles, labels, and legend
+        plt.title(f'RDY Variant Comparisons - BP={bp_param} (Avg={avg_value})', fontsize=14)
         plt.xlabel('Mean Interarrival Time', fontsize=12)
-        plt.ylabel('Ratio (Lower is Better)', fontsize=12)
-        
-        # Handle legend
-        handles, labels = plt.gca().get_legend_handles_labels()
-        if len(handles) > 12:
-            plt.legend(handles[:12], labels[:12], title='Algorithm and BP Parameter', loc='best', fontsize=8)
-        else:
-            plt.legend(title='Algorithm and BP Parameter', loc='best', fontsize=9)
-        
+        plt.ylabel('Ratio', fontsize=12)
+        plt.legend(title='Comparison', loc='best', fontsize=10)
         plt.grid(True, alpha=0.3)
         
-        # Set y-limits
-        y_values = []
-        for line in plt.gca().get_lines():
-            y_data = line.get_ydata()
-            if len(y_data) > 0:
-                valid_y = [y for y in y_data if not np.isnan(y) and np.isfinite(y) and y <= 2]
-                y_values.extend(valid_y)
+        # Set fixed y-axis limits from 0.0 to 2.0 as requested
+        plt.ylim(0.0, 2.0)
+        plt.yticks(np.arange(0.0, 2.1, 0.2))  # Set y-ticks every 0.2
         
-        if y_values:
-            if any(y <= 2 for y in y_values):
-                plt.ylim(0, 2)
-                plt.yticks(np.arange(0, 2.1, 0.1))
-            else:
-                max_y = min(max(y_values), 5)
-                plt.ylim(0, max_y)
-                plt.yticks(np.arange(0, max_y + 0.1, max_y / 10))
-        else:
-            plt.ylim(0.5, 1.5)
-            plt.yticks(np.arange(0.5, 1.6, 0.1))
-        
-        # Set x-ticks
-        x_values = data['arrival_rate'].dropna().unique()
+        # Set appropriate x-ticks
+        x_values = specific_data['arrival_rate'].dropna().unique()
         if len(x_values) > 0:
             min_x = max(min(x_values), 0)
             max_x = max(x_values)
             step = max(1, (max_x - min_x) / 10)
             plt.xticks(np.arange(min_x, max_x + step, step))
         
-        # Save the plot
+        # Save plot
         plt.tight_layout()
-        variant_str = variant.replace('/', '_').replace(' ', '_')
-        filename = f'{output_dir}/{variant_str}_Comparison_avg{avg_value}_cp{cp_value}.pdf'
+        filename = f'{output_dir}/BP_{bp_param_str}_RDY_Variant_Comparison_avg{avg_value}.pdf'
         plt.savefig(filename)
         print(f"Created plot: {filename}")
         plt.close()
+
+# Function to create plots comparing algorithm vs benchmark for each variant
+def create_algorithm_variant_plots(data, bp_parameter, output_dir, avg_value):
+    # Define variants to analyze (keeping the original names for data access)
+    variants = ["Rdynamic_sqrt_2", "Rdynamic_sqrt_6", "Rdynamic_sqrt_8", "Rdynamic_sqrt_10", "Dynamic"]
+    
+    # Display names will be used in the plot labels
+    
+    # Define benchmarks to compare against
+    benchmarks = ["RR", "SRPT", "SETF", "FCFS", "RMLF", "Dynamic"]
+    
+    # Get unique bp_parameters
+    if 'bp_parameter' not in data.columns:
+        print("Warning: 'bp_parameter' column not found in data")
+        return
+        
+    unique_bp_params = data['bp_parameter'].unique()
+    try:
+        unique_bp_params = sorted(unique_bp_params, key=lambda x: get_bp_index(x, bp_parameter))
+    except Exception as e:
+        print(f"Error sorting bp_parameters: {e}")
+    
+    # For each variant, create plots comparing it against benchmarks
+    for variant in variants:
+        for bp_param in unique_bp_params:
+            plt.figure(figsize=(14, 10))
+            specific_data = data[data['bp_parameter'] == bp_param]
+            
+            if specific_data.empty:
+                plt.close()
+                continue
+            
+            # Find ratio columns for this variant
+            ratio_columns = []
+            for benchmark in benchmarks:
+                col_name = f"{variant}/{benchmark}_ratio"
+                if col_name in data.columns:
+                    ratio_columns.append(col_name)
+            
+            if not ratio_columns:
+                plt.close()
+                continue
+            
+            # Plot each benchmark comparison
+            marker_idx = 0
+            for col in ratio_columns:
+                # Extract benchmark name
+                benchmark = col.split('/')[1].split('_')[0]
+                
+                # Skip comparing variant to itself
+                if variant == benchmark:
+                    continue
+                
+                # Choose marker and color
+                marker_style = markers[marker_idx % len(markers)]
+                marker_idx += 1
+                color = algorithm_colors.get(benchmark, 'black')
+                
+                # Sort and plot valid data
+                valid_data = specific_data.dropna(subset=[col, 'arrival_rate']).sort_values('arrival_rate')
+                
+                # Get display names
+                variant_display = get_rdy_display_name(variant)
+                benchmark_display = get_rdy_display_name(benchmark)
+                
+                if not valid_data.empty:
+                    plt.plot(
+                        valid_data['arrival_rate'],
+                        valid_data[col],
+                        marker=marker_style['marker'],
+                        markersize=marker_style['size'],
+                        linestyle='-',
+                        label=f"{variant_display} vs {benchmark_display}",
+                        color=color
+                    )
+            
+            # Add horizontal line at y=1
+            plt.axhline(y=1, color='black', linestyle='-', alpha=0.3)
+            
+            # Format for display and filename
+            bp_param_str = str(bp_param).replace("=", "_").replace(" ", "_").replace(".", "p")
+            variant_str = get_rdy_display_name(variant)
+            
+            # Add titles and labels
+            plt.title(f'{variant_str} vs Benchmarks - BP={bp_param} (Avg={avg_value})', fontsize=14)
+            plt.xlabel('Mean Interarrival Time', fontsize=12)
+            plt.ylabel('Ratio (Lower is Better)', fontsize=12)
+            plt.legend(title='Comparison', loc='best', fontsize=10)
+            plt.grid(True, alpha=0.3)
+            
+            # Set fixed y-axis limits from 0.0 to 2.0 as requested
+            plt.ylim(0.0, 2.0)
+            plt.yticks(np.arange(0.0, 2.1, 0.2))  # Set y-ticks every 0.2
+            
+            # Set x-ticks
+            x_values = specific_data['arrival_rate'].dropna().unique()
+            if len(x_values) > 0:
+                min_x = max(min(x_values), 0)
+                max_x = max(x_values)
+                step = max(1, (max_x - min_x) / 10)
+                plt.xticks(np.arange(min_x, max_x + step, step))
+            
+            # Save plot
+            plt.tight_layout()
+            # Use short name for filename if available
+            variant_short = get_rdy_display_name(variant)
+            variant_filename = variant_short.replace('/', '_').replace(' ', '_')
+            filename = f'{output_dir}/BP_{bp_param_str}_{variant_filename}_vs_Benchmarks_avg{avg_value}.pdf'
+            plt.savefig(filename)
+            print(f"Created plot: {filename}")
+            plt.close()
 
 # Process each avg value (30, 60, 90)
 for avg_value in ["30", "60", "90"]:
@@ -515,7 +575,7 @@ for avg_value in ["30", "60", "90"]:
             if data.empty:
                 print(f"Warning: Empty data file: {file_path}")
                 continue
-                
+            
             # Debug: Print column names and sample of bp_parameter values
             print(f"File: {file_path}")
             print(f"Columns: {data.columns.tolist()}")
@@ -540,16 +600,16 @@ for avg_value in ["30", "60", "90"]:
             # Drop rows with NaN in key columns
             data = data.dropna(subset=['arrival_rate', 'bp_parameter'])
             
-            # Extract CP value from the file name (hardcoded to 60 based on filenames)
-            cp_value = "60"
+            # Create individual BP parameter plots with all comparison columns
+            create_individual_bp_plots(data, bp_parameter, output_dir, avg_value)
             
-            # Generate program name based on the directory
-            program_name = f"avg{avg_value}_cp{cp_value}"
+            # Create RDY variant comparison plots for each BP parameter
+            create_rdynamic_comparison_plots(data, bp_parameter, output_dir, avg_value)
             
-            # Create individual BP parameter plots with specified comparison sets
-            create_individual_bp_plots(data, bp_parameter, output_dir, avg_value, cp_value)
+            # Create algorithm variant vs benchmark plots
+            create_algorithm_variant_plots(data, bp_parameter, output_dir, avg_value)
             
-            print(f"Created plots for {program_name}")
+            print(f"Created all plots for avg_{avg_value}")
         except Exception as e:
             print(f"Error processing file {file_path}: {e}")
     else:
