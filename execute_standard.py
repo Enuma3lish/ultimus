@@ -175,3 +175,72 @@ def execute_phase1_random(Arrival_rates):
             csv_filename = f'freq/{freq_folder}_combined_results.csv'
             df.to_csv(csv_filename, index=False)
             print(f"Saved combined results for {freq_folder} with {len(results)} arrival rates")
+
+def execute_phase1_softrandom(Arrival_rates):
+    """
+    Execute phase 1 for softrandom frequency-based data, combining results from 
+    the same frequency but different arrival times
+    
+    Args:
+        Arrival_rates: List of arrival rates to process
+    """
+    # Frequency folders from freq_1 to freq_10000
+    freq_folders = [f"freq_{i}" for i in [1,10,100,500,1000,10000]]
+    
+    # Dictionary to store results for each frequency
+    freq_results = {freq: [] for freq in freq_folders}
+    
+    # Process each frequency folder
+    for freq_folder in freq_folders:
+        print(f"Processing softrandom/{freq_folder}...")
+        
+        # Process each arrival rate for this frequency
+        for Arrival_rate in Arrival_rates:
+            try:
+                # Modified file path to include softrandom/freq folder
+                file_path = f'data/softrandom/{freq_folder}/({Arrival_rate}).csv'
+                
+                # Read job list
+                job_list = Read_csv.Read_csv(file_path)
+                if not job_list:
+                    print(f"No data found for {file_path}")
+                    continue
+                
+                # Set up algorithms
+                algorithms = [
+                    (RR.RR, job_list.copy(), False, True),
+                    (SRPT.Srpt, job_list.copy(), False, False),
+                    (SETF.Setf, job_list.copy(), False, True),
+                    (FCFS.Fcfs, job_list.copy(), False, False),
+                    (RMLF.RMLF, job_list.copy(), True, False)
+                ]
+                
+                # Run algorithms and collect results
+                algorithm_results = run_all_algorithms_parallel(job_list, algorithms)
+                if algorithm_results and all(v is not None for v in algorithm_results.values()):
+                    result_row = {
+                        "arrival_rate": Arrival_rate,
+                        "RR_L2_Norm": algorithm_results['RR'],
+                        "SRPT_L2_Norm": algorithm_results['Srpt'],
+                        "SETF_L2_Norm": algorithm_results['Setf'],
+                        "FCFS_L2_Norm": algorithm_results['Fcfs'],
+                        "RMLF_L2_Norm": algorithm_results['RMLF']
+                    }
+                    
+                    # Add result to the corresponding frequency list
+                    freq_results[freq_folder].append(result_row)
+                    print(f"Successfully processed {file_path}")
+            except Exception as e:
+                print(f"Error processing {file_path}: {str(e)}")
+                continue
+    
+    # Save combined results for each frequency
+    for freq_folder, results in freq_results.items():
+        if results:
+            # Create directory if it doesn't exist
+            os.makedirs('softrandom', exist_ok=True)
+            
+            df = pd.DataFrame(results)
+            csv_filename = f'softrandom/{freq_folder}_combined_results.csv'
+            df.to_csv(csv_filename, index=False)
+            print(f"Saved combined results for softrandom/{freq_folder} with {len(results)} arrival rates")

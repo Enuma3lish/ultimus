@@ -1,5 +1,6 @@
 import multiprocessing as mp
 from multiprocessing import Manager
+import traceback
 import Read_csv
 import Rdynamic_sqrt_6, Rdynamic_sqrt_8, Rdynamic_sqrt_10, Rdynamic_sqrt_2
 import Dynamic
@@ -20,8 +21,8 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %
 logger = logging.getLogger(__name__)
 
 # Constants for timeouts (in seconds)
-EXECUTION_TIMEOUT = 300  # 5 minutes timeout for each algorithm execution
-PROCESS_TIMEOUT = 900    # 15 minutes timeout for entire process
+EXECUTION_TIMEOUT = 3000  # 5 minutes timeout for each algorithm execution
+PROCESS_TIMEOUT = 9000    # 15 minutes timeout for entire process
 
 # Configurable checkpoints (can be modified by the caller)
 CHECKPOINTS = {
@@ -1374,3 +1375,445 @@ def execute_random(arrival_rate_default, Csettings: list):
 def execute_compare(arrival_rate, settings: list):
     """Main execution function for comparison data (avg_30, avg_60, avg_90, freq)"""
     return compare_execute_phase2(arrival_rate, settings)
+
+def process_softrandom_setting(args):
+    """Process a single softrandom setting with synchronized file handling"""
+    arrival_rate, setting, file_handler = args
+    
+    try:
+        # Set a timeout for the entire process
+        start_time = time.time()
+        
+        # For softrandom data, use the correct source folder
+        source_folder = f'softrandom_freq_{setting}'
+        
+        # Try to find phase1 results for this specific arrival rate
+        # First, try the combined results file directly
+        logger.info(f"Processing arrival_rate={arrival_rate} for softrandom setting {setting}")
+        
+        # Try to directly read from the combined file first
+        combined_file = f"softrandom/{setting}_combined_results.csv"
+        alt_file = f"softrandom/freq_{setting}_combined_results.csv"
+        
+        phase1_row = None
+        try:
+            if os.path.exists(combined_file):
+                combined_df = pd.read_csv(combined_file)
+                logger.info(f"Successfully read combined file: {combined_file}")
+                
+                # Find the exact row for this arrival rate
+                matching_rows = combined_df[combined_df['arrival_rate'] == float(arrival_rate)]
+                if len(matching_rows) > 0:
+                    phase1_row = matching_rows.iloc[0].to_dict()
+                    logger.info(f"Found exact matching row for arrival_rate={arrival_rate}")
+                else:
+                    logger.warning(f"No exact match for arrival_rate={arrival_rate} in combined file")
+            elif os.path.exists(alt_file):
+                combined_df = pd.read_csv(alt_file)
+                logger.info(f"Successfully read combined file: {alt_file}")
+                
+                # Find the exact row for this arrival rate
+                matching_rows = combined_df[combined_df['arrival_rate'] == float(arrival_rate)]
+                if len(matching_rows) > 0:
+                    phase1_row = matching_rows.iloc[0].to_dict()
+                    logger.info(f"Found exact matching row for arrival_rate={arrival_rate}")
+                else:
+                    logger.warning(f"No exact match for arrival_rate={arrival_rate} in combined file")
+        except Exception as e:
+            logger.error(f"Error reading combined file: {e}")
+        
+        # If no phase1_row was found, fall back to the regular method
+        if phase1_row is None:
+            logger.info(f"Falling back to read_phase1_results for arrival_rate={arrival_rate}")
+            phase1_df = file_handler.read_phase1_results(arrival_rate, is_random=False, prefix=setting, is_softrandom=True)
+            
+            # Use the first row
+            if len(phase1_df) > 0:
+                phase1_row = phase1_df.iloc[0].to_dict()
+                logger.info(f"Using first row from phase1 results")
+            else:
+                logger.warning(f"No phase1 data available, will use dummy values")
+                # We'll create a dummy row later if needed
+        
+        # Read job data for this specific arrival rate from the softrandom folder
+        job_file = f'data/softrandom/freq_{setting}/({arrival_rate}).csv'
+        logger.info(f"Attempting to read job data from: {job_file}")
+        
+        job_list = None
+        try:
+            job_list = Read_csv.Read_csv(job_file)
+            logger.info(f"Successfully read job data from {job_file}")
+        except Exception as e:
+            logger.error(f"Error reading job file {job_file}: {e}")
+            # Try alternatives with preference to formats used by execute_standard.py
+            alternatives = [
+                f'data/softrandom/freq_{setting}/({str(arrival_rate)}).csv',
+                f'data/softrandom/freq_{setting}/{arrival_rate}.csv',
+                f'data/softrandom/freq_{setting}/({int(float(arrival_rate)*10)}).csv',
+                f'softrandom/freq_{setting}/({arrival_rate}).csv'
+            ]
+            
+            for alt_file in alternatives:
+                logger.info(f"Trying alternative file path: {alt_file}")
+                try:
+                    job_list = Read_csv.Read_csv(alt_file)
+                    logger.info(f"Successfully read from {alt_file}")
+                    break
+                except Exception as e2:
+                    logger.warning(f"Failed to read from {alt_file}: {e2}")
+                    continue
+            
+            if job_list is None:
+                logger.error(f"Failed to read job data from all attempted paths")
+                return None
+        
+        logger.info(f"Using checkpoints for setting {setting}: {CHECKPOINTS}")
+
+        # Run algorithms using the checkpoint constants
+        rdynamic_sqrt_2_l2_norms = run_algorithm(
+            Rdynamic_sqrt_2.Rdynamic, 
+            job_list, 
+            CHECKPOINTS["RDYNAMIC_SQRT_2"], 
+            arrival_rate,
+            algorithm_name="RDYNAMIC_SQRT_2"
+        )
+        
+        rdynamic_sqrt_6_l2_norms = run_algorithm(
+            Rdynamic_sqrt_6.Rdynamic, 
+            job_list, 
+            CHECKPOINTS["RDYNAMIC_SQRT_6"], 
+            arrival_rate,
+            algorithm_name="RDYNAMIC_SQRT_6"
+        )
+        
+        rdynamic_sqrt_8_l2_norms = run_algorithm(
+            Rdynamic_sqrt_8.Rdynamic, 
+            job_list, 
+            CHECKPOINTS["RDYNAMIC_SQRT_8"], 
+            arrival_rate,
+            algorithm_name="RDYNAMIC_SQRT_8"
+        )
+        
+        rdynamic_sqrt_10_l2_norms = run_algorithm(
+            Rdynamic_sqrt_10.Rdynamic, 
+            job_list, 
+            CHECKPOINTS["RDYNAMIC_SQRT_10"], 
+            arrival_rate,
+            algorithm_name="RDYNAMIC_SQRT_10"
+        )
+        
+        dynamic_l2_norms = run_algorithm(
+            Dynamic.DYNAMIC, 
+            job_list, 
+            CHECKPOINTS["Dynamic"], 
+            arrival_rate,
+            algorithm_name="Dynamic"
+        )
+
+        # Check if process timeout is approaching
+        elapsed_time = time.time() - start_time
+        if elapsed_time >= PROCESS_TIMEOUT:
+            logger.warning(f"Process timeout approaching for arrival_rate={arrival_rate}, setting={setting}")
+            return None
+
+        # Calculate means of L2 norms with fallbacks
+        rdynamic_sqrt_2_l2 = np.mean(rdynamic_sqrt_2_l2_norms) if rdynamic_sqrt_2_l2_norms else 1000.0
+        rdynamic_sqrt_6_l2 = np.mean(rdynamic_sqrt_6_l2_norms) if rdynamic_sqrt_6_l2_norms else 1000.0
+        rdynamic_sqrt_8_l2 = np.mean(rdynamic_sqrt_8_l2_norms) if rdynamic_sqrt_8_l2_norms else 1000.0
+        rdynamic_sqrt_10_l2 = np.mean(rdynamic_sqrt_10_l2_norms) if rdynamic_sqrt_10_l2_norms else 1000.0
+        dynamic_l2 = np.mean(dynamic_l2_norms) if dynamic_l2_norms else 1000.0
+        
+        # If phase1 data is available, use it for complete comparison
+        if phase1_row is not None:
+            logger.info(f"Using phase1 row: {phase1_row}")
+            
+            # Calculate full ratios with phase1 data
+            result_row = {
+                'arrival_rate': float(arrival_rate),  # Ensure arrival_rate is consistent
+                **calculate_ratios(rdynamic_sqrt_2_l2, rdynamic_sqrt_6_l2, rdynamic_sqrt_8_l2, rdynamic_sqrt_10_l2, dynamic_l2, phase1_row)
+            }
+            logger.info("Calculated ratios with phase1 data")
+        else:
+            # If no phase1 data, use limited comparison
+            logger.warning("No phase1 data available, using limited ratios")
+            result_row = {
+                'arrival_rate': float(arrival_rate),
+                **calculate_ratios_without_phase1(rdynamic_sqrt_2_l2, rdynamic_sqrt_6_l2, rdynamic_sqrt_8_l2, rdynamic_sqrt_10_l2, dynamic_l2)
+            }
+        
+        # Create and save DataFrame
+        results_df = pd.DataFrame([result_row])
+        logger.info(f"Saving results for arrival_rate={arrival_rate}, setting={setting}")
+        return file_handler.save_results(
+            results_df,
+            source_folder
+        )
+    except Exception as e:
+        logger.error(f"Error in process_softrandom_setting for arrival_rate={arrival_rate}, setting={setting}: {e}")
+        logger.error(traceback.format_exc())
+        return None
+
+def execute_softrandom(arrival_rate_default, Csettings: list):
+    """Main execution function for softrandom data
+    
+    This function processes softrandom data from multiple folders (softrandom/freq_1, softrandom/freq_10, etc.)
+    and compares with target results from softrandom/freq_X_combined_results.csv
+    The results are saved to softrandom_comp_result/all_result_softrandom_freq_X_cpXX.csv
+    """
+    logger.info(f"Starting softrandom execution for settings: {Csettings}")
+    
+    # Create shared file handler
+    file_handler = SynchronizedFileHandler()
+    
+    # Verify CHECKPOINTS dictionary is accessible
+    logger.info(f"Using checkpoints: {CHECKPOINTS}")
+    # Ensure all required keys exist
+    if "RDYNAMIC_SQRT_2" not in CHECKPOINTS:
+        logger.warning("RDYNAMIC_SQRT_2 not found in CHECKPOINTS, setting default value of 80")
+        CHECKPOINTS["RDYNAMIC_SQRT_2"] = 80
+    if "RDYNAMIC_SQRT_6" not in CHECKPOINTS:
+        logger.warning("RDYNAMIC_SQRT_6 not found in CHECKPOINTS, setting default value of 60")
+        CHECKPOINTS["RDYNAMIC_SQRT_6"] = 60
+    if "RDYNAMIC_SQRT_8" not in CHECKPOINTS:
+        logger.warning("RDYNAMIC_SQRT_8 not found in CHECKPOINTS, setting default value of 80")
+        CHECKPOINTS["RDYNAMIC_SQRT_8"] = 80
+    if "RDYNAMIC_SQRT_10" not in CHECKPOINTS:
+        logger.warning("RDYNAMIC_SQRT_10 not found in CHECKPOINTS, setting default value of 100")
+        CHECKPOINTS["RDYNAMIC_SQRT_10"] = 100
+    if "Dynamic" not in CHECKPOINTS:
+        logger.warning("Dynamic not found in CHECKPOINTS, setting default value of 100")
+        CHECKPOINTS["Dynamic"] = 100
+    
+    # Process each setting (freq_1, freq_10, etc.) in the softrandom folder
+    for setting in Csettings:
+        setting_str = str(setting)
+        logger.info(f"Processing softrandom setting: freq_{setting_str}")
+        
+        # Read target data from softrandom combined results
+        target_file = f"softrandom/freq_{setting_str}_combined_results.csv"
+        alt_target_file = f"softrandom/{setting_str}_combined_results.csv"
+        
+        target_df = None
+        try:
+            # Try both potential file paths
+            if os.path.exists(target_file):
+                target_df = pd.read_csv(target_file)
+                logger.info(f"Read target file: {target_file} with {len(target_df)} rows")
+            elif os.path.exists(alt_target_file):
+                target_df = pd.read_csv(alt_target_file)
+                logger.info(f"Read target file: {alt_target_file} with {len(target_df)} rows")
+            else:
+                logger.warning(f"No target file found for setting softrandom/freq_{setting_str}, trying to use execute_standard output directly")
+                # Try to find files directly from execute_standard.py output
+                os.makedirs("softrandom", exist_ok=True)
+                results_to_combine = []
+                
+                # Check if we can find any arrival rate files directly
+                found_files = False
+                for file_pattern in [f"softrandom/{setting_str}_*.csv", f"softrandom/freq_{setting_str}_*.csv"]:
+                    try:
+                        import glob
+                        matching_files = glob.glob(file_pattern)
+                        if matching_files:
+                            found_files = True
+                            for file in matching_files:
+                                try:
+                                    file_df = pd.read_csv(file)
+                                    results_to_combine.append(file_df)
+                                except Exception as e:
+                                    logger.warning(f"Error reading {file}: {e}")
+                    except Exception as e:
+                        logger.warning(f"Error searching for {file_pattern}: {e}")
+                
+                if found_files and results_to_combine:
+                    target_df = pd.concat(results_to_combine, ignore_index=True)
+                    logger.info(f"Created target data by combining {len(results_to_combine)} files with {len(target_df)} total rows")
+                    
+                    # Save the combined file for future use
+                    combined_file = f"softrandom/{setting_str}_combined_results.csv"
+                    target_df.to_csv(combined_file, index=False)
+                    logger.info(f"Saved combined results to {combined_file}")
+                else:
+                    # Create a default dummy target
+                    logger.warning(f"Creating dummy target data for softrandom/freq_{setting_str}")
+                    target_df = pd.DataFrame({
+                        'arrival_rate': [float(arrival_rate_default)],
+                        'RR_L2_Norm': [100.0],
+                        'SRPT_L2_Norm': [100.0],
+                        'SETF_L2_Norm': [100.0],
+                        'FCFS_L2_Norm': [100.0],
+                        'RMLF_L2_Norm': [100.0]
+                    })
+        except Exception as e:
+            logger.error(f"Error reading target file for setting softrandom/freq_{setting_str}: {e}")
+            # Create a default target dataframe
+            target_df = pd.DataFrame({
+                'arrival_rate': [float(arrival_rate_default)],
+                'RR_L2_Norm': [100.0],
+                'SRPT_L2_Norm': [100.0],
+                'SETF_L2_Norm': [100.0],
+                'FCFS_L2_Norm': [100.0],
+                'RMLF_L2_Norm': [100.0]
+            })
+        
+        # Make sure we have arrival_rate in the target data
+        if 'arrival_rate' not in target_df.columns:
+            logger.error(f"Target file for softrandom/freq_{setting_str} doesn't contain arrival_rate column, adding default")
+            target_df['arrival_rate'] = [float(arrival_rate_default)]
+        
+        # Get all unique arrival rates from the target data
+        arrival_rates = target_df['arrival_rate'].unique()
+        logger.info(f"Found {len(arrival_rates)} unique arrival rates in target data: {arrival_rates}")
+        
+        # Create a list to store all processed results for this setting
+        all_results = []
+        source_folder = f'softrandom_freq_{setting_str}'
+        
+        # Process each arrival rate
+        for arr_rate in arrival_rates:
+            logger.info(f"Processing arrival_rate={arr_rate} for setting softrandom/freq_{setting_str}")
+            
+            # Get the target row for this arrival rate
+            target_row = target_df[target_df['arrival_rate'] == arr_rate]
+            if len(target_row) == 0:
+                logger.warning(f"No target data found for arrival_rate={arr_rate}, using first available row")
+                if len(target_df) > 0:
+                    target_row = target_df.iloc[0:1]
+                else:
+                    logger.warning(f"No target data available at all, skipping arrival_rate={arr_rate}")
+                    continue
+            target_row = target_row.iloc[0].to_dict()
+            
+            # Read job data - file name format should match execute_standard.py's output for softrandom
+            job_file = f'data/softrandom/freq_{setting_str}/({arr_rate}).csv'
+            job_list = None
+            
+            try:
+                job_list = Read_csv.Read_csv(job_file)
+                logger.info(f"Successfully read job data from {job_file}")
+            except Exception as e:
+                logger.error(f"Error reading {job_file}: {e}")
+                # Try alternative file paths for softrandom
+                alternatives = [
+                    f'data/softrandom/freq_{setting_str}/({str(arr_rate)}).csv',
+                    f'data/softrandom/freq_{setting_str}/{arr_rate}.csv',
+                    f'data/softrandom/freq_{setting_str}/({int(float(arr_rate)*10)}).csv',
+                    f'softrandom/freq_{setting_str}/({arr_rate}).csv'
+                ]
+                
+                for alt_file in alternatives:
+                    try:
+                        job_list = Read_csv.Read_csv(alt_file)
+                        logger.info(f"Successfully read job data from {alt_file}")
+                        break
+                    except Exception as e2:
+                        pass
+            
+            if job_list is None:
+                logger.error(f"Failed to read any job data for arrival_rate={arr_rate}, skipping")
+                continue
+            
+            # Run algorithms with checkpoint values - add try/except to catch any algorithm failures
+            logger.info(f"Running algorithms for arrival_rate={arr_rate}")
+            
+            try:
+                # Check if CHECKPOINTS dictionary is accessible and contains required keys
+                rdyn2_checkpoint = CHECKPOINTS.get("RDYNAMIC_SQRT_2", 80)
+                rdyn6_checkpoint = CHECKPOINTS.get("RDYNAMIC_SQRT_6", 60)
+                rdyn8_checkpoint = CHECKPOINTS.get("RDYNAMIC_SQRT_8", 80)
+                rdyn10_checkpoint = CHECKPOINTS.get("RDYNAMIC_SQRT_10", 100)
+                dyn_checkpoint = CHECKPOINTS.get("Dynamic", 100)
+                
+                logger.info(f"Using checkpoints: RDYNAMIC_SQRT_2={rdyn2_checkpoint}, RDYNAMIC_SQRT_6={rdyn6_checkpoint}, RDYNAMIC_SQRT_8={rdyn8_checkpoint}, RDYNAMIC_SQRT_10={rdyn10_checkpoint}, Dynamic={dyn_checkpoint}")
+                
+                # Run all dynamic variants
+                rdynamic_sqrt_2_l2_norms = run_algorithm(
+                    Rdynamic_sqrt_2.Rdynamic, 
+                    job_list, 
+                    rdyn2_checkpoint, 
+                    arr_rate,
+                    algorithm_name="RDYNAMIC_SQRT_2"
+                )
+                
+                rdynamic_sqrt_6_l2_norms = run_algorithm(
+                    Rdynamic_sqrt_6.Rdynamic, 
+                    job_list, 
+                    rdyn6_checkpoint, 
+                    arr_rate,
+                    algorithm_name="RDYNAMIC_SQRT_6"
+                )
+                
+                rdynamic_sqrt_8_l2_norms = run_algorithm(
+                    Rdynamic_sqrt_8.Rdynamic, 
+                    job_list, 
+                    rdyn8_checkpoint, 
+                    arr_rate,
+                    algorithm_name="RDYNAMIC_SQRT_8"
+                )
+                
+                rdynamic_sqrt_10_l2_norms = run_algorithm(
+                    Rdynamic_sqrt_10.Rdynamic, 
+                    job_list, 
+                    rdyn10_checkpoint, 
+                    arr_rate,
+                    algorithm_name="RDYNAMIC_SQRT_10"
+                )
+                
+                dynamic_l2_norms = run_algorithm(
+                    Dynamic.DYNAMIC, 
+                    job_list, 
+                    dyn_checkpoint, 
+                    arr_rate,
+                    algorithm_name="Dynamic"
+                )
+                
+                # Calculate mean L2 norms with fallbacks
+                rdynamic_sqrt_2_l2 = np.mean(rdynamic_sqrt_2_l2_norms) if rdynamic_sqrt_2_l2_norms else 1000.0
+                rdynamic_sqrt_6_l2 = np.mean(rdynamic_sqrt_6_l2_norms) if rdynamic_sqrt_6_l2_norms else 1000.0
+                rdynamic_sqrt_8_l2 = np.mean(rdynamic_sqrt_8_l2_norms) if rdynamic_sqrt_8_l2_norms else 1000.0
+                rdynamic_sqrt_10_l2 = np.mean(rdynamic_sqrt_10_l2_norms) if rdynamic_sqrt_10_l2_norms else 1000.0
+                dynamic_l2 = np.mean(dynamic_l2_norms) if dynamic_l2_norms else 1000.0
+                
+                # Calculate performance ratios
+                result_row = {
+                    'arrival_rate': float(arr_rate),
+                    **calculate_ratios(rdynamic_sqrt_2_l2, rdynamic_sqrt_6_l2, rdynamic_sqrt_8_l2, rdynamic_sqrt_10_l2, dynamic_l2, target_row)
+                }
+                
+                # Add to results collection
+                all_results.append(result_row)
+                logger.info(f"Added result for arrival_rate={arr_rate}")
+            except Exception as e:
+                logger.error(f"Error processing arrival_rate={arr_rate}: {e}")
+                logger.error(traceback.format_exc())
+                # Continue with next arrival rate
+                continue
+        
+        # Save all results for this setting
+        if all_results:
+            results_df = pd.DataFrame(all_results)
+            
+            # Create the softrandom_comp_result folder
+            result_folder = 'softrandom_comp_result'
+            os.makedirs(result_folder, exist_ok=True)
+            
+            # Get checkpoint value for file naming
+            checkpoint_6 = CHECKPOINTS.get("RDYNAMIC_SQRT_6", 60)
+            result_file = f'all_result_softrandom_freq_{setting_str}_cp{checkpoint_6}.csv'
+            
+            # Final path
+            output_file = os.path.join(result_folder, result_file)
+            
+            # Save directly to correct location
+            try:
+                # Create temp file for atomic write
+                temp_file = f"{output_file}.tmp"
+                results_df.to_csv(temp_file, index=False)
+                os.replace(temp_file, output_file)
+                logger.info(f"Successfully saved {len(results_df)} results to {output_file}")
+            except Exception as e:
+                logger.error(f"Error saving results to {output_file}: {e}")
+        else:
+            logger.error(f"No results to save for setting softrandom/freq_{setting_str}")
+    
+    return True

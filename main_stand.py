@@ -51,6 +51,7 @@ def create_dataset():
     # Create output directories
     os.makedirs("phase1", exist_ok=True)
     os.makedirs("freq", exist_ok=True)
+    os.makedirs("softrandom", exist_ok=True)
     
     # Process phase1 for each avg_status
     for avg_status, bp_parameter in parameter_map.items():
@@ -78,6 +79,16 @@ def create_dataset():
         logger.info(f"Completed processing random data for all arrival rates")
     except Exception as e:
         logger.error(f"Error processing random frequency data: {e}")
+    
+    # Process softrandom data for all arrival rates at once
+    logger.info("Processing softrandom frequency-based data...")
+    
+    try:
+        # Call execute_phase1_softrandom with all arrival rates
+        execute_standard.execute_phase1_softrandom(Arrival_rate)
+        logger.info(f"Completed processing softrandom data for all arrival rates")
+    except Exception as e:
+        logger.error(f"Error processing softrandom frequency data: {e}")
 
 if __name__ == "__main__":
     # Set start time

@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 # Checkpoint values for Rdynamic algorithms to test
 checkpoints = {
+    "RDYNAMIC_SQRT_2": [80],  # Add checkpoint for Rdynamic_sqrt_2
     "RDYNAMIC_SQRT_6": [30],
     "RDYNAMIC_SQRT_8": [60],  # default value
     "RDYNAMIC_SQRT_10": [100],  # default value
@@ -46,18 +47,20 @@ def create_dataset():
     ]
     
     # Random job settings
-    jsettings = [1,10,100,500,1000,10000]
+    jsettings = [1, 10, 100, 500, 1000, 10000]
     
     # Create log directory
     os.makedirs("log", exist_ok=True)
     
-    # Create result directories
-    result_dirs = ["result", "compare_avg_30", "compare_avg_60", "compare_avg_90", "freq_comp_result"]
+    # Create result directories (including new one for softrandom)
+    result_dirs = ["result", "compare_avg_30", "compare_avg_60", "compare_avg_90", 
+                   "freq_comp_result", "softrandom_comp_result"]
     for directory in result_dirs:
         os.makedirs(directory, exist_ok=True)
     
     # Update the CHECKPOINTS dictionary in execute_compare module
     execute_compare.CHECKPOINTS = {
+        "RDYNAMIC_SQRT_2": checkpoints["RDYNAMIC_SQRT_2"][0],  # Add Rdynamic_sqrt_2 checkpoint
         "RDYNAMIC_SQRT_6": checkpoints["RDYNAMIC_SQRT_6"][0],  # Start with first checkpoint
         "RDYNAMIC_SQRT_8": checkpoints["RDYNAMIC_SQRT_8"][0],
         "RDYNAMIC_SQRT_10": checkpoints["RDYNAMIC_SQRT_10"][0],
@@ -93,6 +96,11 @@ def create_dataset():
                 # Process comparison data (avg_30, avg_60, avg_90, freq)
                 logger.info(f"Processing comparison data for arrival rate {i}")
                 execute_compare.execute_compare(i, ["avg_30", "avg_60", "avg_90", "freq"])
+                
+                # Process softrandom data (new addition)
+                if jsettings:
+                    logger.info(f"Processing softrandom data for arrival rate {i}")
+                    execute_compare.execute_softrandom(i, jsettings)
             
         except Exception as e:
             logger.error(f"Error processing arrival rate {i}: {e}")
