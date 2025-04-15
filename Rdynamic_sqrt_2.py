@@ -4,7 +4,7 @@ import math
 import os
 import pandas as pd
 from typing import Optional, List, Dict, Any, Tuple
-from MLF import Job, MLF
+from MLF_2 import Job, MLF
 from itertools import count
 
 def Rdynamic(jobs: List[Dict[str, Any]], checkpoint: int, prob_greedy: float = 1.0) -> Tuple[float, float]:

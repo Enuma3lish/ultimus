@@ -4,7 +4,7 @@ import math
 import os
 import pandas as pd
 from typing import Optional, List, Dict, Any, Tuple
-from MLF import Job, MLF
+from MLF_6 import Job, MLF
 from itertools import count
 
 def log_algorithm_usage(filename: str, checkpoint_data: List[Dict[str, Any]]) -> None:
