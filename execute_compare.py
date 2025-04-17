@@ -68,10 +68,14 @@ class SynchronizedFileHandler:
         """Create directory if it doesn't exist"""
         Path(directory_path).mkdir(parents=True, exist_ok=True)
     
-    def save_results(self, results_df, source_folder, mode='w'):
-        """Thread-safe method to save results with improved directory handling"""
+    def save_results(self, results_df, source_folder, mode='a'):
+        """Thread-safe method to save results with improved directory handling - always appends all runs"""
         with self._lock:
             try:
+                # Add timestamp to distinguish each run
+                timestamp = time.strftime("%Y%m%d%H%M%S")
+                results_df['run_timestamp'] = timestamp
+                
                 # Determine result folder name based on source folder
                 if source_folder == 'data':
                     result_folder = 'result'
@@ -109,46 +113,29 @@ class SynchronizedFileHandler:
                 # Log the exact path being used
                 logger.info(f"Saving results to: {combined_file}")
                 
-                # Directly save the new data first
-                if mode == 'w' or not os.path.exists(combined_file):
+                # Always try to read existing data and append (never overwrite)
+                if not os.path.exists(combined_file):  
+                    # Create new file if it doesn't exist
                     logger.info(f"Creating new results file with {len(results_df)} rows")
                     all_results_df = results_df.copy()
                 else:
                     try:
-                        # Try to update existing file
+                        # Try to read and append to existing file
                         all_results_df = pd.read_csv(combined_file)
                         logger.info(f"Read existing results file with {len(all_results_df)} rows")
                         
-                        # Convert all arrival_rate to float for consistent comparison
-                        results_df['arrival_rate'] = results_df['arrival_rate'].astype(float)
-                        if 'arrival_rate' in all_results_df.columns:
-                            all_results_df['arrival_rate'] = all_results_df['arrival_rate'].astype(float)
-                        
-                        # Create a mask for each row to identify duplicates
-                        for _, new_row in results_df.iterrows():
-                            # Create the mask for matching rows
-                            if 'bp_parameter' in new_row and 'bp_parameter' in all_results_df.columns:
-                                # If bp_parameter exists, filter by both arrival_rate and bp_parameter
-                                mask = ((all_results_df['arrival_rate'] == new_row['arrival_rate']) & 
-                                        (all_results_df['bp_parameter'] == new_row['bp_parameter']))
-                            else:
-                                # Otherwise filter just by arrival_rate
-                                mask = (all_results_df['arrival_rate'] == new_row['arrival_rate'])
-                            
-                            # Remove matching rows (will be replaced with new row)
-                            all_results_df = all_results_df[~mask]
-                            logger.info(f"Removed existing data for arrival_rate={new_row['arrival_rate']}")
-                        
-                        # Combine with new data
+                        # Simply append new data - NEVER remove any existing entries
+                        # This ensures all runs for all arrival rates are retained
                         all_results_df = pd.concat([all_results_df, results_df], ignore_index=True)
-                        logger.info(f"Combined data, new size: {len(all_results_df)} rows")
+                        logger.info(f"Appended data, new size: {len(all_results_df)} rows")
                     except Exception as e:
                         logger.error(f"Error reading existing results file: {e}")
                         logger.error(traceback.format_exc())
                         all_results_df = results_df.copy()
                 
-                # Sort by arrival_rate for better readability
-                all_results_df = all_results_df.sort_values('arrival_rate')
+                # Sort by arrival_rate and timestamp for better readability
+                if 'arrival_rate' in all_results_df.columns:
+                    all_results_df = all_results_df.sort_values(['arrival_rate', 'run_timestamp'])
                 
                 # Atomic write to combined file
                 logger.info(f"Writing {len(all_results_df)} rows to {temp_combined}")
@@ -280,67 +267,57 @@ def execute_scheduler_with_timeout(func, args, timeout=EXECUTION_TIMEOUT):
 
 def execute_single_run(algorithm_func, job_list, checkpoint, arrival_rate, run_number, algorithm_name):
     """Execute a single run of an algorithm"""
-    logger.info(f"Starting {algorithm_name} run {run_number} for arrival rate {arrival_rate} with checkpoint {checkpoint}")
+    logger.info(f"Starting {algorithm_name} run for arrival rate {arrival_rate} with checkpoint {checkpoint}")
     converted_jobs = convert_jobs(job_list.copy(), include_index=True)
     
     # Handling empty job lists
     if not converted_jobs:
-        logger.error(f"Empty job list for {algorithm_name} run {run_number}")
+        logger.error(f"Empty job list for {algorithm_name}")
         return None
     
     result = execute_scheduler_with_timeout(algorithm_func, (converted_jobs, checkpoint))
     
     if result is None:
-        logger.error(f"{algorithm_name} Run {run_number} failed")
+        logger.error(f"{algorithm_name} run failed")
         return None
     
     return result
 
-def run_algorithm(algorithm_func, job_list, checkpoint, arrival_rate, num_runs=3, algorithm_name="Algorithm"):
-    """Run an algorithm multiple times and collect results"""
-    results = []
+def run_algorithm(algorithm_func, job_list, checkpoint, arrival_rate, num_runs=1, algorithm_name="Algorithm"):
+    """Run an algorithm once and collect results"""
     success = False  # Track whether algorithm completed successfully
     
-    for run_number in range(1, num_runs + 1):
-        try:
-            result = execute_single_run(
-                algorithm_func, 
-                job_list, 
-                checkpoint, 
-                arrival_rate, 
-                run_number,
-                algorithm_name
-            )
-            if result is not None:
-                results.append(result[1])  # Append L2 norm
-                success = True  # Mark as success if at least one run completed
-        except Exception as e:
-            logger.error(f"Error in run {run_number} for {algorithm_name}: {e}")
-            logger.error(traceback.format_exc())
-            continue
+    try:
+        result = execute_single_run(
+            algorithm_func, 
+            job_list, 
+            checkpoint, 
+            arrival_rate, 
+            1,  # Always pass run_number=1 since we only run once
+            algorithm_name
+        )
+        if result is not None:
+            l2_norm = result[1]  # Get L2 norm
+            success = True  # Mark as success if completed
+            logger.info(f"{algorithm_name} completed successfully with L2 norm: {l2_norm:.2f}")
+            return [l2_norm], True  # Return single L2 norm as a list for compatibility
+    except Exception as e:
+        logger.error(f"Error running {algorithm_name}: {e}")
+        logger.error(traceback.format_exc())
     
-    # Return L2 norms and success status
-    if success:
-        logger.info(f"{algorithm_name} completed successfully with avg L2 norm: {np.mean(results):.2f}")
-        return results, True
-    elif job_list:
-        # Return failure status with actual L2 values from the best attempt
-        # In random cases, this prevents defaulting to 1000.0
-        if len(results) > 0:
-            logger.warning(f"Some runs of {algorithm_name} failed, but we have partial results")
-            return results, True  # Return partial results with success flag
-        else:
-            logger.warning(f"All runs of {algorithm_name} failed, marking as FAILED")
-            # Generate a more reasonable default based on job characteristics
-            try:
-                avg_job_size = np.mean([job[1] if isinstance(job, (list, tuple)) else job.get('job_size', 0) for job in job_list])
-                num_jobs = len(job_list)
-                # More reasonable estimate based on job characteristics 
-                estimated_l2 = avg_job_size * math.sqrt(num_jobs) * 2.0
-                return [min(estimated_l2, DEFAULT_L2_VALUE)], False  # Use more reasonable default
-            except Exception:
-                # Fall back to default if estimation fails
-                return [DEFAULT_L2_VALUE], False
+    # If execution failed or job_list is empty, handle accordingly
+    if job_list:
+        logger.warning(f"{algorithm_name} failed, marking as FAILED")
+        # Generate a more reasonable default based on job characteristics
+        try:
+            avg_job_size = np.mean([job[1] if isinstance(job, (list, tuple)) else job.get('job_size', 0) for job in job_list])
+            num_jobs = len(job_list)
+            # More reasonable estimate based on job characteristics 
+            estimated_l2 = avg_job_size * math.sqrt(num_jobs) * 2.0
+            return [min(estimated_l2, DEFAULT_L2_VALUE)], False  # Use more reasonable default
+        except Exception:
+            # Fall back to default if estimation fails
+            return [DEFAULT_L2_VALUE], False
     else:
         # Empty job list, this is a special case
         logger.error(f"Empty job list for {algorithm_name}")
@@ -387,13 +364,13 @@ def calculate_ratios(rdynamic_sqrt_2_result, rdynamic_sqrt_6_result, rdynamic_sq
     fcfs_norm = phase1_row.get('FCFS_L2_Norm', 100.0)
     rmlf_norm = phase1_row.get('RMLF_L2_Norm', 100.0)
     
-    # Compute L2 values - always use the values we have, regardless of success flag
-    # This prevents showing default values in results when we have actual data
-    rdynamic_sqrt_2_value = np.mean(rdynamic_sqrt_2_l2)
-    rdynamic_sqrt_6_value = np.mean(rdynamic_sqrt_6_l2)
-    rdynamic_sqrt_8_value = np.mean(rdynamic_sqrt_8_l2)
-    rdynamic_sqrt_10_value = np.mean(rdynamic_sqrt_10_l2)
-    dynamic_value = np.mean(dynamic_l2)
+    # Since we now run only once, we just take the first (and only) element 
+    # from the results list, but we maintain list compatibility
+    rdynamic_sqrt_2_value = rdynamic_sqrt_2_l2[0] if rdynamic_sqrt_2_l2 else DEFAULT_L2_VALUE
+    rdynamic_sqrt_6_value = rdynamic_sqrt_6_l2[0] if rdynamic_sqrt_6_l2 else DEFAULT_L2_VALUE
+    rdynamic_sqrt_8_value = rdynamic_sqrt_8_l2[0] if rdynamic_sqrt_8_l2 else DEFAULT_L2_VALUE
+    rdynamic_sqrt_10_value = rdynamic_sqrt_10_l2[0] if rdynamic_sqrt_10_l2 else DEFAULT_L2_VALUE
+    dynamic_value = dynamic_l2[0] if dynamic_l2 else DEFAULT_L2_VALUE
     
     # Add raw L2 norms for reference
     ratios.update({
@@ -589,12 +566,12 @@ def calculate_ratios_without_phase1(rdynamic_sqrt_2_result, rdynamic_sqrt_6_resu
         except:
             return default
     
-    # Compute actual L2 values
-    rdynamic_sqrt_2_value = np.mean(rdynamic_sqrt_2_l2)
-    rdynamic_sqrt_6_value = np.mean(rdynamic_sqrt_6_l2)
-    rdynamic_sqrt_8_value = np.mean(rdynamic_sqrt_8_l2)
-    rdynamic_sqrt_10_value = np.mean(rdynamic_sqrt_10_l2)
-    dynamic_value = np.mean(dynamic_l2)
+    # Since we now run only once, we just take the first (and only) element from each list
+    rdynamic_sqrt_2_value = rdynamic_sqrt_2_l2[0] if rdynamic_sqrt_2_l2 else DEFAULT_L2_VALUE
+    rdynamic_sqrt_6_value = rdynamic_sqrt_6_l2[0] if rdynamic_sqrt_6_l2 else DEFAULT_L2_VALUE
+    rdynamic_sqrt_8_value = rdynamic_sqrt_8_l2[0] if rdynamic_sqrt_8_l2 else DEFAULT_L2_VALUE
+    rdynamic_sqrt_10_value = rdynamic_sqrt_10_l2[0] if rdynamic_sqrt_10_l2 else DEFAULT_L2_VALUE
+    dynamic_value = dynamic_l2[0] if dynamic_l2 else DEFAULT_L2_VALUE
     
     # Add raw L2 norms for reference
     ratios.update({
@@ -676,7 +653,7 @@ def calculate_ratios_without_phase1(rdynamic_sqrt_2_result, rdynamic_sqrt_6_resu
 
 def run_algorithm_wrapper(args):
     """A wrapper function for run_algorithm that avoids pickling issues"""
-    algorithm_name, job_list_data, checkpoint, arrival_rate, num_runs = args
+    algorithm_name, job_list_data, checkpoint, arrival_rate, _ = args
     
     # Recreate algorithm function references inside the process
     algorithm_funcs = {
@@ -693,13 +670,13 @@ def run_algorithm_wrapper(args):
         logger.error(f"Unknown algorithm: {algorithm_name}")
         return None
     
-    # Run algorithm
+    # Run algorithm once (ignore num_runs parameter)
     result = run_algorithm(
         algorithm_func,
         job_list_data,
         checkpoint,
         arrival_rate,
-        num_runs=num_runs,
+        num_runs=1,  # Always run once
         algorithm_name=algorithm_name
     )
     
@@ -764,12 +741,13 @@ def process_task_mp(args):
         
         # Run algorithms in parallel but within this process
         # This avoids pickling issues since we're not passing file handles
+        # Set num_runs=1 for all algorithms
         algorithm_tasks = [
-            ('RDYNAMIC_SQRT_2', job_list, rdyn2_checkpoint, arrival_rate, 3),
-            ('RDYNAMIC_SQRT_6', job_list, rdyn6_checkpoint, arrival_rate, 3),
-            ('RDYNAMIC_SQRT_8', job_list, rdyn8_checkpoint, arrival_rate, 3),
-            ('RDYNAMIC_SQRT_10', job_list, rdyn10_checkpoint, arrival_rate, 3),
-            ('DYNAMIC', job_list, dyn_checkpoint, arrival_rate, 3)
+            ('RDYNAMIC_SQRT_2', job_list, rdyn2_checkpoint, arrival_rate, 1),
+            ('RDYNAMIC_SQRT_6', job_list, rdyn6_checkpoint, arrival_rate, 1),
+            ('RDYNAMIC_SQRT_8', job_list, rdyn8_checkpoint, arrival_rate, 1),
+            ('RDYNAMIC_SQRT_10', job_list, rdyn10_checkpoint, arrival_rate, 1),
+            ('DYNAMIC', job_list, dyn_checkpoint, arrival_rate, 1)
         ]
         
         # Process algorithms sequentially (could use ThreadPool if needed)
@@ -834,6 +812,36 @@ def process_task_mp(args):
         print(f"Error in process_task_mp: {e}")
         return None
 
+def process_tasks_with_delayed_write(all_tasks, num_processes):
+    """Process tasks in parallel but collect results first before writing to disk"""
+    logger.info(f"Using {num_processes} processes for parallel execution")
+    
+    # Create a process pool
+    all_results = []
+    
+    # Use either sequential or parallel processing based on task count
+    if len(all_tasks) <= 2:
+        logger.info("Processing tasks sequentially")
+        for task in all_tasks:
+            result = process_task_mp(task)
+            if result is not None:
+                all_results.append(result)
+    else:
+        # For parallel processing, collect all results first before any writing
+        with mp.Pool(processes=num_processes, maxtasksperchild=1) as pool:
+            for result in pool.map(process_task_mp, all_tasks):
+                if result is not None:
+                    all_results.append(result)
+    
+    # Once all processing is complete, organize results by setting
+    results_by_setting = {}
+    for setting_str, result_row in all_results:
+        if setting_str not in results_by_setting:
+            results_by_setting[setting_str] = []
+        results_by_setting[setting_str].append(result_row)
+    
+    return results_by_setting
+
 def check_data_directories(settings):
     """Check and report on data directory structure for debugging"""
     logger.info("Checking data directories...")
@@ -883,140 +891,9 @@ def check_data_directories(settings):
         else:
             logger.info(f"Result folder '{result_folder}' will be created")
 
-def random_execute_phase2(arrival_rate_default, Csettings: list):
-    """Execute phase 2 and calculate ratios for random data with hybrid multiprocessing"""
-    logger.info(f"Starting hybrid multiprocessing random phase 2 for settings: {Csettings}")
-    
-    # Create shared file handler (only used for initial data reading)
-    file_handler = SynchronizedFileHandler()
-    
-    # Convert settings to strings
-    string_settings = [str(setting) for setting in Csettings]
-    logger.info(f"Processing settings: {string_settings}")
-    
-    # Read phase1 data for each setting
-    all_tasks = []
-    
-    for setting in string_settings:
-        logger.info(f"Preparing tasks for setting: {setting}")
-        # Try to read the combined results file first
-        combined_file = f"freq/freq_{setting}_combined_results.csv"
-        alt_file = f"freq/{setting}_combined_results.csv"
-        
-        phase1_df = None
-        try:
-            # Try both potential file paths
-            if os.path.exists(combined_file):
-                phase1_df = pd.read_csv(combined_file)
-                logger.info(f"Successfully read combined file: {combined_file}")
-            elif os.path.exists(alt_file):
-                phase1_df = pd.read_csv(alt_file)
-                logger.info(f"Successfully read combined file: {alt_file}")
-            else:
-                logger.warning(f"Combined files not found, reading with default arrival_rate")
-                phase1_df = file_handler.read_phase1_results(arrival_rate_default, is_random=True, prefix=setting)
-        except Exception as e:
-            logger.error(f"Error reading phase1 results for setting {setting}: {e}")
-            phase1_df = pd.DataFrame({'arrival_rate': [arrival_rate_default]})
-        
-        # Get arrival rates
-        arrival_rates = []
-        if phase1_df is not None and 'arrival_rate' in phase1_df.columns and len(phase1_df) > 0:
-            arrival_rates = phase1_df['arrival_rate'].unique()
-            
-            # Limit to 5 rates to prevent excessive processing
-            if len(arrival_rates) > 5:
-                logger.warning(f"Too many arrival rates ({len(arrival_rates)}), limiting to 5")
-                arrival_rates = arrival_rates[:5]
-        else:
-            arrival_rates = [arrival_rate_default]
-        
-        # Create tasks for each arrival rate
-        for arr_rate in arrival_rates:
-            logger.info(f"Creating task for arrival_rate={arr_rate}, setting={setting}")
-            
-            # Find the phase1 data for this arrival rate
-            target_row = None
-            if phase1_df is not None:
-                matching_rows = phase1_df[phase1_df['arrival_rate'] == float(arr_rate)]
-                if len(matching_rows) > 0:
-                    target_row = matching_rows.iloc[0].to_dict()
-            
-            # If no target row found, create a default one
-            if target_row is None:
-                target_row = {
-                    'arrival_rate': float(arr_rate),
-                    'RR_L2_Norm': 100.0,
-                    'SRPT_L2_Norm': 100.0,
-                    'SETF_L2_Norm': 100.0,
-                    'FCFS_L2_Norm': 100.0,
-                    'RMLF_L2_Norm': 100.0
-                }
-            
-            # Add task to list - bp_param is None for random tasks
-            all_tasks.append(('random', setting, arr_rate, None, target_row))
-    
-    # Process tasks in parallel
-    logger.info(f"Created {len(all_tasks)} tasks for processing")
-    
-    # Determine number of processes
-    num_processes = min(len(all_tasks), max(1, mp.cpu_count() // 2))
-    logger.info(f"Using {num_processes} processes")
-    
-    # Process tasks in parallel
-    results_by_setting = {}
-    
-    if len(all_tasks) <= 2:  # Process sequentially for small number of tasks
-        logger.info("Processing tasks sequentially")
-        for task in all_tasks:
-            result = process_task_mp(task)
-            if result is not None:
-                setting_str, result_row = result
-                if setting_str not in results_by_setting:
-                    results_by_setting[setting_str] = []
-                results_by_setting[setting_str].append(result_row)
-    else:  # Use multiprocessing for larger task sets
-        with mp.Pool(processes=num_processes, maxtasksperchild=1) as pool:
-            for result in pool.map(process_task_mp, all_tasks):
-                if result is not None:
-                    setting_str, result_row = result
-                    if setting_str not in results_by_setting:
-                        results_by_setting[setting_str] = []
-                    results_by_setting[setting_str].append(result_row)
-    
-    # Process results for each setting
-    successful = 0
-    for setting_str, results in results_by_setting.items():
-        if results:
-            results_df = pd.DataFrame(results)
-            
-            # Save to the freq_comp_result folder
-            result_folder = 'freq_comp_result'
-            os.makedirs(result_folder, exist_ok=True)
-            
-            checkpoint_6 = CHECKPOINTS.get("RDYNAMIC_SQRT_6", 60)
-            result_file = f'all_result_freq_{setting_str}_cp{checkpoint_6}.csv'
-            
-            output_file = os.path.join(result_folder, result_file)
-            
-            try:
-                # Atomic write
-                temp_file = f"{output_file}.tmp"
-                results_df.to_csv(temp_file, index=False)
-                os.replace(temp_file, output_file)
-                logger.info(f"Successfully saved {len(results_df)} results to {output_file}")
-                successful += 1
-            except Exception as e:
-                logger.error(f"Error saving results to {output_file}: {e}")
-        else:
-            logger.error(f"No results to save for setting freq_{setting_str}")
-    
-    logger.info(f"Successfully processed {successful}/{len(string_settings)} settings")
-    return successful > 0
-
 def compare_execute_phase2(arrival_rate, settings: list):
-    """Execute phase 2 and calculate ratios for comparison data with hybrid multiprocessing"""
-    logger.info(f"Starting hybrid multiprocessing compare phase 2 with arrival_rate={arrival_rate}")
+    """Execute phase 2 and calculate ratios for comparison data with improved file handling"""
+    logger.info(f"Starting optimized compare phase 2 with arrival_rate={arrival_rate}")
     logger.info(f"Processing settings: {settings}")
     
     # Create shared file handler (only for initial reads)
@@ -1104,39 +981,25 @@ def compare_execute_phase2(arrival_rate, settings: list):
             # Add task to list
             all_tasks.append(('compare', setting, arrival_rate, bp_param, phase1_row))
     
-    # Process tasks in parallel
+    # Process tasks in parallel, collecting results first
     logger.info(f"Created {len(all_tasks)} tasks for processing")
     
-    # Determine number of processes
-    num_processes = min(len(all_tasks), max(1, mp.cpu_count() // 2))
-    logger.info(f"Using {num_processes} processes")
+    # Determine number of processes - use more aggressive parallelism (up to 75% of CPUs)
+    num_processes = min(len(all_tasks), max(1, int(mp.cpu_count() * 0.75)))
     
-    # Process tasks in parallel
-    results_by_setting = {}
+    # Process all tasks and collect results by setting
+    results_by_setting = process_tasks_with_delayed_write(all_tasks, num_processes)
     
-    if len(all_tasks) <= 2:  # Process sequentially for small number of tasks
-        logger.info("Processing tasks sequentially")
-        for task in all_tasks:
-            result = process_task_mp(task)
-            if result is not None:
-                setting_str, result_row = result
-                if setting_str not in results_by_setting:
-                    results_by_setting[setting_str] = []
-                results_by_setting[setting_str].append(result_row)
-    else:  # Use multiprocessing for larger task sets
-        with mp.Pool(processes=num_processes, maxtasksperchild=1) as pool:
-            for result in pool.map(process_task_mp, all_tasks):
-                if result is not None:
-                    setting_str, result_row = result
-                    if setting_str not in results_by_setting:
-                        results_by_setting[setting_str] = []
-                    results_by_setting[setting_str].append(result_row)
-    
-    # Save results for each setting
+    # Save results for each setting - ONLY HAPPENS IN MAIN THREAD
     successful = 0
     for setting, results in results_by_setting.items():
         if results:
             results_df = pd.DataFrame(results)
+            
+            # Add timestamp to distinguish each run
+            timestamp = time.strftime("%Y%m%d%H%M%S")
+            results_df['run_timestamp'] = timestamp
+            
             logger.info(f"Saving {len(results_df)} results for {setting}")
             
             # Save to correct folder
@@ -1149,17 +1012,181 @@ def compare_execute_phase2(arrival_rate, settings: list):
             output_file = os.path.join(result_folder, result_file)
             
             try:
-                # Atomic write
-                temp_file = f"{output_file}.tmp"
-                results_df.to_csv(temp_file, index=False)
-                os.replace(temp_file, output_file)
-                logger.info(f"Successfully saved {len(results_df)} results to {output_file}")
+                # Check if file exists already
+                if os.path.exists(output_file):
+                    # Read existing file and append new results
+                    logger.info(f"Appending to existing file: {output_file}")
+                    try:
+                        existing_df = pd.read_csv(output_file)
+                        # Combine with new results - never filter out any existing data
+                        combined_df = pd.concat([existing_df, results_df], ignore_index=True)
+                        # Sort by arrival_rate and timestamp for better readability
+                        combined_df = combined_df.sort_values(['arrival_rate', 'run_timestamp'])
+                        # Atomic write with combined data
+                        temp_file = f"{output_file}.tmp"
+                        combined_df.to_csv(temp_file, index=False)
+                        os.replace(temp_file, output_file)
+                        logger.info(f"Successfully appended {len(results_df)} results to {output_file}")
+                    except Exception as e:
+                        logger.error(f"Error reading existing file, creating new one: {e}")
+                        # Just write new results if can't read existing file
+                        temp_file = f"{output_file}.tmp"
+                        results_df.to_csv(temp_file, index=False)
+                        os.replace(temp_file, output_file)
+                else:
+                    # Create new file
+                    logger.info(f"Creating new file: {output_file}")
+                    temp_file = f"{output_file}.tmp"
+                    results_df.to_csv(temp_file, index=False)
+                    os.replace(temp_file, output_file)
+                    logger.info(f"Successfully saved {len(results_df)} results to {output_file}")
+                
                 successful += 1
             except Exception as e:
                 logger.error(f"Error saving results to {output_file}: {e}")
         else:
             logger.error(f"No results to save for setting {setting}")
     
+    return successful > 0
+
+def random_execute_phase2(arrival_rate_default, Csettings: list):
+    """Execute phase 2 and calculate ratios for random data with improved file handling"""
+    logger.info(f"Starting optimized random phase 2 for settings: {Csettings}")
+    
+    # Create shared file handler (only used for initial data reading)
+    file_handler = SynchronizedFileHandler()
+    
+    # Convert settings to strings
+    string_settings = [str(setting) for setting in Csettings]
+    logger.info(f"Processing settings: {string_settings}")
+    
+    # Read phase1 data for each setting
+    all_tasks = []
+    
+    for setting in string_settings:
+        logger.info(f"Preparing tasks for setting: {setting}")
+        # Try to read the combined results file first
+        combined_file = f"freq/freq_{setting}_combined_results.csv"
+        alt_file = f"freq/{setting}_combined_results.csv"
+        
+        phase1_df = None
+        try:
+            # Try both potential file paths
+            if os.path.exists(combined_file):
+                phase1_df = pd.read_csv(combined_file)
+                logger.info(f"Successfully read combined file: {combined_file}")
+            elif os.path.exists(alt_file):
+                phase1_df = pd.read_csv(alt_file)
+                logger.info(f"Successfully read combined file: {alt_file}")
+            else:
+                logger.warning(f"Combined files not found, reading with default arrival_rate")
+                phase1_df = file_handler.read_phase1_results(arrival_rate_default, is_random=True, prefix=setting)
+        except Exception as e:
+            logger.error(f"Error reading phase1 results for setting {setting}: {e}")
+            phase1_df = pd.DataFrame({'arrival_rate': [arrival_rate_default]})
+        
+        # Get arrival rates
+        arrival_rates = []
+        if phase1_df is not None and 'arrival_rate' in phase1_df.columns and len(phase1_df) > 0:
+            arrival_rates = phase1_df['arrival_rate'].unique()
+            
+            # Process more arrival rates in parallel since we're optimizing file I/O
+            if len(arrival_rates) > 10:
+                logger.warning(f"Too many arrival rates ({len(arrival_rates)}), limiting to 10")
+                arrival_rates = arrival_rates[:10]
+        else:
+            arrival_rates = [arrival_rate_default]
+        
+        # Create tasks for each arrival rate
+        for arr_rate in arrival_rates:
+            logger.info(f"Creating task for arrival_rate={arr_rate}, setting={setting}")
+            
+            # Find the phase1 data for this arrival rate
+            target_row = None
+            if phase1_df is not None:
+                matching_rows = phase1_df[phase1_df['arrival_rate'] == float(arr_rate)]
+                if len(matching_rows) > 0:
+                    target_row = matching_rows.iloc[0].to_dict()
+            
+            # If no target row found, create a default one
+            if target_row is None:
+                target_row = {
+                    'arrival_rate': float(arr_rate),
+                    'RR_L2_Norm': 100.0,
+                    'SRPT_L2_Norm': 100.0,
+                    'SETF_L2_Norm': 100.0,
+                    'FCFS_L2_Norm': 100.0,
+                    'RMLF_L2_Norm': 100.0
+                }
+            
+            # Add task to list - bp_param is None for random tasks
+            all_tasks.append(('random', setting, arr_rate, None, target_row))
+    
+    # Process tasks in parallel, collecting results first
+    logger.info(f"Created {len(all_tasks)} tasks for processing")
+    
+    # Determine number of processes - use more aggressive parallelism (up to 75% of CPUs)
+    num_processes = min(len(all_tasks), max(1, int(mp.cpu_count() * 0.75)))
+    
+    # Process all tasks and collect results by setting
+    results_by_setting = process_tasks_with_delayed_write(all_tasks, num_processes)
+    
+    # Save results for each setting - ONLY HAPPENS IN MAIN THREAD
+    successful = 0
+    for setting_str, results in results_by_setting.items():
+        if results:
+            results_df = pd.DataFrame(results)
+            
+            # Add timestamp to distinguish each run
+            timestamp = time.strftime("%Y%m%d%H%M%S")
+            results_df['run_timestamp'] = timestamp
+            
+            # Save to the freq_comp_result folder
+            result_folder = 'freq_comp_result'
+            os.makedirs(result_folder, exist_ok=True)
+            
+            checkpoint_6 = CHECKPOINTS.get("RDYNAMIC_SQRT_6", 60)
+            result_file = f'all_result_freq_{setting_str}_cp{checkpoint_6}.csv'
+            
+            output_file = os.path.join(result_folder, result_file)
+            
+            try:
+                # Check if file exists already
+                if os.path.exists(output_file):
+                    # Read existing file and append new results
+                    logger.info(f"Appending to existing file: {output_file}")
+                    try:
+                        existing_df = pd.read_csv(output_file)
+                        # Combine with new results - never filter out any existing data
+                        combined_df = pd.concat([existing_df, results_df], ignore_index=True)
+                        # Sort by arrival_rate and timestamp for better readability
+                        combined_df = combined_df.sort_values(['arrival_rate', 'run_timestamp'])
+                        # Atomic write with combined data
+                        temp_file = f"{output_file}.tmp"
+                        combined_df.to_csv(temp_file, index=False)
+                        os.replace(temp_file, output_file)
+                        logger.info(f"Successfully appended {len(results_df)} results to {output_file}")
+                    except Exception as e:
+                        logger.error(f"Error reading existing file, creating new one: {e}")
+                        # Just write new results if can't read existing file
+                        temp_file = f"{output_file}.tmp"
+                        results_df.to_csv(temp_file, index=False)
+                        os.replace(temp_file, output_file)
+                else:
+                    # Create new file
+                    logger.info(f"Creating new file: {output_file}")
+                    temp_file = f"{output_file}.tmp"
+                    results_df.to_csv(temp_file, index=False)
+                    os.replace(temp_file, output_file)
+                    logger.info(f"Successfully saved {len(results_df)} results to {output_file}")
+                
+                successful += 1
+            except Exception as e:
+                logger.error(f"Error saving results to {output_file}: {e}")
+        else:
+            logger.error(f"No results to save for setting freq_{setting_str}")
+    
+    logger.info(f"Successfully processed {successful}/{len(string_settings)} settings")
     return successful > 0
 
 def get_bp_parameters_for_setting(setting):
@@ -1233,11 +1260,13 @@ def process_single_bp_parameter(args):
                 return None
         
         # Run algorithms using the checkpoint constants - now with success tracking
+        # Always use num_runs=1 since we want a single execution
         rdynamic_sqrt_2_result = run_algorithm(
             Rdynamic_sqrt_2.Rdynamic, 
             job_list, 
             CHECKPOINTS["RDYNAMIC_SQRT_2"], 
             arrival_rate,
+            num_runs=1,  # Single run
             algorithm_name="RDYNAMIC_SQRT_2"
         )
         
@@ -1246,6 +1275,7 @@ def process_single_bp_parameter(args):
             job_list, 
             CHECKPOINTS["RDYNAMIC_SQRT_6"], 
             arrival_rate,
+            num_runs=1,  # Single run
             algorithm_name="RDYNAMIC_SQRT_6"
         )
         
@@ -1254,6 +1284,7 @@ def process_single_bp_parameter(args):
             job_list, 
             CHECKPOINTS["RDYNAMIC_SQRT_8"], 
             arrival_rate,
+            num_runs=1,  # Single run
             algorithm_name="RDYNAMIC_SQRT_8"
         )
         
@@ -1262,6 +1293,7 @@ def process_single_bp_parameter(args):
             job_list, 
             CHECKPOINTS["RDYNAMIC_SQRT_10"], 
             arrival_rate,
+            num_runs=1,  # Single run
             algorithm_name="RDYNAMIC_SQRT_10"
         )
         
@@ -1270,6 +1302,7 @@ def process_single_bp_parameter(args):
             job_list, 
             CHECKPOINTS["Dynamic"], 
             arrival_rate,
+            num_runs=1,  # Single run
             algorithm_name="Dynamic"
         )
         
@@ -1351,7 +1384,7 @@ def process_single_bp_parameter(args):
         return None
 
 def execute_phase2(arrival_rate, bp_parameter, file_handler):
-    """Execute phase 2 and calculate ratios in parallel"""
+    """Execute phase 2 and calculate ratios with improved file handling"""
     logger.info(f"Starting phase 2 with arrival_rate={arrival_rate}")
     logger.info(f"Number of bp_parameters to process: {len(bp_parameter)}")
     logger.info(f"Using checkpoints: {CHECKPOINTS}")
@@ -1370,50 +1403,40 @@ def execute_phase2(arrival_rate, bp_parameter, file_handler):
         except Exception as e:
             logger.warning(f"Error parsing bp_parameter as dict: {e}")
     
-    # CRITICAL CHANGE: Process sequentially for small number of parameters
-    # This avoids process pool overhead and potential resource issues
-    if len(bp_parameter) <= 3:
-        logger.info(f"Processing {len(bp_parameter)} bp_parameters sequentially")
-        results = []
-        for bp_param in bp_parameter:
-            result = process_single_bp_parameter((arrival_rate, bp_param, phase1_df, file_handler))
-            if result is not None:
-                results.append(result)
-                
-        if results:
-            results_df = pd.DataFrame(results)
-            logger.info(f"Saving results with {len(results_df)} rows")
-            file_handler.save_results(
-                results_df, 
-                'data'  # Source folder
-            )
-            return True
-        
-        logger.error("No results to save")
-        return False
-    
-    # Only use process pool for larger parameter sets
     # Prepare arguments for parallel processing
-    process_args = [(arrival_rate, bp_param, phase1_df, file_handler) for bp_param in bp_parameter]
+    all_tasks = [(arrival_rate, bp_param, phase1_df, file_handler) for bp_param in bp_parameter]
     
-    # Limit the number of processes to avoid resource exhaustion
-    num_processes = min(len(bp_parameter), max(1, mp.cpu_count() // 2))  # Use at most half of available CPUs
-    logger.info(f"Using {num_processes} processes for parallel execution")
-    
+    # Collect all results first, then write to file
     results = []
-    # CRITICAL: Set maxtasksperchild to ensure processes are recycled
-    with mp.Pool(processes=num_processes, maxtasksperchild=1) as pool:
-        # Apply the process_single_bp_parameter function to each parameter set
-        for result in pool.map(process_single_bp_parameter, process_args):
+    
+    # Use either sequential or parallel processing based on task count
+    if len(all_tasks) <= 3:
+        logger.info(f"Processing {len(all_tasks)} bp_parameters sequentially")
+        for task in all_tasks:
+            result = process_single_bp_parameter(task)
             if result is not None:
                 results.append(result)
+    else:
+        # Determine number of processes - use more aggressive parallelism (up to 75% of CPUs)
+        num_processes = min(len(all_tasks), max(1, int(mp.cpu_count() * 0.75)))
+        logger.info(f"Using {num_processes} processes for parallel execution")
+        
+        # Execute all tasks in parallel and collect results
+        with mp.Pool(processes=num_processes, maxtasksperchild=1) as pool:
+            for result in pool.map(process_single_bp_parameter, all_tasks):
+                if result is not None:
+                    results.append(result)
     
+    # Write all results at once from the main thread - no file contention
     if results:
         results_df = pd.DataFrame(results)
-        logger.info(f"Saving results with {len(results_df)} rows")
+        logger.info(f"Saving {len(results_df)} rows all at once")
+        
+        # Now save everything at once with append mode
         file_handler.save_results(
             results_df, 
-            'data'  # Source folder
+            'data',  # Source folder
+            mode='a'  # Always append instead of overwrite
         )
         return True
     
@@ -1427,16 +1450,16 @@ def execute(arrival_rate, bp_parameter):
     return execute_phase2(arrival_rate, bp_parameter, file_handler)
 
 def execute_random(arrival_rate_default, Csettings: list):
-    """Main execution function for random data using hybrid multiprocessing"""
+    """Main execution function for random data using improved file handling"""
     return random_execute_phase2(arrival_rate_default, Csettings)
 
 def execute_softrandom(arrival_rate_default, Csettings: list):
-    """Main execution function for soft random data using hybrid multiprocessing"""
+    """Main execution function for soft random data using improved file handling"""
     logger.info(f"Starting softrandom execution for settings: {Csettings}")
     return random_execute_phase2(arrival_rate_default, Csettings)
 
 def execute_compare(arrival_rate, settings: list):
-    """Main execution function for comparison data using hybrid multiprocessing"""
+    """Main execution function for comparison data using improved file handling"""
     logger.info(f"execute_compare called with arrival_rate={arrival_rate}, settings={settings}")
     check_data_directories(settings)
     return compare_execute_phase2(arrival_rate, settings)

@@ -1,12 +1,31 @@
+import sys
+import multiprocessing as mp
+
+# For macOS, force the 'fork' start method to avoid issues with standard streams.
+if sys.platform == 'darwin':
+    try:
+        mp.set_start_method('fork', force=True)
+    except RuntimeError:
+        # If the start method is already set, we can ignore the error.
+        pass
+
+# Before importing any modules that use multiprocessing, reassign sys streams.
+sys.stdout = sys.__stdout__
+sys.stderr = sys.__stderr__
+sys.stdin = sys.__stdin__
+
+# Now import modules that create multiprocessing Pools (like execute_compare)
 import execute_compare
 import tqdm
 import pandas as pd
 import os
 import logging
 
-# Set up logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s',
-                    filename='execution_log.log', filemode='a')
+# Set up logging for main_compare.py
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s - %(levelname)s - %(message)s',
+                    filename='execution_log.log',
+                    filemode='a')
 logger = logging.getLogger(__name__)
 
 # Checkpoint values for Rdynamic algorithms to test
@@ -20,7 +39,7 @@ checkpoints = {
 
 def create_dataset():
     # Arrival rates to process
-    arrival_rates = [i for i in range(20, 42, 2)]
+    arrival_rates = list(range(20, 42, 2))
     
     # BP parameters for different settings
     bp_parameter_30 = [
@@ -60,8 +79,8 @@ def create_dataset():
     
     # Update the CHECKPOINTS dictionary in execute_compare module
     execute_compare.CHECKPOINTS = {
-        "RDYNAMIC_SQRT_2": checkpoints["RDYNAMIC_SQRT_2"][0],  # Add Rdynamic_sqrt_2 checkpoint
-        "RDYNAMIC_SQRT_6": checkpoints["RDYNAMIC_SQRT_6"][0],  # Start with first checkpoint
+        "RDYNAMIC_SQRT_2": checkpoints["RDYNAMIC_SQRT_2"][0],
+        "RDYNAMIC_SQRT_6": checkpoints["RDYNAMIC_SQRT_6"][0],
         "RDYNAMIC_SQRT_8": checkpoints["RDYNAMIC_SQRT_8"][0],
         "RDYNAMIC_SQRT_10": checkpoints["RDYNAMIC_SQRT_10"][0],
         "Dynamic": checkpoints["Dynamic"][0]
@@ -107,4 +126,5 @@ def create_dataset():
             continue
 
 if __name__ == "__main__":
+    mp.freeze_support()
     create_dataset()
