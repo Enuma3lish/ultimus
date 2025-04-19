@@ -699,6 +699,19 @@ def process_task_mp(args):
                 f'freq_{setting}/({arrival_rate}).csv',
                 f'data/freq_{setting}/({arrival_rate}).csv'
             ]
+        elif task_type == 'softrandom':  # Add explicit softrandom case
+            source_folder = f'freq_{setting}'
+            job_file = f'data/{source_folder}/({arrival_rate}).csv'
+            alternatives = [
+                f'data/{source_folder}/({str(arrival_rate)}).csv',
+                f'data/{source_folder}/{arrival_rate}.csv',
+                f'data/{source_folder}/({int(float(arrival_rate)*10)}).csv',
+                f'{source_folder}/({arrival_rate}).csv',
+                f'freq_{setting}/({arrival_rate}).csv',
+                f'data/freq_{setting}/({arrival_rate}).csv',
+                f'softrandom/({arrival_rate}).csv',
+                f'data/softrandom/({arrival_rate}).csv'
+            ]
         else:  # compare
             data_folder = f'data/{setting}'
             job_file = f'{data_folder}/({arrival_rate}, {bp_param["L"]}).csv'
@@ -806,7 +819,8 @@ def process_task_mp(args):
         )
         result_row.update(ratio_data)
         
-        return (setting, result_row)
+        # BUGFIX: Pass the task_type along with the setting for proper folder selection downstream
+        return (task_type, setting, result_row)
         
     except Exception as e:
         print(f"Error in process_task_mp: {e}")
@@ -833,14 +847,15 @@ def process_tasks_with_delayed_write(all_tasks, num_processes):
                 if result is not None:
                     all_results.append(result)
     
-    # Once all processing is complete, organize results by setting
-    results_by_setting = {}
-    for setting_str, result_row in all_results:
-        if setting_str not in results_by_setting:
-            results_by_setting[setting_str] = []
-        results_by_setting[setting_str].append(result_row)
+    # Once all processing is complete, organize results by task_type and setting
+    results_by_type_and_setting = {}
+    for task_type, setting_str, result_row in all_results:
+        key = (task_type, setting_str)
+        if key not in results_by_type_and_setting:
+            results_by_type_and_setting[key] = []
+        results_by_type_and_setting[key].append(result_row)
     
-    return results_by_setting
+    return results_by_type_and_setting
 
 def check_data_directories(settings):
     """Check and report on data directory structure for debugging"""
@@ -978,7 +993,7 @@ def compare_execute_phase2(arrival_rate, settings: list):
                     'RMLF_L2_Norm': 100.0
                 }
             
-            # Add task to list
+            # Add task to list with 'compare' as the task_type
             all_tasks.append(('compare', setting, arrival_rate, bp_param, phase1_row))
     
     # Process tasks in parallel, collecting results first
@@ -988,11 +1003,11 @@ def compare_execute_phase2(arrival_rate, settings: list):
     num_processes = min(len(all_tasks), max(1, int(mp.cpu_count() * 0.75)))
     
     # Process all tasks and collect results by setting
-    results_by_setting = process_tasks_with_delayed_write(all_tasks, num_processes)
+    results_by_type_and_setting = process_tasks_with_delayed_write(all_tasks, num_processes)
     
-    # Save results for each setting - ONLY HAPPENS IN MAIN THREAD
+    # Save results for each setting and task type - ONLY HAPPENS IN MAIN THREAD
     successful = 0
-    for setting, results in results_by_setting.items():
+    for (task_type, setting), results in results_by_type_and_setting.items():
         if results:
             results_df = pd.DataFrame(results)
             
@@ -1000,14 +1015,36 @@ def compare_execute_phase2(arrival_rate, settings: list):
             timestamp = time.strftime("%Y%m%d%H%M%S")
             results_df['run_timestamp'] = timestamp
             
-            logger.info(f"Saving {len(results_df)} results for {setting}")
+            logger.info(f"Saving {len(results_df)} results for {task_type}/{setting}")
             
-            # Save to correct folder
-            result_folder = f'compare_{setting}'
+            # Save to correct folder - use task_type to determine folder pattern
+            if task_type == 'compare':
+                # For normal comparison data
+                result_folder = f'compare_{setting}'
+            elif task_type == 'random':
+                # For random data
+                result_folder = 'freq_comp_result'
+            elif task_type == 'softrandom':
+                # BUGFIX: For softrandom data, use the correct folder
+                result_folder = 'softrandom_comp_result'
+            else:
+                # Fallback for any other task type
+                result_folder = f'{task_type}_comp_result'
+            
             os.makedirs(result_folder, exist_ok=True)
             
             checkpoint_6 = CHECKPOINTS.get("RDYNAMIC_SQRT_6", 60)
-            result_file = f'all_result_{setting}_cp{checkpoint_6}.csv'
+            
+            # Determine the appropriate filename pattern based on task_type
+            if task_type == 'compare':
+                result_file = f'all_result_{setting}_cp{checkpoint_6}.csv'
+            elif task_type == 'random':
+                result_file = f'all_result_freq_{setting}_cp{checkpoint_6}.csv'
+            elif task_type == 'softrandom':
+                # BUGFIX: For softrandom data, use a different filename pattern
+                result_file = f'all_result_softrandom_{setting}_cp{checkpoint_6}.csv'
+            else:
+                result_file = f'all_result_{task_type}_{setting}_cp{checkpoint_6}.csv'
             
             output_file = os.path.join(result_folder, result_file)
             
@@ -1018,10 +1055,16 @@ def compare_execute_phase2(arrival_rate, settings: list):
                     logger.info(f"Appending to existing file: {output_file}")
                     try:
                         existing_df = pd.read_csv(output_file)
+                        logger.info(f"Read existing results file with {len(existing_df)} rows")
+                        
                         # Combine with new results - never filter out any existing data
                         combined_df = pd.concat([existing_df, results_df], ignore_index=True)
+                        logger.info(f"Appended data, new size: {len(combined_df)} rows")
+                        
                         # Sort by arrival_rate and timestamp for better readability
-                        combined_df = combined_df.sort_values(['arrival_rate', 'run_timestamp'])
+                        if 'arrival_rate' in combined_df.columns:
+                            combined_df = combined_df.sort_values(['arrival_rate', 'run_timestamp'])
+                        
                         # Atomic write with combined data
                         temp_file = f"{output_file}.tmp"
                         combined_df.to_csv(temp_file, index=False)
@@ -1045,13 +1088,16 @@ def compare_execute_phase2(arrival_rate, settings: list):
             except Exception as e:
                 logger.error(f"Error saving results to {output_file}: {e}")
         else:
-            logger.error(f"No results to save for setting {setting}")
+            logger.error(f"No results to save for {task_type}/{setting}")
     
     return successful > 0
 
-def random_execute_phase2(arrival_rate_default, Csettings: list):
+def random_execute_phase2(arrival_rate_default, Csettings: list, is_softrandom=False):
     """Execute phase 2 and calculate ratios for random data with improved file handling"""
-    logger.info(f"Starting optimized random phase 2 for settings: {Csettings}")
+    # Determine the task type based on is_softrandom parameter
+    task_type = 'softrandom' if is_softrandom else 'random'
+    
+    logger.info(f"Starting optimized {task_type} phase 2 for settings: {Csettings}")
     
     # Create shared file handler (only used for initial data reading)
     file_handler = SynchronizedFileHandler()
@@ -1120,7 +1166,8 @@ def random_execute_phase2(arrival_rate_default, Csettings: list):
                 }
             
             # Add task to list - bp_param is None for random tasks
-            all_tasks.append(('random', setting, arr_rate, None, target_row))
+            # BUGFIX: Use the correct task_type ('random' or 'softrandom')
+            all_tasks.append((task_type, setting, arr_rate, None, target_row))
     
     # Process tasks in parallel, collecting results first
     logger.info(f"Created {len(all_tasks)} tasks for processing")
@@ -1128,12 +1175,12 @@ def random_execute_phase2(arrival_rate_default, Csettings: list):
     # Determine number of processes - use more aggressive parallelism (up to 75% of CPUs)
     num_processes = min(len(all_tasks), max(1, int(mp.cpu_count() * 0.75)))
     
-    # Process all tasks and collect results by setting
-    results_by_setting = process_tasks_with_delayed_write(all_tasks, num_processes)
+    # Process all tasks and collect results by setting and task type
+    results_by_type_and_setting = process_tasks_with_delayed_write(all_tasks, num_processes)
     
     # Save results for each setting - ONLY HAPPENS IN MAIN THREAD
     successful = 0
-    for setting_str, results in results_by_setting.items():
+    for (task_type, setting_str), results in results_by_type_and_setting.items():
         if results:
             results_df = pd.DataFrame(results)
             
@@ -1141,12 +1188,25 @@ def random_execute_phase2(arrival_rate_default, Csettings: list):
             timestamp = time.strftime("%Y%m%d%H%M%S")
             results_df['run_timestamp'] = timestamp
             
-            # Save to the freq_comp_result folder
-            result_folder = 'freq_comp_result'
+            # BUGFIX: Set the result folder based on task_type
+            if task_type == 'random':
+                result_folder = 'freq_comp_result'
+            elif task_type == 'softrandom':
+                result_folder = 'softrandom_comp_result'
+            else:
+                result_folder = f'{task_type}_comp_result'
+                
             os.makedirs(result_folder, exist_ok=True)
             
             checkpoint_6 = CHECKPOINTS.get("RDYNAMIC_SQRT_6", 60)
-            result_file = f'all_result_freq_{setting_str}_cp{checkpoint_6}.csv'
+            
+            # BUGFIX: Determine the filename pattern based on task_type
+            if task_type == 'random':
+                result_file = f'all_result_freq_{setting_str}_cp{checkpoint_6}.csv'
+            elif task_type == 'softrandom':
+                result_file = f'all_result_softrandom_{setting_str}_cp{checkpoint_6}.csv'
+            else:
+                result_file = f'all_result_{task_type}_{setting_str}_cp{checkpoint_6}.csv'
             
             output_file = os.path.join(result_folder, result_file)
             
@@ -1184,7 +1244,7 @@ def random_execute_phase2(arrival_rate_default, Csettings: list):
             except Exception as e:
                 logger.error(f"Error saving results to {output_file}: {e}")
         else:
-            logger.error(f"No results to save for setting freq_{setting_str}")
+            logger.error(f"No results to save for {task_type}/{setting_str}")
     
     logger.info(f"Successfully processed {successful}/{len(string_settings)} settings")
     return successful > 0
@@ -1451,12 +1511,13 @@ def execute(arrival_rate, bp_parameter):
 
 def execute_random(arrival_rate_default, Csettings: list):
     """Main execution function for random data using improved file handling"""
-    return random_execute_phase2(arrival_rate_default, Csettings)
+    return random_execute_phase2(arrival_rate_default, Csettings, is_softrandom=False)
 
 def execute_softrandom(arrival_rate_default, Csettings: list):
     """Main execution function for soft random data using improved file handling"""
     logger.info(f"Starting softrandom execution for settings: {Csettings}")
-    return random_execute_phase2(arrival_rate_default, Csettings)
+    # BUGFIX: Pass is_softrandom=True to use the correct folder
+    return random_execute_phase2(arrival_rate_default, Csettings, is_softrandom=True)
 
 def execute_compare(arrival_rate, settings: list):
     """Main execution function for comparison data using improved file handling"""
