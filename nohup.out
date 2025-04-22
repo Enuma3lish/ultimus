@@ -5403,3 +5403,7 @@ Successfully read job data from data/freq_500/(38).csv
 2025-04-18 01:41:44,473 - INFO - Starting DYNAMIC run for arrival rate 36 with checkpoint 100
 2025-04-18 01:41:59,242 - INFO - RDYNAMIC_SQRT_8 completed successfully with L2 norm: 14118874.83
 2025-04-18 01:41:59,242 - INFO - Starting RDYNAMIC_SQRT_10 run for arrival rate 36 with checkpoint 100
+Starting execution at: 2025-04-20 16:44:19
+main_stand.py completed successfully
+main_compare.py completed successfully
+Execution finished at: 2025-04-22 09:16:39
