@@ -32,8 +32,8 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %
 logger = logging.getLogger(__name__)
 
 # Constants for timeouts (in seconds)
-EXECUTION_TIMEOUT = 300  # 5 minutes timeout for each algorithm execution
-PROCESS_TIMEOUT = 900    # 15 minutes timeout for entire process
+EXECUTION_TIMEOUT = 3000  # 5 minutes timeout for each algorithm execution
+PROCESS_TIMEOUT = 9000    # 15 minutes timeout for entire process
 
 # Configurable checkpoints (can be modified by the caller)
 CHECKPOINTS = {

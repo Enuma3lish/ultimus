@@ -5,6 +5,17 @@ import Write_csv
 import math
 import os
 import random
+import multiprocessing as mp
+from functools import partial
+import sys
+
+# For macOS, ensure proper multiprocessing setup
+if sys.platform == 'darwin':
+    try:
+        mp.set_start_method('fork', force=True)
+    except RuntimeError:
+        # If already set, ignore the error
+        pass
 
 # Define inter-arrival times
 inter_arrival_time = [i for i in range(20, 41, 2)]  # This defines average inter-arrival times
@@ -72,11 +83,12 @@ def random_job_init(num_jobs, avg_inter_arrival_time, coherence_time=1):
     Parameters:
     num_jobs (int): Number of jobs to generate
     avg_inter_arrival_time (float): Average inter-arrival time
-    coherence_time (int): Number of consecutive jobs that use the same parameter set
+    coherence_time (int): Number of consecutive jobs that use the same parameter pair
                          Values: 1, 10, 100, 500, 1000, 10000
     """
     samples = []
     jb = []
+    arrival_times = []
     alpha = 1.1
     pareto = stats.pareto(b=alpha)
     
@@ -87,7 +99,21 @@ def random_job_init(num_jobs, avg_inter_arrival_time, coherence_time=1):
     current_param = None
     param_jobs_count = 0
     
-    while len(jb) < num_jobs:
+    job_count = 0
+    # Generate integer arrival times first
+    current_time = 0
+    while job_count < num_jobs:
+        # Generate inter-arrival time and round to nearest integer
+        inter_arrival = round(np.random.exponential(scale=avg_inter_arrival_time))
+        # Ensure inter-arrival time is at least 1
+        inter_arrival = max(1, inter_arrival)
+        current_time += inter_arrival
+        arrival_times.append(current_time)
+        job_count += 1
+    
+    # Now generate job sizes with proper coherence
+    job_count = 0
+    while job_count < num_jobs:
         # Check if we need to select a new parameter set based on coherence time
         if current_param is None or param_jobs_count >= coherence_time:
             current_param = random.choice(all_parameters)
@@ -99,17 +125,7 @@ def random_job_init(num_jobs, avg_inter_arrival_time, coherence_time=1):
         if xmin <= raw_sample <= xmax:
             jb.append(raw_sample)
             param_jobs_count += 1
-    
-    # Generate integer arrival times
-    current_time = 0
-    arrival_times = []
-    for _ in range(num_jobs):
-        # Generate inter-arrival time and round to nearest integer
-        inter_arrival = round(np.random.exponential(scale=avg_inter_arrival_time))
-        # Ensure inter-arrival time is at least 1
-        inter_arrival = max(1, inter_arrival)
-        current_time += inter_arrival
-        arrival_times.append(current_time)
+            job_count += 1
     
     # Create job list with arrival times and job sizes
     for k in range(len(jb)):
@@ -130,6 +146,7 @@ def soft_random_job_init(num_jobs, avg_inter_arrival_time, coherence_time=1):
     """
     samples = []
     jb = []
+    arrival_times = []
     alpha = 1.1
     pareto = stats.pareto(b=alpha)
     
@@ -139,7 +156,21 @@ def soft_random_job_init(num_jobs, avg_inter_arrival_time, coherence_time=1):
     current_param = None
     param_set_jobs_count = 0
     
-    while len(jb) < num_jobs:
+    # Generate integer arrival times first
+    current_time = 0
+    job_count = 0
+    while job_count < num_jobs:
+        # Generate inter-arrival time and round to nearest integer
+        inter_arrival = round(np.random.exponential(scale=avg_inter_arrival_time))
+        # Ensure inter-arrival time is at least 1
+        inter_arrival = max(1, inter_arrival)
+        current_time += inter_arrival
+        arrival_times.append(current_time)
+        job_count += 1
+    
+    # Now generate job sizes with proper coherence
+    job_count = 0
+    while job_count < num_jobs:
         # Check if we need to select a new parameter set based on coherence time
         if current_param_set_key is None or param_set_jobs_count >= coherence_time:
             # Choose whether to keep the same parameter set family with 50% probability
@@ -163,22 +194,36 @@ def soft_random_job_init(num_jobs, avg_inter_arrival_time, coherence_time=1):
         if xmin <= raw_sample <= xmax:
             jb.append(raw_sample)
             param_set_jobs_count += 1
-    
-    # Generate integer arrival times
-    current_time = 0
-    arrival_times = []
-    for _ in range(num_jobs):
-        # Generate inter-arrival time and round to nearest integer
-        inter_arrival = round(np.random.exponential(scale=avg_inter_arrival_time))
-        # Ensure inter-arrival time is at least 1
-        inter_arrival = max(1, inter_arrival)
-        current_time += inter_arrival
-        arrival_times.append(current_time)
+            job_count += 1
     
     # Create job list with arrival times and job sizes
     for k in range(len(jb)):
         samples.append({"arrival_time": arrival_times[k], "job_size": jb[k]})
     return samples
+
+def process_normal_job(param_name, param_info, avg_inter_arrival, num_jobs):
+    """Process and save a single job with normal parameters"""
+    b, output_dir = param_info
+    job_list = job_init(num_jobs, avg_inter_arrival, b["L"], b["H"])
+    bl = b["L"]
+    # Format the filename as (inter_arrival, bl).csv
+    filename = f"{output_dir}/({avg_inter_arrival}, {bl}).csv"
+    Write_csv.Write_raw(filename, job_list)
+    return f"Completed {filename}"
+
+def process_random_job(coherence_time, avg_inter_arrival, num_jobs, is_soft=False):
+    """Process and save a single job with random parameters"""
+    if is_soft:
+        base_dir = "data/softrandom"
+        job_list = soft_random_job_init(num_jobs, avg_inter_arrival, coherence_time=coherence_time)
+    else:
+        base_dir = "data"
+        job_list = random_job_init(num_jobs, avg_inter_arrival, coherence_time=coherence_time)
+    
+    output_dir = f"{base_dir}/freq_{coherence_time}"
+    filename = f"{output_dir}/({avg_inter_arrival}).csv"
+    Write_csv.Write_raw(filename, job_list)
+    return f"Completed {filename}"
 
 def Save_file(num_jobs):
     # Create base data directory if it doesn't exist
@@ -190,44 +235,67 @@ def Save_file(num_jobs):
         freq_folder = f"data/freq_{ct}"
         os.makedirs(freq_folder, exist_ok=True)
     
-    # Process normal parameter sets (30, 60, 90)
-    for param_name, param_set in parameter_sets.items():
-        # Create folder for this parameter set
-        os.makedirs(f"data/{param_name}", exist_ok=True)
-        
-        for avg_inter_arrival in inter_arrival_time:
-            for b in tqdm.tqdm(param_set, desc=f"Processing {param_name}, inter_arrival={avg_inter_arrival}"):
-                job_list = job_init(num_jobs, avg_inter_arrival, b["L"], b["H"])
-                bl = b["L"]
-                # Format the filename as (inter_arrival, bl).csv
-                filename = f"data/{param_name}/({avg_inter_arrival}, {bl}).csv"
-                Write_csv.Write_raw(filename, job_list)
+    # Create a pool with CPU count - 1 processes (to keep one CPU free)
+    num_processes = max(1, mp.cpu_count() - 1)
+    print(f"Using {num_processes} processes for parallel execution")
     
-    # Generate and save job lists for each coherence time
-    for ct in coherence_times:
-        for avg_inter_arrival in tqdm.tqdm(inter_arrival_time, desc=f"Processing freq_{ct}"):
-            # Generate job list with random parameters and specified coherence time
-            job_list = random_job_init(num_jobs, avg_inter_arrival, coherence_time=ct)
+    # Create a multiprocessing pool
+    with mp.Pool(processes=num_processes) as pool:
+        # Create tasks for normal parameter sets (30, 60, 90)
+        normal_tasks = []
+        for param_name, param_set in parameter_sets.items():
+            # Create folder for this parameter set
+            output_dir = f"data/{param_name}"
+            os.makedirs(output_dir, exist_ok=True)
             
-            # Save to the frequency-specific folder
-            filename = f"data/freq_{ct}/({avg_inter_arrival}).csv"
-            Write_csv.Write_raw(filename, job_list)
-    
-    # Create soft random folder and generate soft random job lists for each coherence time
-    os.makedirs("data/softrandom", exist_ok=True)
-    
-    # Create coherence time subfolders within softrandom
-    for ct in coherence_times:
-        softrandom_folder = f"data/softrandom/freq_{ct}"
-        os.makedirs(softrandom_folder, exist_ok=True)
+            for avg_inter_arrival in inter_arrival_time:
+                for b in param_set:
+                    normal_tasks.append((param_name, (b, output_dir), avg_inter_arrival, num_jobs))
         
-        for avg_inter_arrival in tqdm.tqdm(inter_arrival_time, desc=f"Processing soft random freq_{ct}"):
-            # Generate job list with soft random parameters and specified coherence time
-            job_list = soft_random_job_init(num_jobs, avg_inter_arrival, coherence_time=ct)
-            
-            # Save to the soft random coherence-specific folder
-            filename = f"{softrandom_folder}/({avg_inter_arrival}).csv"
-            Write_csv.Write_raw(filename, job_list)
+        # Process normal tasks with multiprocessing
+        print(f"Processing {len(normal_tasks)} normal parameter jobs")
+        results = list(tqdm.tqdm(
+            pool.starmap(process_normal_job, normal_tasks),
+            total=len(normal_tasks),
+            desc="Processing normal parameter jobs"
+        ))
+        
+        # Create tasks for random parameter jobs
+        random_tasks = []
+        for ct in coherence_times:
+            for avg_inter_arrival in inter_arrival_time:
+                random_tasks.append((ct, avg_inter_arrival, num_jobs, False))  # False means not soft random
+        
+        # Process random tasks with multiprocessing
+        print(f"Processing {len(random_tasks)} random parameter jobs")
+        results = list(tqdm.tqdm(
+            pool.starmap(process_random_job, random_tasks),
+            total=len(random_tasks),
+            desc="Processing random parameter jobs"
+        ))
+        
+        # Create soft random folder and generate soft random job lists for each coherence time
+        os.makedirs("data/softrandom", exist_ok=True)
+        
+        # Create coherence time subfolders within softrandom
+        for ct in coherence_times:
+            softrandom_folder = f"data/softrandom/freq_{ct}"
+            os.makedirs(softrandom_folder, exist_ok=True)
+        
+        # Create tasks for soft random parameter jobs
+        soft_random_tasks = []
+        for ct in coherence_times:
+            for avg_inter_arrival in inter_arrival_time:
+                soft_random_tasks.append((ct, avg_inter_arrival, num_jobs, True))  # True means soft random
+        
+        # Process soft random tasks with multiprocessing
+        print(f"Processing {len(soft_random_tasks)} soft random parameter jobs")
+        results = list(tqdm.tqdm(
+            pool.starmap(process_random_job, soft_random_tasks),
+            total=len(soft_random_tasks),
+            desc="Processing soft random parameter jobs"
+        ))
 
 if __name__ == "__main__":
+    mp.freeze_support()  # Support for frozen executables
     Save_file(10000)
