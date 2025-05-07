@@ -426,54 +426,177 @@ def create_algorithm_variant_plots(data, output_dir, freq_value, category_name):
         print(f"Created plot: {filename}")
         plt.close()
 
-# Process each combination of category and frequency
-for category in categories:
-    for freq in frequencies:
-        # Define the file path based on category and frequency
-        if category == "":
-            file_path = f'freq_comp_result/all_result_freq_{freq}_cp30.csv'
-        else:
-            file_path = f'softrandom_comp_result/all_result_{category}freq_{freq}_cp30.csv'
-        
-        # Create directory for output files
-        output_dir = f"{plots_dir}/freq_{freq}/{category.strip('_')}"
-        os.makedirs(output_dir, exist_ok=True)
-        
-        # Load the data
-        if os.path.exists(file_path):
-            try:
-                # Try to read with default settings
-                data = pd.read_csv(file_path)
+# Define file mappings for "avg" results that are in different directories
+avg_file_mappings = {
+    "avg_30": "compare_avg_30/all_result_avg_30_cp30.csv",
+    "avg_60": "compare_avg_60/all_result_avg_60_cp30.csv",
+    "avg_90": "compare_avg_90/all_result_avg_90_cp30.csv"
+}
+
+# Process regular "avg" frequencies
+for avg_freq, file_path in avg_file_mappings.items():
+    if os.path.exists(file_path):
+        try:
+            # Create directory for output files - use the exact avg_xx format for directory name
+            output_dir = f"{plots_dir}/{avg_freq}"
+            os.makedirs(output_dir, exist_ok=True)
+            
+            # Load the data
+            data = pd.read_csv(file_path)
+            
+            # Check for empty DataFrame
+            if data.empty:
+                print(f"Warning: Empty data file: {file_path}")
+                continue
+            
+            # Debug: Print column names
+            print(f"File: {file_path}")
+            print(f"Columns: {data.columns.tolist()}")
+            
+            # Clean data - ensure numerical columns are properly converted
+            for col in data.columns:
+                if col != 'arrival_rate' and col != 'bp_parameter':
+                    if data[col].dtype == object:  # String type
+                        try:
+                            data[col] = pd.to_numeric(data[col], errors='coerce')
+                            print(f"Converted column {col} to numeric")
+                        except Exception as e:
+                            print(f"Error converting {col} to numeric: {e}")
+            
+            # Drop rows with NaN in key columns
+            data = data.dropna(subset=['arrival_rate'])
+            
+            # Extract just the number from avg_freq for display purposes
+            freq_number = avg_freq.split('_')[1]
+            
+            # Check if bp_parameter column exists
+            if 'bp_parameter' in data.columns:
+                # Group data by bp_parameter
+                bp_parameters = data['bp_parameter'].unique()
                 
-                # Check for empty DataFrame
-                if data.empty:
-                    print(f"Warning: Empty data file: {file_path}")
-                    continue
+                for bp_param in bp_parameters:
+                    # Create a specific directory for this bp_parameter
+                    bp_dir = f"{output_dir}/{bp_param}"
+                    os.makedirs(bp_dir, exist_ok=True)
+                    
+                    # Filter data for this bp_parameter
+                    bp_data = data[data['bp_parameter'] == bp_param]
+                    
+                    if not bp_data.empty:
+                        # Create plots specifically for this bp_parameter
+                        create_individual_plots(bp_data, bp_dir, f"{freq_number}_{bp_param}", "")
+                        create_rdynamic_comparison_plots(bp_data, bp_dir, f"{freq_number}_{bp_param}", "")
+                        create_algorithm_variant_plots(bp_data, bp_dir, f"{freq_number}_{bp_param}", "")
+                        
+                        print(f"Created plots for {avg_freq} with bp_parameter={bp_param}")
+            else:
+                # No bp_parameter column, just create standard plots
+                standard_dir = f"{output_dir}/standard"
+                os.makedirs(standard_dir, exist_ok=True)
                 
-                # Debug: Print column names
-                print(f"File: {file_path}")
-                print(f"Columns: {data.columns.tolist()}")
+                create_individual_plots(data, standard_dir, freq_number, "")
+                create_rdynamic_comparison_plots(data, standard_dir, freq_number, "")
+                create_algorithm_variant_plots(data, standard_dir, freq_number, "")
                 
-                # Clean data - ensure numerical columns are properly converted
-                for col in data.columns:
-                    if col != 'arrival_rate':
-                        if data[col].dtype == object:  # String type
-                            try:
-                                data[col] = pd.to_numeric(data[col], errors='coerce')
-                                print(f"Converted column {col} to numeric")
-                            except Exception as e:
-                                print(f"Error converting {col} to numeric: {e}")
-                
-                # Drop rows with NaN in key columns
-                data = data.dropna(subset=['arrival_rate'])
-                
-                # Create plots
-                create_individual_plots(data, output_dir, freq, category)
-                create_rdynamic_comparison_plots(data, output_dir, freq, category)
-                create_algorithm_variant_plots(data, output_dir, freq, category)
-                
-                print(f"Created all plots for {category}freq_{freq}")
-            except Exception as e:
-                print(f"Error processing file {file_path}: {e}")
-        else:
-            print(f"File not found: {file_path}")
+                print(f"Created standard plots for {avg_freq} (no bp_parameter column)")
+            
+        except Exception as e:
+            print(f"Error processing file {file_path}: {e}")
+    else:
+        print(f"File not found: {file_path}")
+
+# Process the regular (non-softrandom) frequencies - THIS IS THE NEW SECTION
+for freq in frequencies:
+    # Define the file path for regular frequency data
+    file_path = f'freq_comp_result/all_result_freq_{freq}_cp30.csv'
+    
+    # Create directory for output files
+    output_dir = f"{plots_dir}/freq_{freq}/standard"
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Load the data
+    if os.path.exists(file_path):
+        try:
+            # Try to read with default settings
+            data = pd.read_csv(file_path)
+            
+            # Check for empty DataFrame
+            if data.empty:
+                print(f"Warning: Empty data file: {file_path}")
+                continue
+            
+            # Debug: Print column names
+            print(f"File: {file_path}")
+            print(f"Columns: {data.columns.tolist()}")
+            
+            # Clean data - ensure numerical columns are properly converted
+            for col in data.columns:
+                if col != 'arrival_rate':
+                    if data[col].dtype == object:  # String type
+                        try:
+                            data[col] = pd.to_numeric(data[col], errors='coerce')
+                            print(f"Converted column {col} to numeric")
+                        except Exception as e:
+                            print(f"Error converting {col} to numeric: {e}")
+            
+            # Drop rows with NaN in key columns
+            data = data.dropna(subset=['arrival_rate'])
+            
+            # Create plots (use empty string for standard category)
+            create_individual_plots(data, output_dir, freq, "")
+            create_rdynamic_comparison_plots(data, output_dir, freq, "")
+            create_algorithm_variant_plots(data, output_dir, freq, "")
+            
+            print(f"Created all plots for standard freq_{freq}")
+        except Exception as e:
+            print(f"Error processing file {file_path}: {e}")
+    else:
+        print(f"File not found: {file_path}")
+
+# Process the softrandom frequencies
+for freq in frequencies:
+    # Define the file path for softrandom data
+    file_path = f'softrandom_comp_result/all_result_softrandom_{freq}_cp30.csv'
+    
+    # Create directory for output files
+    output_dir = f"{plots_dir}/freq_{freq}/softrandom"
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Load the data
+    if os.path.exists(file_path):
+        try:
+            # Try to read with default settings
+            data = pd.read_csv(file_path)
+            
+            # Check for empty DataFrame
+            if data.empty:
+                print(f"Warning: Empty data file: {file_path}")
+                continue
+            
+            # Debug: Print column names
+            print(f"File: {file_path}")
+            print(f"Columns: {data.columns.tolist()}")
+            
+            # Clean data - ensure numerical columns are properly converted
+            for col in data.columns:
+                if col != 'arrival_rate':
+                    if data[col].dtype == object:  # String type
+                        try:
+                            data[col] = pd.to_numeric(data[col], errors='coerce')
+                            print(f"Converted column {col} to numeric")
+                        except Exception as e:
+                            print(f"Error converting {col} to numeric: {e}")
+            
+            # Drop rows with NaN in key columns
+            data = data.dropna(subset=['arrival_rate'])
+            
+            # Create plots (use softrandom_ for category)
+            create_individual_plots(data, output_dir, freq, "softrandom_")
+            create_rdynamic_comparison_plots(data, output_dir, freq, "softrandom_")
+            create_algorithm_variant_plots(data, output_dir, freq, "softrandom_")
+            
+            print(f"Created all plots for softrandom_{freq}")
+        except Exception as e:
+            print(f"Error processing file {file_path}: {e}")
+    else:
+        print(f"File not found: {file_path}")

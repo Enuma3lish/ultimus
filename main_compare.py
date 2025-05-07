@@ -30,9 +30,9 @@ logger = logging.getLogger(__name__)
 
 # Fixed checkpoint values for Rdynamic algorithms
 checkpoints = {
-    "RDYNAMIC_SQRT_2": 80,
-    "RDYNAMIC_SQRT_6": 30,
-    "RDYNAMIC_SQRT_8": 60,
+    "RDYNAMIC_SQRT_2": 100,
+    "RDYNAMIC_SQRT_6": 100,
+    "RDYNAMIC_SQRT_8": 100,
     "RDYNAMIC_SQRT_10": 100,
     "Dynamic": 100
 }

@@ -82,3 +82,12 @@ def read_jobs_from_csv(filename):
     except csv.Error as e:
         print(f"Error reading CSV file: {e}")
     return jobs
+# # # Example usage
+# if __name__ == "__main__":
+#      jobs = read_jobs_from_csv("data/avg_90/(30, 19.7).csv")
+#      # Print a sample job to verify the structure
+#      if jobs:
+#          print(f"Sample job: {jobs[0]}")
+#      average_flow_time, l2_norm_flow_time = Fcfs(jobs)
+#      print(f"Average Flow Time: {average_flow_time}")
+#      print(f"L2 Norm Flow Time: {l2_norm_flow_time}")

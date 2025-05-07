@@ -3,110 +3,94 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Load the data
-check = [1,10,100,500,1000,10000]
-# Define the bp_parameter
-bp_parameter_60 = [
-    {"L": 56.300, "H": pow(2, 6)},
-    {"L": 18.900, "H": pow(2, 9)},
-    {"L": 12.400, "H": pow(2, 12)},
-    {"L": 9.800, "H": pow(2, 15)},
-    {"L": 8.500, "H": pow(2, 18)}
-]
-bp_parameter_90 = [
-    {"L": 32.300, "H": pow(2, 9)},
-    {"L": 19.700, "H": pow(2, 12)},
-    {"L": 15.300, "H": pow(2, 15)},
-    {"L": 13.000, "H": pow(2, 18)}
-]
-bp_parameter_30 = [
-    {"L": 16.772, "H": pow(2, 6)},
-    {"L": 7.918, "H": pow(2, 9)},
-    {"L": 5.649, "H": pow(2, 12)},
-    {"L": 4.639, "H": pow(2, 15)},
-    {"L": 4.073, "H": pow(2, 18)}
+# Define plotting support structures
+comparison_columns = [
+    "Rdynamic_sqrt_6/RR_ratio", "Rdynamic_sqrt_6/SRPT_ratio", "Rdynamic_sqrt_6/SETF_ratio", "Rdynamic_sqrt_6/FCFS_ratio",
+    "Rdynamic_sqrt_6/RMLF_ratio", "Rdynamic_sqrt_6/Dynamic_ratio", "Rdynamic_sqrt_8/RR_ratio", "Rdynamic_sqrt_8/SRPT_ratio",
+    "Rdynamic_sqrt_8/SETF_ratio", "Rdynamic_sqrt_8/FCFS_ratio", "Rdynamic_sqrt_8/RMLF_ratio", "Rdynamic_sqrt_8/Dynamic_ratio",
+    "Rdynamic_sqrt_10/RR_ratio", "Rdynamic_sqrt_10/SRPT_ratio", "Rdynamic_sqrt_10/SETF_ratio", "Rdynamic_sqrt_10/FCFS_ratio",
+    "Rdynamic_sqrt_10/RMLF_ratio", "Rdynamic_sqrt_10/Dynamic_ratio", "Dynamic/SRPT_ratio",
+    "Rdynamic_sqrt_6/Rdynamic_sqrt_8_ratio", "Rdynamic_sqrt_6/Rdynamic_sqrt_10_ratio", "Rdynamic_sqrt_8/Rdynamic_sqrt_10_ratio",
+    "Rdynamic_sqrt_2/RR_ratio", "Rdynamic_sqrt_2/SRPT_ratio", "Rdynamic_sqrt_2/SETF_ratio", "Rdynamic_sqrt_2/FCFS_ratio",
+    "Rdynamic_sqrt_2/RMLF_ratio", "Rdynamic_sqrt_2/Dynamic_ratio", "Rdynamic_sqrt_2/Rdynamic_sqrt_6_ratio",
+    "Rdynamic_sqrt_2/Rdynamic_sqrt_8_ratio", "Rdynamic_sqrt_2/Rdynamic_sqrt_10_ratio", "RMLF/FCFS_ratio"
 ]
 
-# Ensure directory for plots exists or is created
+frequencies = ["1", "10", "100", "500", "1000", "10000"]
+categories = ["", "softrandom"]
+
+markers = [
+    {'marker': 'o', 'size': 8}, {'marker': '^', 'size': 10}, {'marker': 's', 'size': 8},
+    {'marker': 'v', 'size': 10}, {'marker': 'D', 'size': 8}, {'marker': '*', 'size': 10},
+    {'marker': 'p', 'size': 8}, {'marker': 'h', 'size': 10}
+]
+
+line_styles = {
+    'RR': '-', 'SRPT': '--', 'SETF': '-.', 'FCFS': ':', 'RMLF': '-', 'Dynamic': '--',
+    'Rdynamic_sqrt_2': '-', 'Rdynamic_sqrt_6': '--', 'Rdynamic_sqrt_8': '-.', 'Rdynamic_sqrt_10': ':'
+}
+
+algorithm_colors = {
+    'RR': '#FF0000', 'SRPT': '#0000FF', 'SETF': '#00CC00', 'FCFS': '#9900CC', 'RMLF': '#FF6600', 'Dynamic': '#996633',
+    'Rdynamic_sqrt_2': '#FF00FF', 'Rdynamic_sqrt_6': '#00CCCC', 'Rdynamic_sqrt_8': '#FFCC00', 'Rdynamic_sqrt_10': '#00FF00'
+}
+
+algorithm_display_names = {
+    'Rdynamic_sqrt_2': 'RDY_2', 'Rdynamic_sqrt_6': 'RDY_6', 'Rdynamic_sqrt_8': 'RDY_8', 'Rdynamic_sqrt_10': 'RDY_10'
+}
+
+def get_rdy_display_name(name):
+    if 'Rdynamic_sqrt_' in name:
+        try:
+            num = name.split('_')[-1]
+            return f"RDY_{num}"
+        except:
+            pass
+    return algorithm_display_names.get(name, name)
+
 plots_dir = "log/img/"
 os.makedirs(plots_dir, exist_ok=True)
 
-# Define markers and line styles
-srpt_markers = [
-    {'marker': '^', 'size': 10},  # Large upward triangle
-    {'marker': '^', 'size': 6},   # Small upward triangle
-    {'marker': 'o', 'size': 8},   # Circle
-    {'marker': 'v', 'size': 6},   # Small downward triangle
-    {'marker': 'v', 'size': 10}   # Large downward triangle
-]
-fcfs_markers = srpt_markers
-srpt_color = 'blue'  # Fixed color for SRPT lines
-fcfs_color = 'red'   # Fixed color for FCFS lines
+# Placeholder dummy plotting functions (to be replaced by full logic if needed)
+def create_individual_plots(data, output_dir, freq_value, category_name):
+    print(f"[Simulate] Creating individual plots for {category_name} freq={freq_value}")
 
-# Function to get the index of a bp_parameter in the ordered list
-def get_bp_index(bp_param):
-    for i, param in enumerate(bp_parameter):
-        if f"{param['L']:.3f}" in bp_param:
-            return i
-    return len(bp_parameter)  # Return max index if not found
+def create_rdynamic_comparison_plots(data, output_dir, freq_value, category_name):
+    print(f"[Simulate] Creating RDY comparisons for {category_name} freq={freq_value}")
 
-# Loop over each check
-for c in check:
-    data = pd.read_csv(f'log/final_result_{c}.csv')  # Adjust path as needed
-    
-    # Prepare the plot
-    plt.figure(figsize=(12, 8))
+def create_algorithm_variant_plots(data, output_dir, freq_value, category_name):
+    print(f"[Simulate] Creating algorithm vs benchmark plots for {category_name} freq={freq_value}")
 
-    # Sort the unique bp_parameters based on the defined order
-    unique_bp_params = sorted(data['bp_parameter'].unique(), key=get_bp_index)
+# === Main processing loop ===
+for category in categories:
+    for freq in frequencies:
+        if category == "":
+            file_path = f'freq_comp_result/all_result_freq_{freq}_cp30.csv'
+        else:
+            file_path = f'softrandom_comp_result/all_result_freq_{freq}_cp30.csv'
 
-    # First, plot RMLF comparisons
-    for color_index, bp_param in enumerate(unique_bp_params):
-        specific_data = data[data['bp_parameter'] == bp_param]
-        if not specific_data.empty:
-            marker_style = srpt_markers[color_index % len(srpt_markers)]['marker']
-            marker_size = srpt_markers[color_index % len(srpt_markers)]['size']
-            plt.plot(
-                specific_data['arrival_rate'],
-                specific_data['RDYNAMIC_L2_Norm/RMLF_L2_Norm'],
-                marker=marker_style,
-                markersize=marker_size,
-                linestyle='-',
-                label=f'RMLF BP={bp_param}',
-                color=srpt_color
-            )
+        output_dir = f"{plots_dir}/freq_{freq}/{category}"
+        os.makedirs(output_dir, exist_ok=True)
 
-    # Now, plot FCFS comparisons
-    for color_index, bp_param in enumerate(unique_bp_params):
-        specific_data = data[data['bp_parameter'] == bp_param]
-        if not specific_data.empty:
-            marker_style = fcfs_markers[color_index % len(fcfs_markers)]['marker']
-            marker_size = fcfs_markers[color_index % len(fcfs_markers)]['size']
-            plt.plot(
-                specific_data['arrival_rate'],
-                specific_data['RDYNAMIC_L2_Norm/FCFS_L2_Norm'],
-                marker=marker_style,
-                markersize=marker_size,
-                linestyle='--',
-                label=f'FCFS BP={bp_param}',
-                color=fcfs_color
-            )
-    # Add titles, labels, and grid
-    plt.title(f'Comparison of L2 Norm for DYNAMIC vs RMLF and FCFS (Check={c})')
-    plt.xlabel('Mean Interarrival Time')
-    plt.ylabel('L2 Norm Ratio')
-    plt.legend(title='Comparison Type and BP Parameter', loc='best')
-    plt.grid(True)
+        if os.path.exists(file_path):
+            try:
+                data = pd.read_csv(file_path)
+                if data.empty:
+                    print(f"Warning: Empty data file: {file_path}")
+                    continue
 
-    # Set y-limits for zooming into values close to 1
-    plt.ylim(0, 2)
-    plt.yticks(np.arange(0, 2.1, 0.1))
+                for col in data.columns:
+                    if col != 'arrival_rate' and data[col].dtype == object:
+                        data[col] = pd.to_numeric(data[col], errors='coerce')
 
-    # Set custom x-ticks for mean interarrival time (arrival_rate)
-    plt.xticks(ticks=np.arange(20, 41, 2))
-    
-    # Adjust layout and save the figure
-    plt.tight_layout()
-    filename = f'{plots_dir}/L2_Norm_Comparison_{c}.pdf'
-    plt.savefig(filename)
-    plt.close()
+                data = data.dropna(subset=['arrival_rate'])
+
+                create_individual_plots(data, output_dir, freq, category)
+                create_rdynamic_comparison_plots(data, output_dir, freq, category)
+                create_algorithm_variant_plots(data, output_dir, freq, category)
+
+                print(f"Created all plots for {category}freq_{freq}")
+            except Exception as e:
+                print(f"Error processing file {file_path}: {e}")
+        else:
+            print(f"File not found: {file_path}")

@@ -63,7 +63,7 @@ class MLFQueue:
 class MLF:
     TAU = 12
     
-    def __init__(self, initial_queues: int = 1, first_level_quantum: float = 2.0):
+    def __init__(self, initial_queues: int = 1, first_level_quantum: float = 6.0):
         self.queues = [MLFQueue(level) for level in range(initial_queues)]
         self.active_jobs: Set[Job] = set()
         self.finished_jobs: List[Job] = []
@@ -111,7 +111,6 @@ class MLF:
             self.queues[next_queue].enqueue(job)
             job.current_queue = next_queue
             job.time_in_current_queue = 0
-            #print(f"Job {job.id} moved to lower priority queue {next_queue}")
     
     def generate_beta(self, job_index: int) -> float:
         if job_index <= 3:
