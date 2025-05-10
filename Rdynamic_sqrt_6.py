@@ -6,7 +6,7 @@ import pandas as pd
 from typing import Optional, List, Dict, Any, Tuple
 from MLF_6 import Job, MLF
 from itertools import count
-
+#this is test for RDD
 def log_algorithm_usage(filename: str, checkpoint_data: List[Dict[str, Any]]) -> None:
     """Log algorithm usage statistics to a CSV file"""
     fieldnames = ['checkpoint_time', 'algorithm', 'fcfs_score', 'rmlf_score', 'rmlf_ratio', 'fcfs_ratio']
