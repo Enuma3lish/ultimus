@@ -1,71 +1,89 @@
-import numpy as np
-import pandas as pd
-from heapq import heapify, heappush, heappop
-def Read_csv(filename):
-# Read the CSV file into a DataFrame 
-    data_frame = pd.read_csv(filename)
-    data_list = data_frame.values.tolist()
-    return data_list
+import csv
+import math
+from SRPT_Selector import select_next_job as srpt_select_next_job
+from BAL_Selector import select_starving_job
+
 def Bal(jobs):
-    jobs.sort(key=lambda x: x[0])
-    n = len(jobs)
     current_time = 0
-    queue = []
-    job_index = 0
-    flow_times = [0] * n
-    logs = [{} for _ in range(n)]  # Initialize logs for each job
-    starvation_threshold = n ** (2/3)
+    completed_jobs = []
+    job_queue = []
+    total_jobs = len(jobs)
+    jobs_pointer = 0
+    starvation_threshold = total_jobs ** (2/3)
     
-    while job_index < n or queue:
-        if not queue:
-            current_time = max(current_time, jobs[job_index][0])
+    # Assign job indices
+    for idx, job in enumerate(jobs):
+        job['job_index'] = idx
+    
+    # Sort jobs by arrival time
+    jobs.sort(key=lambda x: x['arrival_time'])
+    
+    while len(completed_jobs) < total_jobs:
+        # Add jobs that arrive at or before current time
+        while jobs_pointer < total_jobs and jobs[jobs_pointer]['arrival_time'] <= current_time:
+            job = jobs[jobs_pointer]
+            job_copy = {
+                'arrival_time': job['arrival_time'],
+                'job_size': job['job_size'],
+                'remaining_time': job['job_size'],
+                'job_index': job['job_index'],
+                'completion_time': None,
+                'start_time': None,
+                'starving_time': None,  # Time when job became starving
+                'waiting_time_ratio': 0
+            }
+            job_queue.append(job_copy)
+            jobs_pointer += 1
         
-        while job_index < n and jobs[job_index][0] <= current_time:
-            heappush(queue, (jobs[job_index][1], jobs[job_index][0], job_index, 0))
-            if job_index not in logs:  # Initialize log if not already done
-                logs[job_index] = {'arrival_time': jobs[job_index][0], 'first_executed_time': None, 'ifdone': False}
-            job_index += 1
-
-        new_queue = []
-        for remaining_time, arrival_time, index, _ in queue:
-            waiting_time_ratio = (current_time - arrival_time) / max(1, remaining_time)
-            heappush(new_queue, (remaining_time, arrival_time, index, waiting_time_ratio))
-        queue = new_queue
+        # Update waiting_time_ratio for all jobs in queue
+        for job in job_queue:
+            if job['remaining_time'] > 0:
+                job['waiting_time_ratio'] = (current_time - job['arrival_time']) / max(1, job['remaining_time'])
+                # Check if job just became starving
+                if job['waiting_time_ratio'] > starvation_threshold and job['starving_time'] is None:
+                    job['starving_time'] = current_time
         
-        starving_job = None
-        for job in queue:
-            if job[3] > starvation_threshold:
-                starving_job = job
-                break
+        # Separate starving and non-starving jobs
+        starving_jobs = [job for job in job_queue if job['waiting_time_ratio'] > starvation_threshold]
         
-        if starving_job:
-            queue.remove(starving_job)
-            selected_job = starving_job
+        selected_job = None
+        
+        if starving_jobs:
+            # Use BAL's starving job selection
+            selected_job = select_starving_job(starving_jobs)
         else:
-            queue.sort(key=lambda x: (x[0], x[3]))
-            selected_job = queue.pop(0)
+            # Use SRPT selector when no starving jobs
+            selected_job = srpt_select_next_job(job_queue)
         
-        remaining_time, arrival_time, index, _ = selected_job
-        # Log first execution time
-        if logs[index]['first_executed_time'] is None:
-            logs[index]['first_executed_time'] = current_time
-        current_time += remaining_time
-        flow_times[index] = current_time - arrival_time
-        logs[index]['ifdone'] = True  # Mark job as done
+        # Process selected job
+        if selected_job:
+            job_queue.remove(selected_job)
+            
+            # Record start_time if not already set
+            if selected_job['start_time'] is None:
+                selected_job['start_time'] = current_time
+            
+            # Execute job for one time unit
+            selected_job['remaining_time'] -= 1
+            
+            # Check if job is completed
+            if selected_job['remaining_time'] == 0:
+                selected_job['completion_time'] = current_time + 1
+                completed_jobs.append(selected_job)
+            else:
+                # Re-add the job to the queue
+                job_queue.append(selected_job)
         
-        queue = [(rem_time, arr_time, idx, wtr) for rem_time, arr_time, idx, wtr in queue]
-        heapify(queue)
+        # Increment time
+        current_time += 1
     
-    average_flow_time = sum(flow_times) / n
-    l2_norm_flow_time = (sum(x**2 for x in flow_times) ** 0.5)  # np.sqrt(np.sum(np.square(flow_times))) simplified
+    # Calculate metrics
+    total_flow_time = sum(job['completion_time'] - job['arrival_time'] for job in completed_jobs)
+    if total_jobs > 0:
+        avg_flow_time = total_flow_time / total_jobs
+        l2_norm_flow_time = (sum((job['completion_time'] - job['arrival_time']) ** 2 for job in completed_jobs)) ** 0.5
+    else:
+        avg_flow_time = 0
+        l2_norm_flow_time = 0
     
-    return average_flow_time, l2_norm_flow_time, logs
-
-
-# Example input and running the function
-# jobs = Read_csv("data/(40, 16.772).csv")
-# average_flow_time, l2_norm_flow_time,logs= Bal(jobs)
-
-# print(average_flow_time)
-# print(l2_norm_flow_time)
-# print(logs)
+    return avg_flow_time, l2_norm_flow_time

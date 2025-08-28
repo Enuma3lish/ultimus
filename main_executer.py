@@ -35,7 +35,7 @@ def main():
     # Run main_stand.py
     if run_and_wait("main_stand.py"):
         # If successful, run main_compare.py
-        run_and_wait("main_compare.py")
+        print("Execute sucessful")
     
     # Record end time
     print("Execution finished at:", time.strftime("%Y-%m-%d %H:%M:%S"))
