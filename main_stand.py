@@ -48,7 +48,7 @@ def create_dataset():
     # Log system information for parallel processing
     cpu_count = multiprocessing.cpu_count()
     logger.info(f"System has {cpu_count} CPU cores available for parallel processing")
-    logger.info("Processing with 7 algorithms: RR, SRPT, SETF, FCFS, RMLF, Dynamic, RFdynamic")
+    logger.info("Processing with 8 algorithms: RR, SRPT, SETF, FCFS, RMLF, Dynamic, RFdynamic, BAL")
 
     # Create the log directory if it doesn't exist
     log_dir = "log"
@@ -159,7 +159,7 @@ def validate_results():
             df = pd.read_csv(sample_file)
             expected_columns = ['arrival_rate', 'bp_parameter', 'RR_L2_Norm', 'SRPT_L2_Norm', 
                               'SETF_L2_Norm', 'FCFS_L2_Norm', 'RMLF_L2_Norm', 
-                              'DYNAMIC_L2_Norm', 'Rdynamic_L2_Norm']
+                              'DYNAMIC_L2_Norm', 'RFdynamic_L2_Norm', 'BAL_L2_Norm']
             
             missing_columns = [col for col in expected_columns if col not in df.columns]
             if missing_columns:

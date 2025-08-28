@@ -7,7 +7,7 @@ from typing import Optional, List, Dict, Any, Tuple
 from MLF_2 import Job, MLF
 from itertools import count
 
-def Rdynamic(jobs: List[Dict[str, Any]], checkpoint = 100) -> Tuple[float, float]:
+def RFdynamic(jobs: List[Dict[str, Any]], checkpoint = 100) -> Tuple[float, float]:
     if not jobs:
         return 0.0, 0.0
 

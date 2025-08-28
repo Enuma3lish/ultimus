@@ -1,6 +1,6 @@
 import multiprocessing
 import Read_csv
-import RR, SRPT, SETF, FCFS, RMLF, Dynamic, RFdynamic
+import RR, SRPT, SETF, FCFS, RMLF, Dynamic, RFdynamic, BAL
 import time
 import pandas as pd
 import numpy as np
@@ -76,7 +76,7 @@ def execute_phase1(Arrival_rate, bp_parameter):
                 if not job_list:
                     continue
 
-                # Set up algorithms including Dynamic and RFdynamic
+                # Set up algorithms including Dynamic, RFdynamic, and BAL
                 algorithms = [
                     (RR.RR, job_list.copy(), False, True),
                     (SRPT.Srpt, job_list.copy(), False, False),
@@ -84,7 +84,8 @@ def execute_phase1(Arrival_rate, bp_parameter):
                     (FCFS.Fcfs, job_list.copy(), False, False),
                     (RMLF.RMLF, job_list.copy(), True, False),
                     (Dynamic.DYNAMIC, job_list.copy(), False, False),
-                    (RFdynamic.Rdynamic, job_list.copy(), True, False)
+                    (RFdynamic.RFdynamic, job_list.copy(), True, False),
+                    (BAL.Bal, job_list.copy(), False, False)
                 ]
                 
                 # Run algorithms and collect results
@@ -99,7 +100,8 @@ def execute_phase1(Arrival_rate, bp_parameter):
                         "FCFS_L2_Norm": algorithm_results['Fcfs'],
                         "RMLF_L2_Norm": algorithm_results['RMLF'],
                         "DYNAMIC_L2_Norm": algorithm_results['DYNAMIC'],
-                        "Rdynamic_L2_Norm": algorithm_results['Rdynamic']
+                        "RFdynamic_L2_Norm": algorithm_results['RFdynamic'],
+                        "BAL_L2_Norm": algorithm_results['Bal']
                     })
                 else:
                     print(f"Failed to get results for {file_path}")
@@ -147,7 +149,7 @@ def execute_phase1_random(Arrival_rates):
                     print(f"No data found for {file_path}")
                     continue
                 
-                # Set up algorithms including Dynamic and RFdynamic
+                # Set up algorithms including Dynamic, RFdynamic, and BAL
                 algorithms = [
                     (RR.RR, job_list.copy(), False, True),
                     (SRPT.Srpt, job_list.copy(), False, False),
@@ -155,7 +157,8 @@ def execute_phase1_random(Arrival_rates):
                     (FCFS.Fcfs, job_list.copy(), False, False),
                     (RMLF.RMLF, job_list.copy(), True, False),
                     (Dynamic.DYNAMIC, job_list.copy(), False, False),
-                    (RFdynamic.Rdynamic, job_list.copy(), True, False)
+                    (RFdynamic.RFdynamic, job_list.copy(), True, False),
+                    (BAL.Bal, job_list.copy(), False, False)
                 ]
                 
                 # Run algorithms and collect results
@@ -169,7 +172,8 @@ def execute_phase1_random(Arrival_rates):
                         "FCFS_L2_Norm": algorithm_results['Fcfs'],
                         "RMLF_L2_Norm": algorithm_results['RMLF'],
                         "DYNAMIC_L2_Norm": algorithm_results['DYNAMIC'],
-                        "Rdynamic_L2_Norm": algorithm_results['Rdynamic']
+                        "RFdynamic_L2_Norm": algorithm_results['RFdynamic'],
+                        "BAL_L2_Norm": algorithm_results['Bal']
                     }
                     
                     # Add result to the corresponding frequency list
@@ -222,7 +226,7 @@ def execute_phase1_softrandom(Arrival_rates):
                     print(f"No data found for {file_path}")
                     continue
                 
-                # Set up algorithms including Dynamic and RFdynamic
+                # Set up algorithms including Dynamic, RFdynamic, and BAL
                 algorithms = [
                     (RR.RR, job_list.copy(), False, True),
                     (SRPT.Srpt, job_list.copy(), False, False),
@@ -230,7 +234,8 @@ def execute_phase1_softrandom(Arrival_rates):
                     (FCFS.Fcfs, job_list.copy(), False, False),
                     (RMLF.RMLF, job_list.copy(), True, False),
                     (Dynamic.DYNAMIC, job_list.copy(), False, False),
-                    (RFdynamic.Rdynamic, job_list.copy(), True, False)
+                    (RFdynamic.RFdynamic, job_list.copy(), True, False),
+                    (BAL.Bal, job_list.copy(), False, False)
                 ]
                 
                 # Run algorithms and collect results
@@ -244,7 +249,8 @@ def execute_phase1_softrandom(Arrival_rates):
                         "FCFS_L2_Norm": algorithm_results['Fcfs'],
                         "RMLF_L2_Norm": algorithm_results['RMLF'],
                         "DYNAMIC_L2_Norm": algorithm_results['DYNAMIC'],
-                        "Rdynamic_L2_Norm": algorithm_results['Rdynamic']
+                        "RFdynamic_L2_Norm": algorithm_results['RFdynamic'],
+                        "BAL_L2_Norm": algorithm_results['Bal']
                     }
                     
                     # Add result to the corresponding frequency list
