@@ -65,18 +65,3 @@ def Srpt(jobs):
         l2_norm_flow_time = 0
 
     return avg_flow_time, l2_norm_flow_time
-
-def read_jobs_from_csv(filename):
-    jobs = []
-    try:
-        with open(filename, 'r') as file:
-            reader = csv.DictReader(file)
-            for row in reader:
-                arrival_time = float(row['arrival_time'])
-                job_size = float(row['job_size'])
-                jobs.append({'arrival_time': arrival_time, 'job_size': job_size})
-    except FileNotFoundError:
-        print(f"Error: File '{filename}' not found.")
-    except csv.Error as e:
-        print(f"Error reading CSV file: {e}")
-    return jobs

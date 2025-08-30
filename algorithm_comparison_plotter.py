@@ -29,8 +29,8 @@ def create_dynamic_plot(df, output_path, plot_title):
     """
     
     # Define colors and markers for different algorithms
-    colors = ['blue', 'green', 'orange', 'purple', 'brown']
-    markers = ['^', 'v', 's', 'o', 'D']
+    colors = ['blue', 'green', 'orange', 'purple', 'brown', 'red']
+    markers = ['^', 'v', 's', 'o', 'D', 'x']
     
     # Create plot
     fig, ax = plt.subplots(figsize=(12, 8))
@@ -41,7 +41,8 @@ def create_dynamic_plot(df, output_path, plot_title):
         ('DYNAMIC_L2_Norm/SRPT_L2_Norm', 'DYNAMIC vs SRPT'),
         ('DYNAMIC_L2_Norm/FCFS_L2_Norm', 'DYNAMIC vs FCFS'),
         ('DYNAMIC_L2_Norm/RMLF_L2_Norm', 'DYNAMIC vs RMLF'),
-        ('DYNAMIC_L2_Norm/Rdynamic_L2_Norm', 'DYNAMIC vs Rdynamic')
+        ('DYNAMIC_L2_Norm/RFdynamic_L2_Norm', 'DYNAMIC vs RFdynamic'),
+        ('DYNAMIC_L2_Norm/BAL_L2_Norm', 'DYNAMIC vs BAL')
     ]
     
     # Calculate ratios for DYNAMIC
@@ -54,7 +55,7 @@ def create_dynamic_plot(df, output_path, plot_title):
                     markersize=8, label=label)
     
     # Add baseline line
-    ax.axhline(y=1, color='red', linestyle='-', linewidth=2, label='Baseline (y=1)')
+    ax.axhline(y=1, color='black', linestyle='-', linewidth=2, label='Baseline (y=1)')
     ax.set_xlabel('Arrival Rate', fontsize=12)
     ax.set_ylabel('Performance Ratio', fontsize=12)
     ax.set_title(f'DYNAMIC Algorithm Comparison\n{plot_title}', fontsize=14, fontweight='bold')
@@ -69,9 +70,9 @@ def create_dynamic_plot(df, output_path, plot_title):
     
     logger.info(f"Saved DYNAMIC comparison plot to {output_path}_DYNAMIC.pdf")
 
-def create_rdynamic_plot(df, output_path, plot_title):
+def create_rfdynamic_plot(df, output_path, plot_title):
     """
-    Create Rdynamic comparison plot
+    Create RFdynamic comparison plot
     
     Args:
         df: DataFrame with algorithm results
@@ -80,46 +81,100 @@ def create_rdynamic_plot(df, output_path, plot_title):
     """
     
     # Define colors and markers for different algorithms
-    colors = ['blue', 'green', 'orange', 'purple', 'brown', 'pink']
-    markers = ['^', 'v', 's', 'o', 'D', '*']
+    colors = ['blue', 'green', 'orange', 'purple', 'brown', 'pink', 'red']
+    markers = ['^', 'v', 's', 'o', 'D', '*', 'x']
     
     # Create plot
     fig, ax = plt.subplots(figsize=(12, 8))
     
-    # Rdynamic comparisons
-    rdynamic_comparisons = [
-        ('Rdynamic_L2_Norm/RR_L2_Norm', 'Rdynamic vs RR'),
-        ('Rdynamic_L2_Norm/SRPT_L2_Norm', 'Rdynamic vs SRPT'),
-        ('Rdynamic_L2_Norm/SETF_L2_Norm', 'Rdynamic vs SETF'),
-        ('Rdynamic_L2_Norm/FCFS_L2_Norm', 'Rdynamic vs FCFS'),
-        ('Rdynamic_L2_Norm/RMLF_L2_Norm', 'Rdynamic vs RMLF'),
-        ('Rdynamic_L2_Norm/DYNAMIC_L2_Norm', 'Rdynamic vs DYNAMIC')
+    # RFdynamic comparisons
+    rfdynamic_comparisons = [
+        ('RFdynamic_L2_Norm/RR_L2_Norm', 'RFdynamic vs RR'),
+        ('RFdynamic_L2_Norm/SRPT_L2_Norm', 'RFdynamic vs SRPT'),
+        ('RFdynamic_L2_Norm/SETF_L2_Norm', 'RFdynamic vs SETF'),
+        ('RFdynamic_L2_Norm/FCFS_L2_Norm', 'RFdynamic vs FCFS'),
+        ('RFdynamic_L2_Norm/RMLF_L2_Norm', 'RFdynamic vs RMLF'),
+        ('RFdynamic_L2_Norm/DYNAMIC_L2_Norm', 'RFdynamic vs DYNAMIC'),
+        ('RFdynamic_L2_Norm/BAL_L2_Norm', 'RFdynamic vs BAL')
     ]
     
-    # Calculate ratios for Rdynamic
-    for i, (ratio_name, label) in enumerate(rdynamic_comparisons):
+    # Calculate ratios for RFdynamic
+    for i, (ratio_name, label) in enumerate(rfdynamic_comparisons):
         algo_name = ratio_name.split('/')[1].replace('_L2_Norm', '')
-        if f'Rdynamic_L2_Norm' in df.columns and f'{algo_name}_L2_Norm' in df.columns:
-            ratio_values = df['Rdynamic_L2_Norm'] / df[f'{algo_name}_L2_Norm']
+        if f'RFdynamic_L2_Norm' in df.columns and f'{algo_name}_L2_Norm' in df.columns:
+            ratio_values = df['RFdynamic_L2_Norm'] / df[f'{algo_name}_L2_Norm']
             ax.plot(df['arrival_rate'], ratio_values, 
                     color=colors[i], marker=markers[i], linewidth=2, 
                     markersize=8, label=label)
     
     # Add baseline line
-    ax.axhline(y=1, color='red', linestyle='-', linewidth=2, label='Baseline (y=1)')
+    ax.axhline(y=1, color='black', linestyle='-', linewidth=2, label='Baseline (y=1)')
     ax.set_xlabel('Arrival Rate', fontsize=12)
     ax.set_ylabel('Performance Ratio', fontsize=12)
-    ax.set_title(f'Rdynamic Algorithm Comparison\n{plot_title}', fontsize=14, fontweight='bold')
+    ax.set_title(f'RFdynamic Algorithm Comparison\n{plot_title}', fontsize=14, fontweight='bold')
     ax.legend(loc='best', fontsize=10)
     ax.grid(True, alpha=0.3)
     ax.set_xlim(19, 41)
     
     # Save plot
     plt.tight_layout()
-    plt.savefig(f"{output_path}_Rdynamic.pdf", dpi=300, bbox_inches='tight')
+    plt.savefig(f"{output_path}_RFdynamic.pdf", dpi=300, bbox_inches='tight')
     plt.close()
     
-    logger.info(f"Saved Rdynamic comparison plot to {output_path}_Rdynamic.pdf")
+    logger.info(f"Saved RFdynamic comparison plot to {output_path}_RFdynamic.pdf")
+
+def create_bal_plot(df, output_path, plot_title):
+    """
+    Create BAL comparison plot
+    
+    Args:
+        df: DataFrame with algorithm results
+        output_path: Path for saving plot (without extension)
+        plot_title: Title for the plot
+    """
+    
+    # Define colors and markers for different algorithms
+    colors = ['blue', 'green', 'orange', 'purple', 'brown', 'pink', 'red']
+    markers = ['^', 'v', 's', 'o', 'D', '*', 'x']
+    
+    # Create plot
+    fig, ax = plt.subplots(figsize=(12, 8))
+    
+    # BAL comparisons
+    bal_comparisons = [
+        ('BAL_L2_Norm/RR_L2_Norm', 'BAL vs RR'),
+        ('BAL_L2_Norm/SRPT_L2_Norm', 'BAL vs SRPT'),
+        ('BAL_L2_Norm/SETF_L2_Norm', 'BAL vs SETF'),
+        ('BAL_L2_Norm/FCFS_L2_Norm', 'BAL vs FCFS'),
+        ('BAL_L2_Norm/RMLF_L2_Norm', 'BAL vs RMLF'),
+        ('BAL_L2_Norm/DYNAMIC_L2_Norm', 'BAL vs DYNAMIC'),
+        ('BAL_L2_Norm/RFdynamic_L2_Norm', 'BAL vs RFdynamic')
+    ]
+    
+    # Calculate ratios for BAL
+    for i, (ratio_name, label) in enumerate(bal_comparisons):
+        algo_name = ratio_name.split('/')[1].replace('_L2_Norm', '')
+        if f'BAL_L2_Norm' in df.columns and f'{algo_name}_L2_Norm' in df.columns:
+            ratio_values = df['BAL_L2_Norm'] / df[f'{algo_name}_L2_Norm']
+            ax.plot(df['arrival_rate'], ratio_values, 
+                    color=colors[i], marker=markers[i], linewidth=2, 
+                    markersize=8, label=label)
+    
+    # Add baseline line
+    ax.axhline(y=1, color='black', linestyle='-', linewidth=2, label='Baseline (y=1)')
+    ax.set_xlabel('Arrival Rate', fontsize=12)
+    ax.set_ylabel('Performance Ratio', fontsize=12)
+    ax.set_title(f'BAL Algorithm Comparison\n{plot_title}', fontsize=14, fontweight='bold')
+    ax.legend(loc='best', fontsize=10)
+    ax.grid(True, alpha=0.3)
+    ax.set_xlim(19, 41)
+    
+    # Save plot
+    plt.tight_layout()
+    plt.savefig(f"{output_path}_BAL.pdf", dpi=300, bbox_inches='tight')
+    plt.close()
+    
+    logger.info(f"Saved BAL comparison plot to {output_path}_BAL.pdf")
 
 def aggregate_and_save_phase1_files(base_dir, output_dir):
     """
@@ -228,7 +283,8 @@ def process_freq_files(input_dir, output_dir, folder_type="random"):
             
             # Create separate comparison plots
             create_dynamic_plot(df, output_path, plot_title)
-            create_rdynamic_plot(df, output_path, plot_title)
+            create_rfdynamic_plot(df, output_path, plot_title)
+            create_bal_plot(df, output_path, plot_title)
             
         except Exception as e:
             logger.error(f"Error processing {file_path}: {e}")
@@ -263,7 +319,8 @@ def process_softrandom_files(input_dir, output_dir):
             
             # Create separate comparison plots
             create_dynamic_plot(df, output_path, plot_title)
-            create_rdynamic_plot(df, output_path, plot_title)
+            create_rfdynamic_plot(df, output_path, plot_title)
+            create_bal_plot(df, output_path, plot_title)
             
         except Exception as e:
             logger.error(f"Error processing {file_path}: {e}")
@@ -305,7 +362,8 @@ def process_phase1_files(input_dir, output_dir):
             
             # Create separate comparison plots
             create_dynamic_plot(df, output_path, plot_title)
-            create_rdynamic_plot(df, output_path, plot_title)
+            create_rfdynamic_plot(df, output_path, plot_title)
+            create_bal_plot(df, output_path, plot_title)
             
         except Exception as e:
             logger.error(f"Error processing CSV file {csv_file}: {e}")

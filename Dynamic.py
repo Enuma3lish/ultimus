@@ -134,7 +134,6 @@ def Fcfs(jobs):
         l2_norm_flow_time = 0
 
     return avg_flow_time, l2_norm_flow_time
-
 def DYNAMIC(jobs, nJobsPerRound = 100):
     total_jobs = len(jobs)
 
@@ -178,7 +177,7 @@ def DYNAMIC(jobs, nJobsPerRound = 100):
                 # Simulate SRPT and FCFS on the new jobs only
                 srpt_avg, srpt_l2 = Srpt(jobs_in_round)
                 fcfs_avg, fcfs_l2 = Fcfs(jobs_in_round)
-                is_srpt_better = srpt_l2 <= fcfs_l2
+                is_srpt_better = srpt_l2 <= fcfs_l2 
             jobs_in_round = []
             n_arrival_jobs = 0  # Reset the arrival counter
 

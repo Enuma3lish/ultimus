@@ -146,14 +146,14 @@ def soft_random_job_init(num_jobs, avg_inter_arrival_time, coherence_time=1):
     between parameters within that family using probabilistic rules.
     
     Transition Rules:
-    - First parameter: 1/2 to move down (next index), 1/2 to stay
-    - Last parameter: 1/2 to move up (previous index), 1/2 to stay  
-    - Middle parameters: 1/3 to stay, 1/3 to move up, 1/3 to move down
+    - First parameter (highest L): 1/2 to move to next index (lower L), 1/2 to stay
+    - Last parameter (lowest L): 1/2 to move to previous index (higher L), 1/2 to stay  
+    - Middle parameters: 1/3 to stay, 1/3 to move to previous index (higher L), 1/3 to move to next index (lower L)
     
     Parameters:
     num_jobs (int): Number of jobs to generate
     avg_inter_arrival_time (float): Average inter-arrival time
-    coherence_time (int): Number of CPU time units before potentially selecting new parameters
+    coherence_time (int): Number of jobs before potentially selecting new parameters
     """
     samples = []
     param_set_keys = list(parameter_sets.keys())  # ["avg_30", "avg_60", "avg_90"]
@@ -166,42 +166,42 @@ def soft_random_job_init(num_jobs, avg_inter_arrival_time, coherence_time=1):
     current_param_index = random.randint(0, len(current_param_set) - 1)
     
     current_time = 0
-    next_change_time = coherence_time  # Time to potentially pick new parameters
+    jobs_since_last_change = 0  # Counter for jobs since last parameter change
     
     # Generate jobs one by one in an online manner
     for _ in range(num_jobs):
         # Check if we need to potentially change the parameter within the same family
-        if current_time >= next_change_time:
+        if jobs_since_last_change >= coherence_time:
             num_params = len(current_param_set)
             
             # Apply smooth transition rules based on current position
-            if current_param_index == 0:  # First parameter
-                # 1/2 to go down (move to next index), 1/2 to stay
+            if current_param_index == 0:  # First parameter (highest L value)
+                # 1/2 to go to next index (lower L), 1/2 to stay
                 if random.random() < 0.5:
-                    current_param_index = 1  # move down to next parameter
+                    current_param_index = 1  # move to next parameter (lower L)
                 # else stay at index 0
                 
-            elif current_param_index == num_params - 1:  # Last parameter
-                # 1/2 to go up (move to previous index), 1/2 to stay
+            elif current_param_index == num_params - 1:  # Last parameter (lowest L value)
+                # 1/2 to go to previous index (higher L), 1/2 to stay
                 if random.random() < 0.5:
-                    current_param_index = num_params - 2  # move up to previous parameter
+                    current_param_index = num_params - 2  # move to previous parameter (higher L)
                 # else stay at last index
                 
             else:  # Middle parameters
-                # 1/3 to stay, 1/3 to go up (decrease index), 1/3 to go down (increase index)
+                # 1/3 to stay, 1/3 to go to previous index (higher L), 1/3 to go to next index (lower L)
                 choice = random.random()
                 if choice < 1/3:
                     # stay at current index
                     pass
                 elif choice < 2/3:
-                    # go up (decrease index - move to previous parameter)
+                    # go to previous index (higher L value)
                     current_param_index -= 1
                 else:
-                    # go down (increase index - move to next parameter)
+                    # go to next index (lower L value)
                     current_param_index += 1
             
-            # Set next change time
-            next_change_time = current_time + coherence_time
+            # Reset job counter
+            jobs_since_last_change = 0
         
         # Get bounds from current parameter
         current_param = current_param_set[current_param_index]
@@ -217,8 +217,12 @@ def soft_random_job_init(num_jobs, avg_inter_arrival_time, coherence_time=1):
         
         # Add job to samples
         samples.append({"arrival_time": current_time, "job_size": job_size})
+        
+        # Increment job counter
+        jobs_since_last_change += 1
     
     return samples
+
 def Save_file(num_jobs):
     # Create base data directory if it doesn't exist
     os.makedirs("data", exist_ok=True)
@@ -269,4 +273,4 @@ def Save_file(num_jobs):
             Write_csv.Write_raw(filename, job_list)
 
 if __name__ == "__main__":
-    Save_file(10000)
+    Save_file(1000)
