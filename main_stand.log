@@ -1,13 +1,13 @@
 nohup: ignoring input
-2025-08-28 18:23:11,341 - INFO - ============================================================
-2025-08-28 18:23:11,341 - INFO - STARTING DYNAMIC ALGORITHM DATASET CREATION
-2025-08-28 18:23:11,342 - INFO - ============================================================
-2025-08-28 18:23:11,342 - INFO - System has 16 CPU cores available for parallel processing
-2025-08-28 18:23:11,342 - INFO - Processing with 8 algorithms: RR, SRPT, SETF, FCFS, RMLF, Dynamic, RFdynamic, BAL
-2025-08-28 18:23:11,342 - INFO - Starting dataset creation with 35 total tasks
-2025-08-28 18:23:11,342 - INFO - Processing avg_30 data with 5 parameter sets...
-Processing avg_30 arrival rates:   0%|          | 0/11 [00:00<?, ?it/s]2025-08-28 18:29:53,286 - INFO - Completed arrival rate 20 for avg_30 in 401.94s (1/35 total tasks)
-Processing avg_30 arrival rates:   9%|▉         | 1/11 [06:42<1:07:00, 402.04s/it]Saved 5 results to phase1/phase1_results_avg_30_20.csv
+2025-08-30 23:08:27,613 - INFO - ============================================================
+2025-08-30 23:08:27,613 - INFO - STARTING DYNAMIC ALGORITHM DATASET CREATION
+2025-08-30 23:08:27,613 - INFO - ============================================================
+2025-08-30 23:08:27,613 - INFO - System has 16 CPU cores available for parallel processing
+2025-08-30 23:08:27,613 - INFO - Processing with 8 algorithms: RR, SRPT, SETF, FCFS, RMLF, Dynamic, RFdynamic, BAL
+2025-08-30 23:08:27,613 - INFO - Starting dataset creation with 35 total tasks
+2025-08-30 23:08:27,613 - INFO - Processing avg_30 data with 5 parameter sets...
+Processing avg_30 arrival rates:   0%|          | 0/11 [00:00<?, ?it/s]2025-08-30 23:14:58,190 - INFO - Completed arrival rate 20 for avg_30 in 390.58s (1/35 total tasks)
+Processing avg_30 arrival rates:   9%|▉         | 1/11 [06:30<1:05:06, 390.68s/it]Saved 5 results to phase1/phase1_results_avg_30_20.csv
 Error processing data/avg_60/(20, 16.772).csv: [Errno 2] No such file or directory: 'data/avg_60/(20, 16.772).csv'
 Error processing data/avg_60/(20, 7.918).csv: [Errno 2] No such file or directory: 'data/avg_60/(20, 7.918).csv'
 Error processing data/avg_60/(20, 5.649).csv: [Errno 2] No such file or directory: 'data/avg_60/(20, 5.649).csv'
@@ -18,8 +18,8 @@ Error processing data/avg_90/(20, 7.918).csv: [Errno 2] No such file or director
 Error processing data/avg_90/(20, 5.649).csv: [Errno 2] No such file or directory: 'data/avg_90/(20, 5.649).csv'
 Error processing data/avg_90/(20, 4.639).csv: [Errno 2] No such file or directory: 'data/avg_90/(20, 4.639).csv'
 Error processing data/avg_90/(20, 4.073).csv: [Errno 2] No such file or directory: 'data/avg_90/(20, 4.073).csv'
-2025-08-28 18:36:25,798 - INFO - Completed arrival rate 22 for avg_30 in 392.41s (2/35 total tasks)
-Processing avg_30 arrival rates:  18%|█▊        | 2/11 [13:14<59:27, 396.44s/it]  Saved 5 results to phase1/phase1_results_avg_30_22.csv
+2025-08-30 23:21:09,646 - INFO - Completed arrival rate 22 for avg_30 in 371.36s (2/35 total tasks)
+Processing avg_30 arrival rates:  18%|█▊        | 2/11 [12:42<56:54, 379.37s/it]  Saved 5 results to phase1/phase1_results_avg_30_22.csv
 Error processing data/avg_60/(22, 16.772).csv: [Errno 2] No such file or directory: 'data/avg_60/(22, 16.772).csv'
 Error processing data/avg_60/(22, 7.918).csv: [Errno 2] No such file or directory: 'data/avg_60/(22, 7.918).csv'
 Error processing data/avg_60/(22, 5.649).csv: [Errno 2] No such file or directory: 'data/avg_60/(22, 5.649).csv'
@@ -30,8 +30,8 @@ Error processing data/avg_90/(22, 7.918).csv: [Errno 2] No such file or director
 Error processing data/avg_90/(22, 5.649).csv: [Errno 2] No such file or directory: 'data/avg_90/(22, 5.649).csv'
 Error processing data/avg_90/(22, 4.639).csv: [Errno 2] No such file or directory: 'data/avg_90/(22, 4.639).csv'
 Error processing data/avg_90/(22, 4.073).csv: [Errno 2] No such file or directory: 'data/avg_90/(22, 4.073).csv'
-2025-08-28 18:42:48,021 - INFO - Completed arrival rate 24 for avg_30 in 382.12s (3/35 total tasks)
-Processing avg_30 arrival rates:  27%|██▋       | 3/11 [19:36<51:59, 389.95s/it]Saved 5 results to phase1/phase1_results_avg_30_24.csv
+2025-08-30 23:27:28,030 - INFO - Completed arrival rate 24 for avg_30 in 378.28s (3/35 total tasks)
+Processing avg_30 arrival rates:  27%|██▋       | 3/11 [19:00<50:31, 378.92s/it]Saved 5 results to phase1/phase1_results_avg_30_24.csv
 Error processing data/avg_60/(24, 16.772).csv: [Errno 2] No such file or directory: 'data/avg_60/(24, 16.772).csv'
 Error processing data/avg_60/(24, 7.918).csv: [Errno 2] No such file or directory: 'data/avg_60/(24, 7.918).csv'
 Error processing data/avg_60/(24, 5.649).csv: [Errno 2] No such file or directory: 'data/avg_60/(24, 5.649).csv'
@@ -42,8 +42,8 @@ Error processing data/avg_90/(24, 7.918).csv: [Errno 2] No such file or director
 Error processing data/avg_90/(24, 5.649).csv: [Errno 2] No such file or directory: 'data/avg_90/(24, 5.649).csv'
 Error processing data/avg_90/(24, 4.639).csv: [Errno 2] No such file or directory: 'data/avg_90/(24, 4.639).csv'
 Error processing data/avg_90/(24, 4.073).csv: [Errno 2] No such file or directory: 'data/avg_90/(24, 4.073).csv'
-2025-08-28 18:49:26,686 - INFO - Completed arrival rate 26 for avg_30 in 398.56s (4/35 total tasks)
-Processing avg_30 arrival rates:  36%|███▋      | 4/11 [26:15<45:53, 393.39s/it]Saved 5 results to phase1/phase1_results_avg_30_26.csv
+2025-08-30 23:33:55,504 - INFO - Completed arrival rate 26 for avg_30 in 387.37s (4/35 total tasks)
+Processing avg_30 arrival rates:  36%|███▋      | 4/11 [25:27<44:36, 382.30s/it]Saved 5 results to phase1/phase1_results_avg_30_26.csv
 Error processing data/avg_60/(26, 16.772).csv: [Errno 2] No such file or directory: 'data/avg_60/(26, 16.772).csv'
 Error processing data/avg_60/(26, 7.918).csv: [Errno 2] No such file or directory: 'data/avg_60/(26, 7.918).csv'
 Error processing data/avg_60/(26, 5.649).csv: [Errno 2] No such file or directory: 'data/avg_60/(26, 5.649).csv'
@@ -54,8 +54,8 @@ Error processing data/avg_90/(26, 7.918).csv: [Errno 2] No such file or director
 Error processing data/avg_90/(26, 5.649).csv: [Errno 2] No such file or directory: 'data/avg_90/(26, 5.649).csv'
 Error processing data/avg_90/(26, 4.639).csv: [Errno 2] No such file or directory: 'data/avg_90/(26, 4.639).csv'
 Error processing data/avg_90/(26, 4.073).csv: [Errno 2] No such file or directory: 'data/avg_90/(26, 4.073).csv'
-2025-08-28 18:56:33,459 - INFO - Completed arrival rate 28 for avg_30 in 426.67s (5/35 total tasks)
-Processing avg_30 arrival rates:  45%|████▌     | 5/11 [33:22<40:32, 405.43s/it]Saved 5 results to phase1/phase1_results_avg_30_28.csv
+2025-08-30 23:41:19,997 - INFO - Completed arrival rate 28 for avg_30 in 444.39s (5/35 total tasks)
+Processing avg_30 arrival rates:  45%|████▌     | 5/11 [32:52<40:28, 404.73s/it]Saved 5 results to phase1/phase1_results_avg_30_28.csv
 Error processing data/avg_60/(28, 16.772).csv: [Errno 2] No such file or directory: 'data/avg_60/(28, 16.772).csv'
 Error processing data/avg_60/(28, 7.918).csv: [Errno 2] No such file or directory: 'data/avg_60/(28, 7.918).csv'
 Error processing data/avg_60/(28, 5.649).csv: [Errno 2] No such file or directory: 'data/avg_60/(28, 5.649).csv'
@@ -66,8 +66,8 @@ Error processing data/avg_90/(28, 7.918).csv: [Errno 2] No such file or director
 Error processing data/avg_90/(28, 5.649).csv: [Errno 2] No such file or directory: 'data/avg_90/(28, 5.649).csv'
 Error processing data/avg_90/(28, 4.639).csv: [Errno 2] No such file or directory: 'data/avg_90/(28, 4.639).csv'
 Error processing data/avg_90/(28, 4.073).csv: [Errno 2] No such file or directory: 'data/avg_90/(28, 4.073).csv'
-2025-08-28 19:04:05,502 - INFO - Completed arrival rate 30 for avg_30 in 451.94s (6/35 total tasks)
-Processing avg_30 arrival rates:  55%|█████▍    | 6/11 [40:54<35:06, 421.28s/it]Saved 5 results to phase1/phase1_results_avg_30_30.csv
+2025-08-30 23:48:29,258 - INFO - Completed arrival rate 30 for avg_30 in 429.16s (6/35 total tasks)
+Processing avg_30 arrival rates:  55%|█████▍    | 6/11 [40:01<34:25, 413.07s/it]Saved 5 results to phase1/phase1_results_avg_30_30.csv
 Error processing data/avg_60/(30, 16.772).csv: [Errno 2] No such file or directory: 'data/avg_60/(30, 16.772).csv'
 Error processing data/avg_60/(30, 7.918).csv: [Errno 2] No such file or directory: 'data/avg_60/(30, 7.918).csv'
 Error processing data/avg_60/(30, 5.649).csv: [Errno 2] No such file or directory: 'data/avg_60/(30, 5.649).csv'
@@ -78,8 +78,8 @@ Error processing data/avg_90/(30, 7.918).csv: [Errno 2] No such file or director
 Error processing data/avg_90/(30, 5.649).csv: [Errno 2] No such file or directory: 'data/avg_90/(30, 5.649).csv'
 Error processing data/avg_90/(30, 4.639).csv: [Errno 2] No such file or directory: 'data/avg_90/(30, 4.639).csv'
 Error processing data/avg_90/(30, 4.073).csv: [Errno 2] No such file or directory: 'data/avg_90/(30, 4.073).csv'
-2025-08-28 19:11:17,146 - INFO - Completed arrival rate 32 for avg_30 in 431.54s (7/35 total tasks)
-Processing avg_30 arrival rates:  64%|██████▎   | 7/11 [48:05<28:18, 424.67s/it]Saved 5 results to phase1/phase1_results_avg_30_32.csv
+2025-08-30 23:55:56,439 - INFO - Completed arrival rate 32 for avg_30 in 447.08s (7/35 total tasks)
+Processing avg_30 arrival rates:  64%|██████▎   | 7/11 [47:28<28:16, 424.22s/it]Saved 5 results to phase1/phase1_results_avg_30_32.csv
 Error processing data/avg_60/(32, 16.772).csv: [Errno 2] No such file or directory: 'data/avg_60/(32, 16.772).csv'
 Error processing data/avg_60/(32, 7.918).csv: [Errno 2] No such file or directory: 'data/avg_60/(32, 7.918).csv'
 Error processing data/avg_60/(32, 5.649).csv: [Errno 2] No such file or directory: 'data/avg_60/(32, 5.649).csv'
@@ -90,8 +90,8 @@ Error processing data/avg_90/(32, 7.918).csv: [Errno 2] No such file or director
 Error processing data/avg_90/(32, 5.649).csv: [Errno 2] No such file or directory: 'data/avg_90/(32, 5.649).csv'
 Error processing data/avg_90/(32, 4.639).csv: [Errno 2] No such file or directory: 'data/avg_90/(32, 4.639).csv'
 Error processing data/avg_90/(32, 4.073).csv: [Errno 2] No such file or directory: 'data/avg_90/(32, 4.073).csv'
-2025-08-28 19:19:04,910 - INFO - Completed arrival rate 34 for avg_30 in 467.66s (8/35 total tasks)
-Processing avg_30 arrival rates:  73%|███████▎  | 8/11 [55:53<21:55, 438.39s/it]Saved 5 results to phase1/phase1_results_avg_30_34.csv
+2025-08-31 00:03:19,253 - INFO - Completed arrival rate 34 for avg_30 in 442.71s (8/35 total tasks)
+Processing avg_30 arrival rates:  73%|███████▎  | 8/11 [54:51<21:30, 430.14s/it]Saved 5 results to phase1/phase1_results_avg_30_34.csv
 Error processing data/avg_60/(34, 16.772).csv: [Errno 2] No such file or directory: 'data/avg_60/(34, 16.772).csv'
 Error processing data/avg_60/(34, 7.918).csv: [Errno 2] No such file or directory: 'data/avg_60/(34, 7.918).csv'
 Error processing data/avg_60/(34, 5.649).csv: [Errno 2] No such file or directory: 'data/avg_60/(34, 5.649).csv'
@@ -102,8 +102,8 @@ Error processing data/avg_90/(34, 7.918).csv: [Errno 2] No such file or director
 Error processing data/avg_90/(34, 5.649).csv: [Errno 2] No such file or directory: 'data/avg_90/(34, 5.649).csv'
 Error processing data/avg_90/(34, 4.639).csv: [Errno 2] No such file or directory: 'data/avg_90/(34, 4.639).csv'
 Error processing data/avg_90/(34, 4.073).csv: [Errno 2] No such file or directory: 'data/avg_90/(34, 4.073).csv'
-2025-08-28 19:26:43,424 - INFO - Completed arrival rate 36 for avg_30 in 458.41s (9/35 total tasks)
-Processing avg_30 arrival rates:  82%|████████▏ | 9/11 [1:03:32<14:49, 444.68s/it]Saved 5 results to phase1/phase1_results_avg_30_36.csv
+2025-08-31 00:10:31,494 - INFO - Completed arrival rate 36 for avg_30 in 432.14s (9/35 total tasks)
+Processing avg_30 arrival rates:  82%|████████▏ | 9/11 [1:02:03<14:21, 430.80s/it]Saved 5 results to phase1/phase1_results_avg_30_36.csv
 Error processing data/avg_60/(36, 16.772).csv: [Errno 2] No such file or directory: 'data/avg_60/(36, 16.772).csv'
 Error processing data/avg_60/(36, 7.918).csv: [Errno 2] No such file or directory: 'data/avg_60/(36, 7.918).csv'
 Error processing data/avg_60/(36, 5.649).csv: [Errno 2] No such file or directory: 'data/avg_60/(36, 5.649).csv'
@@ -114,8 +114,8 @@ Error processing data/avg_90/(36, 7.918).csv: [Errno 2] No such file or director
 Error processing data/avg_90/(36, 5.649).csv: [Errno 2] No such file or directory: 'data/avg_90/(36, 5.649).csv'
 Error processing data/avg_90/(36, 4.639).csv: [Errno 2] No such file or directory: 'data/avg_90/(36, 4.639).csv'
 Error processing data/avg_90/(36, 4.073).csv: [Errno 2] No such file or directory: 'data/avg_90/(36, 4.073).csv'
-2025-08-28 19:34:20,271 - INFO - Completed arrival rate 38 for avg_30 in 456.75s (10/35 total tasks)
-Processing avg_30 arrival rates:  91%|█████████ | 10/11 [1:11:09<07:28, 448.44s/it]Saved 5 results to phase1/phase1_results_avg_30_38.csv
+2025-08-31 00:17:55,679 - INFO - Completed arrival rate 38 for avg_30 in 444.08s (10/35 total tasks)
+Processing avg_30 arrival rates:  91%|█████████ | 10/11 [1:09:28<07:14, 434.93s/it]Saved 5 results to phase1/phase1_results_avg_30_38.csv
 Error processing data/avg_60/(38, 16.772).csv: [Errno 2] No such file or directory: 'data/avg_60/(38, 16.772).csv'
 Error processing data/avg_60/(38, 7.918).csv: [Errno 2] No such file or directory: 'data/avg_60/(38, 7.918).csv'
 Error processing data/avg_60/(38, 5.649).csv: [Errno 2] No such file or directory: 'data/avg_60/(38, 5.649).csv'
@@ -126,10 +126,10 @@ Error processing data/avg_90/(38, 7.918).csv: [Errno 2] No such file or director
 Error processing data/avg_90/(38, 5.649).csv: [Errno 2] No such file or directory: 'data/avg_90/(38, 5.649).csv'
 Error processing data/avg_90/(38, 4.639).csv: [Errno 2] No such file or directory: 'data/avg_90/(38, 4.639).csv'
 Error processing data/avg_90/(38, 4.073).csv: [Errno 2] No such file or directory: 'data/avg_90/(38, 4.073).csv'
-2025-08-28 19:42:09,371 - INFO - Completed arrival rate 40 for avg_30 in 469.00s (11/35 total tasks)
-Processing avg_30 arrival rates: 100%|██████████| 11/11 [1:18:58<00:00, 454.76s/it]Processing avg_30 arrival rates: 100%|██████████| 11/11 [1:18:58<00:00, 430.74s/it]
-2025-08-28 19:42:09,472 - INFO - Completed avg_30: 11 successful, 0 failed in 4738.13s
-2025-08-28 19:42:09,472 - INFO - Processing avg_60 data with 5 parameter sets...
+2025-08-31 00:25:21,558 - INFO - Completed arrival rate 40 for avg_30 in 445.78s (11/35 total tasks)
+Processing avg_30 arrival rates: 100%|██████████| 11/11 [1:16:54<00:00, 438.28s/it]Processing avg_30 arrival rates: 100%|██████████| 11/11 [1:16:54<00:00, 419.46s/it]
+2025-08-31 00:25:21,658 - INFO - Completed avg_30: 11 successful, 0 failed in 4614.05s
+2025-08-31 00:25:21,658 - INFO - Processing avg_60 data with 5 parameter sets...
 Saved 5 results to phase1/phase1_results_avg_30_40.csv
 Error processing data/avg_60/(40, 16.772).csv: [Errno 2] No such file or directory: 'data/avg_60/(40, 16.772).csv'
 Error processing data/avg_60/(40, 7.918).csv: [Errno 2] No such file or directory: 'data/avg_60/(40, 7.918).csv'
@@ -146,8 +146,8 @@ Error processing data/avg_30/(20, 18.9).csv: [Errno 2] No such file or directory
 Error processing data/avg_30/(20, 12.4).csv: [Errno 2] No such file or directory: 'data/avg_30/(20, 12.4).csv'
 Error processing data/avg_30/(20, 9.8).csv: [Errno 2] No such file or directory: 'data/avg_30/(20, 9.8).csv'
 Error processing data/avg_30/(20, 8.5).csv: [Errno 2] No such file or directory: 'data/avg_30/(20, 8.5).csv'
-2025-08-28 20:14:30,473 - INFO - Completed arrival rate 20 for avg_60 in 1941.00s (12/35 total tasks)
-Processing avg_60 arrival rates:   9%|▉         | 1/11 [32:21<5:23:31, 1941.10s/it]Saved 5 results to phase1/phase1_results_avg_60_20.csv
+2025-08-31 00:50:58,447 - INFO - Completed arrival rate 20 for avg_60 in 1536.79s (12/35 total tasks)
+Processing avg_60 arrival rates:   9%|▉         | 1/11 [25:36<4:16:08, 1536.89s/it]Saved 5 results to phase1/phase1_results_avg_60_20.csv
 Error processing data/avg_90/(20, 56.3).csv: [Errno 2] No such file or directory: 'data/avg_90/(20, 56.3).csv'
 Error processing data/avg_90/(20, 18.9).csv: [Errno 2] No such file or directory: 'data/avg_90/(20, 18.9).csv'
 Error processing data/avg_90/(20, 12.4).csv: [Errno 2] No such file or directory: 'data/avg_90/(20, 12.4).csv'
@@ -158,8 +158,8 @@ Error processing data/avg_30/(22, 18.9).csv: [Errno 2] No such file or directory
 Error processing data/avg_30/(22, 12.4).csv: [Errno 2] No such file or directory: 'data/avg_30/(22, 12.4).csv'
 Error processing data/avg_30/(22, 9.8).csv: [Errno 2] No such file or directory: 'data/avg_30/(22, 9.8).csv'
 Error processing data/avg_30/(22, 8.5).csv: [Errno 2] No such file or directory: 'data/avg_30/(22, 8.5).csv'
-2025-08-28 20:41:35,392 - INFO - Completed arrival rate 22 for avg_60 in 1624.82s (13/35 total tasks)
-Processing avg_60 arrival rates:  18%|█▊        | 2/11 [59:26<4:23:16, 1755.11s/it]Saved 5 results to phase1/phase1_results_avg_60_22.csv
+2025-08-31 01:15:59,723 - INFO - Completed arrival rate 22 for avg_60 in 1501.18s (13/35 total tasks)
+Processing avg_60 arrival rates:  18%|█▊        | 2/11 [50:38<3:47:23, 1515.94s/it]Saved 5 results to phase1/phase1_results_avg_60_22.csv
 Error processing data/avg_90/(22, 56.3).csv: [Errno 2] No such file or directory: 'data/avg_90/(22, 56.3).csv'
 Error processing data/avg_90/(22, 18.9).csv: [Errno 2] No such file or directory: 'data/avg_90/(22, 18.9).csv'
 Error processing data/avg_90/(22, 12.4).csv: [Errno 2] No such file or directory: 'data/avg_90/(22, 12.4).csv'
@@ -170,8 +170,8 @@ Error processing data/avg_30/(24, 18.9).csv: [Errno 2] No such file or directory
 Error processing data/avg_30/(24, 12.4).csv: [Errno 2] No such file or directory: 'data/avg_30/(24, 12.4).csv'
 Error processing data/avg_30/(24, 9.8).csv: [Errno 2] No such file or directory: 'data/avg_30/(24, 9.8).csv'
 Error processing data/avg_30/(24, 8.5).csv: [Errno 2] No such file or directory: 'data/avg_30/(24, 8.5).csv'
-2025-08-28 21:06:52,810 - INFO - Completed arrival rate 24 for avg_60 in 1517.32s (14/35 total tasks)
-Processing avg_60 arrival rates:  27%|██▋       | 3/11 [1:24:43<3:39:32, 1646.58s/it]Saved 5 results to phase1/phase1_results_avg_60_24.csv
+2025-08-31 01:38:06,931 - INFO - Completed arrival rate 24 for avg_60 in 1327.11s (14/35 total tasks)
+Processing avg_60 arrival rates:  27%|██▋       | 3/11 [1:12:45<3:10:38, 1429.76s/it]Saved 5 results to phase1/phase1_results_avg_60_24.csv
 Error processing data/avg_90/(24, 56.3).csv: [Errno 2] No such file or directory: 'data/avg_90/(24, 56.3).csv'
 Error processing data/avg_90/(24, 18.9).csv: [Errno 2] No such file or directory: 'data/avg_90/(24, 18.9).csv'
 Error processing data/avg_90/(24, 12.4).csv: [Errno 2] No such file or directory: 'data/avg_90/(24, 12.4).csv'
@@ -182,8 +182,8 @@ Error processing data/avg_30/(26, 18.9).csv: [Errno 2] No such file or directory
 Error processing data/avg_30/(26, 12.4).csv: [Errno 2] No such file or directory: 'data/avg_30/(26, 12.4).csv'
 Error processing data/avg_30/(26, 9.8).csv: [Errno 2] No such file or directory: 'data/avg_30/(26, 9.8).csv'
 Error processing data/avg_30/(26, 8.5).csv: [Errno 2] No such file or directory: 'data/avg_30/(26, 8.5).csv'
-2025-08-28 21:30:47,123 - INFO - Completed arrival rate 26 for avg_60 in 1434.21s (15/35 total tasks)
-Processing avg_60 arrival rates:  36%|███▋      | 4/11 [1:48:37<3:02:19, 1562.78s/it]Saved 5 results to phase1/phase1_results_avg_60_26.csv
+2025-08-31 02:00:02,220 - INFO - Completed arrival rate 26 for avg_60 in 1315.19s (15/35 total tasks)
+Processing avg_60 arrival rates:  36%|███▋      | 4/11 [1:34:40<2:41:31, 1384.57s/it]Saved 5 results to phase1/phase1_results_avg_60_26.csv
 Error processing data/avg_90/(26, 56.3).csv: [Errno 2] No such file or directory: 'data/avg_90/(26, 56.3).csv'
 Error processing data/avg_90/(26, 18.9).csv: [Errno 2] No such file or directory: 'data/avg_90/(26, 18.9).csv'
 Error processing data/avg_90/(26, 12.4).csv: [Errno 2] No such file or directory: 'data/avg_90/(26, 12.4).csv'
@@ -194,8 +194,8 @@ Error processing data/avg_30/(28, 18.9).csv: [Errno 2] No such file or directory
 Error processing data/avg_30/(28, 12.4).csv: [Errno 2] No such file or directory: 'data/avg_30/(28, 12.4).csv'
 Error processing data/avg_30/(28, 9.8).csv: [Errno 2] No such file or directory: 'data/avg_30/(28, 9.8).csv'
 Error processing data/avg_30/(28, 8.5).csv: [Errno 2] No such file or directory: 'data/avg_30/(28, 8.5).csv'
-2025-08-28 21:53:00,448 - INFO - Completed arrival rate 28 for avg_60 in 1333.22s (16/35 total tasks)
-Processing avg_60 arrival rates:  45%|████▌     | 5/11 [2:10:51<2:28:00, 1480.03s/it]Saved 5 results to phase1/phase1_results_avg_60_28.csv
+2025-08-31 02:20:14,146 - INFO - Completed arrival rate 28 for avg_60 in 1211.83s (16/35 total tasks)
+Processing avg_60 arrival rates:  45%|████▌     | 5/11 [1:54:52<2:12:13, 1322.31s/it]Saved 5 results to phase1/phase1_results_avg_60_28.csv
 Error processing data/avg_90/(28, 56.3).csv: [Errno 2] No such file or directory: 'data/avg_90/(28, 56.3).csv'
 Error processing data/avg_90/(28, 18.9).csv: [Errno 2] No such file or directory: 'data/avg_90/(28, 18.9).csv'
 Error processing data/avg_90/(28, 12.4).csv: [Errno 2] No such file or directory: 'data/avg_90/(28, 12.4).csv'
@@ -206,8 +206,8 @@ Error processing data/avg_30/(30, 18.9).csv: [Errno 2] No such file or directory
 Error processing data/avg_30/(30, 12.4).csv: [Errno 2] No such file or directory: 'data/avg_30/(30, 12.4).csv'
 Error processing data/avg_30/(30, 9.8).csv: [Errno 2] No such file or directory: 'data/avg_30/(30, 9.8).csv'
 Error processing data/avg_30/(30, 8.5).csv: [Errno 2] No such file or directory: 'data/avg_30/(30, 8.5).csv'
-2025-08-28 22:13:42,114 - INFO - Completed arrival rate 30 for avg_60 in 1241.56s (17/35 total tasks)
-Processing avg_60 arrival rates:  55%|█████▍    | 6/11 [2:31:32<1:56:34, 1398.99s/it]Saved 5 results to phase1/phase1_results_avg_60_30.csv
+2025-08-31 02:38:18,093 - INFO - Completed arrival rate 30 for avg_60 in 1083.85s (17/35 total tasks)
+Processing avg_60 arrival rates:  55%|█████▍    | 6/11 [2:12:56<1:43:26, 1241.27s/it]Saved 5 results to phase1/phase1_results_avg_60_30.csv
 Error processing data/avg_90/(30, 56.3).csv: [Errno 2] No such file or directory: 'data/avg_90/(30, 56.3).csv'
 Error processing data/avg_90/(30, 18.9).csv: [Errno 2] No such file or directory: 'data/avg_90/(30, 18.9).csv'
 Error processing data/avg_90/(30, 12.4).csv: [Errno 2] No such file or directory: 'data/avg_90/(30, 12.4).csv'
@@ -218,8 +218,8 @@ Error processing data/avg_30/(32, 18.9).csv: [Errno 2] No such file or directory
 Error processing data/avg_30/(32, 12.4).csv: [Errno 2] No such file or directory: 'data/avg_30/(32, 12.4).csv'
 Error processing data/avg_30/(32, 9.8).csv: [Errno 2] No such file or directory: 'data/avg_30/(32, 9.8).csv'
 Error processing data/avg_30/(32, 8.5).csv: [Errno 2] No such file or directory: 'data/avg_30/(32, 8.5).csv'
-2025-08-28 22:33:31,248 - INFO - Completed arrival rate 32 for avg_60 in 1189.03s (18/35 total tasks)
-Processing avg_60 arrival rates:  64%|██████▎   | 7/11 [2:51:21<1:28:41, 1330.38s/it]Saved 5 results to phase1/phase1_results_avg_60_32.csv
+2025-08-31 02:56:14,634 - INFO - Completed arrival rate 32 for avg_60 in 1076.44s (18/35 total tasks)
+Processing avg_60 arrival rates:  64%|██████▎   | 7/11 [2:30:53<1:19:09, 1187.41s/it]Saved 5 results to phase1/phase1_results_avg_60_32.csv
 Error processing data/avg_90/(32, 56.3).csv: [Errno 2] No such file or directory: 'data/avg_90/(32, 56.3).csv'
 Error processing data/avg_90/(32, 18.9).csv: [Errno 2] No such file or directory: 'data/avg_90/(32, 18.9).csv'
 Error processing data/avg_90/(32, 12.4).csv: [Errno 2] No such file or directory: 'data/avg_90/(32, 12.4).csv'
@@ -230,8 +230,8 @@ Error processing data/avg_30/(34, 18.9).csv: [Errno 2] No such file or directory
 Error processing data/avg_30/(34, 12.4).csv: [Errno 2] No such file or directory: 'data/avg_30/(34, 12.4).csv'
 Error processing data/avg_30/(34, 9.8).csv: [Errno 2] No such file or directory: 'data/avg_30/(34, 9.8).csv'
 Error processing data/avg_30/(34, 8.5).csv: [Errno 2] No such file or directory: 'data/avg_30/(34, 8.5).csv'
-2025-08-28 22:51:43,157 - INFO - Completed arrival rate 34 for avg_60 in 1091.81s (19/35 total tasks)
-Processing avg_60 arrival rates:  73%|███████▎  | 8/11 [3:09:33<1:02:43, 1254.46s/it]Saved 5 results to phase1/phase1_results_avg_60_34.csv
+2025-08-31 03:14:13,984 - INFO - Completed arrival rate 34 for avg_60 in 1079.25s (19/35 total tasks)
+Processing avg_60 arrival rates:  73%|███████▎  | 8/11 [2:48:52<57:39, 1153.01s/it]  Saved 5 results to phase1/phase1_results_avg_60_34.csv
 Error processing data/avg_90/(34, 56.3).csv: [Errno 2] No such file or directory: 'data/avg_90/(34, 56.3).csv'
 Error processing data/avg_90/(34, 18.9).csv: [Errno 2] No such file or directory: 'data/avg_90/(34, 18.9).csv'
 Error processing data/avg_90/(34, 12.4).csv: [Errno 2] No such file or directory: 'data/avg_90/(34, 12.4).csv'
@@ -242,8 +242,8 @@ Error processing data/avg_30/(36, 18.9).csv: [Errno 2] No such file or directory
 Error processing data/avg_30/(36, 12.4).csv: [Errno 2] No such file or directory: 'data/avg_30/(36, 12.4).csv'
 Error processing data/avg_30/(36, 9.8).csv: [Errno 2] No such file or directory: 'data/avg_30/(36, 9.8).csv'
 Error processing data/avg_30/(36, 8.5).csv: [Errno 2] No such file or directory: 'data/avg_30/(36, 8.5).csv'
-2025-08-28 23:08:20,340 - INFO - Completed arrival rate 36 for avg_60 in 997.08s (20/35 total tasks)
-Processing avg_60 arrival rates:  82%|████████▏ | 9/11 [3:26:10<39:08, 1174.03s/it]  Saved 5 results to phase1/phase1_results_avg_60_36.csv
+2025-08-31 03:29:55,439 - INFO - Completed arrival rate 36 for avg_60 in 941.35s (20/35 total tasks)
+Processing avg_60 arrival rates:  82%|████████▏ | 9/11 [3:04:33<36:13, 1086.88s/it]Saved 5 results to phase1/phase1_results_avg_60_36.csv
 Error processing data/avg_90/(36, 56.3).csv: [Errno 2] No such file or directory: 'data/avg_90/(36, 56.3).csv'
 Error processing data/avg_90/(36, 18.9).csv: [Errno 2] No such file or directory: 'data/avg_90/(36, 18.9).csv'
 Error processing data/avg_90/(36, 12.4).csv: [Errno 2] No such file or directory: 'data/avg_90/(36, 12.4).csv'
@@ -254,8 +254,8 @@ Error processing data/avg_30/(38, 18.9).csv: [Errno 2] No such file or directory
 Error processing data/avg_30/(38, 12.4).csv: [Errno 2] No such file or directory: 'data/avg_30/(38, 12.4).csv'
 Error processing data/avg_30/(38, 9.8).csv: [Errno 2] No such file or directory: 'data/avg_30/(38, 9.8).csv'
 Error processing data/avg_30/(38, 8.5).csv: [Errno 2] No such file or directory: 'data/avg_30/(38, 8.5).csv'
-2025-08-28 23:23:43,792 - INFO - Completed arrival rate 38 for avg_60 in 923.35s (21/35 total tasks)
-Processing avg_60 arrival rates:  91%|█████████ | 10/11 [3:41:34<18:16, 1096.67s/it]Saved 5 results to phase1/phase1_results_avg_60_38.csv
+2025-08-31 03:45:00,711 - INFO - Completed arrival rate 38 for avg_60 in 905.17s (21/35 total tasks)
+Processing avg_60 arrival rates:  91%|█████████ | 10/11 [3:19:39<17:10, 1030.81s/it]Saved 5 results to phase1/phase1_results_avg_60_38.csv
 Error processing data/avg_90/(38, 56.3).csv: [Errno 2] No such file or directory: 'data/avg_90/(38, 56.3).csv'
 Error processing data/avg_90/(38, 18.9).csv: [Errno 2] No such file or directory: 'data/avg_90/(38, 18.9).csv'
 Error processing data/avg_90/(38, 12.4).csv: [Errno 2] No such file or directory: 'data/avg_90/(38, 12.4).csv'
@@ -266,10 +266,10 @@ Error processing data/avg_30/(40, 18.9).csv: [Errno 2] No such file or directory
 Error processing data/avg_30/(40, 12.4).csv: [Errno 2] No such file or directory: 'data/avg_30/(40, 12.4).csv'
 Error processing data/avg_30/(40, 9.8).csv: [Errno 2] No such file or directory: 'data/avg_30/(40, 9.8).csv'
 Error processing data/avg_30/(40, 8.5).csv: [Errno 2] No such file or directory: 'data/avg_30/(40, 8.5).csv'
-2025-08-28 23:38:18,082 - INFO - Completed arrival rate 40 for avg_60 in 874.19s (22/35 total tasks)
-Processing avg_60 arrival rates: 100%|██████████| 11/11 [3:56:08<00:00, 1028.61s/it]Processing avg_60 arrival rates: 100%|██████████| 11/11 [3:56:08<00:00, 1288.06s/it]
-2025-08-28 23:38:18,183 - INFO - Completed avg_60: 11 successful, 0 failed in 14168.71s
-2025-08-28 23:38:18,183 - INFO - Processing avg_90 data with 4 parameter sets...
+2025-08-31 03:59:05,859 - INFO - Completed arrival rate 40 for avg_60 in 845.05s (22/35 total tasks)
+Processing avg_60 arrival rates: 100%|██████████| 11/11 [3:33:44<00:00, 973.99s/it] Processing avg_60 arrival rates: 100%|██████████| 11/11 [3:33:44<00:00, 1165.85s/it]
+2025-08-31 03:59:05,960 - INFO - Completed avg_60: 11 successful, 0 failed in 12824.30s
+2025-08-31 03:59:05,960 - INFO - Processing avg_90 data with 4 parameter sets...
 Saved 5 results to phase1/phase1_results_avg_60_40.csv
 Error processing data/avg_90/(40, 56.3).csv: [Errno 2] No such file or directory: 'data/avg_90/(40, 56.3).csv'
 Error processing data/avg_90/(40, 18.9).csv: [Errno 2] No such file or directory: 'data/avg_90/(40, 18.9).csv'
@@ -284,8 +284,8 @@ Error processing data/avg_60/(20, 32.3).csv: [Errno 2] No such file or directory
 Error processing data/avg_60/(20, 19.7).csv: [Errno 2] No such file or directory: 'data/avg_60/(20, 19.7).csv'
 Error processing data/avg_60/(20, 15.3).csv: [Errno 2] No such file or directory: 'data/avg_60/(20, 15.3).csv'
 Error processing data/avg_60/(20, 13.0).csv: [Errno 2] No such file or directory: 'data/avg_60/(20, 13.0).csv'
-2025-08-29 00:11:36,148 - INFO - Completed arrival rate 20 for avg_90 in 1997.96s (23/35 total tasks)
-Processing avg_90 arrival rates:   9%|▉         | 1/11 [33:18<5:33:00, 1998.07s/it]Saved 4 results to phase1/phase1_results_avg_90_20.csv
+2025-08-31 04:29:46,975 - INFO - Completed arrival rate 20 for avg_90 in 1841.02s (23/35 total tasks)
+Processing avg_90 arrival rates:   9%|▉         | 1/11 [30:41<5:06:51, 1841.12s/it]Saved 4 results to phase1/phase1_results_avg_90_20.csv
 Error processing data/avg_30/(22, 32.3).csv: [Errno 2] No such file or directory: 'data/avg_30/(22, 32.3).csv'
 Error processing data/avg_30/(22, 19.7).csv: [Errno 2] No such file or directory: 'data/avg_30/(22, 19.7).csv'
 Error processing data/avg_30/(22, 15.3).csv: [Errno 2] No such file or directory: 'data/avg_30/(22, 15.3).csv'
@@ -294,8 +294,8 @@ Error processing data/avg_60/(22, 32.3).csv: [Errno 2] No such file or directory
 Error processing data/avg_60/(22, 19.7).csv: [Errno 2] No such file or directory: 'data/avg_60/(22, 19.7).csv'
 Error processing data/avg_60/(22, 15.3).csv: [Errno 2] No such file or directory: 'data/avg_60/(22, 15.3).csv'
 Error processing data/avg_60/(22, 13.0).csv: [Errno 2] No such file or directory: 'data/avg_60/(22, 13.0).csv'
-2025-08-29 00:44:18,160 - INFO - Completed arrival rate 22 for avg_90 in 1961.91s (24/35 total tasks)
-Processing avg_90 arrival rates:  18%|█▊        | 2/11 [1:06:00<4:56:31, 1976.86s/it]Saved 4 results to phase1/phase1_results_avg_90_22.csv
+2025-08-31 04:58:43,960 - INFO - Completed arrival rate 22 for avg_90 in 1736.88s (24/35 total tasks)
+Processing avg_90 arrival rates:  18%|█▊        | 2/11 [59:38<4:26:58, 1779.86s/it]Saved 4 results to phase1/phase1_results_avg_90_22.csv
 Error processing data/avg_30/(24, 32.3).csv: [Errno 2] No such file or directory: 'data/avg_30/(24, 32.3).csv'
 Error processing data/avg_30/(24, 19.7).csv: [Errno 2] No such file or directory: 'data/avg_30/(24, 19.7).csv'
 Error processing data/avg_30/(24, 15.3).csv: [Errno 2] No such file or directory: 'data/avg_30/(24, 15.3).csv'
@@ -304,8 +304,8 @@ Error processing data/avg_60/(24, 32.3).csv: [Errno 2] No such file or directory
 Error processing data/avg_60/(24, 19.7).csv: [Errno 2] No such file or directory: 'data/avg_60/(24, 19.7).csv'
 Error processing data/avg_60/(24, 15.3).csv: [Errno 2] No such file or directory: 'data/avg_60/(24, 15.3).csv'
 Error processing data/avg_60/(24, 13.0).csv: [Errno 2] No such file or directory: 'data/avg_60/(24, 13.0).csv'
-2025-08-29 01:17:01,470 - INFO - Completed arrival rate 24 for avg_90 in 1963.21s (25/35 total tasks)
-Processing avg_90 arrival rates:  27%|██▋       | 3/11 [1:38:43<4:22:45, 1970.67s/it]Saved 4 results to phase1/phase1_results_avg_90_24.csv
+2025-08-31 05:30:08,120 - INFO - Completed arrival rate 24 for avg_90 in 1884.06s (25/35 total tasks)
+Processing avg_90 arrival rates:  27%|██▋       | 3/11 [1:31:02<4:03:39, 1827.49s/it]Saved 4 results to phase1/phase1_results_avg_90_24.csv
 Error processing data/avg_30/(26, 32.3).csv: [Errno 2] No such file or directory: 'data/avg_30/(26, 32.3).csv'
 Error processing data/avg_30/(26, 19.7).csv: [Errno 2] No such file or directory: 'data/avg_30/(26, 19.7).csv'
 Error processing data/avg_30/(26, 15.3).csv: [Errno 2] No such file or directory: 'data/avg_30/(26, 15.3).csv'
@@ -314,8 +314,8 @@ Error processing data/avg_60/(26, 32.3).csv: [Errno 2] No such file or directory
 Error processing data/avg_60/(26, 19.7).csv: [Errno 2] No such file or directory: 'data/avg_60/(26, 19.7).csv'
 Error processing data/avg_60/(26, 15.3).csv: [Errno 2] No such file or directory: 'data/avg_60/(26, 15.3).csv'
 Error processing data/avg_60/(26, 13.0).csv: [Errno 2] No such file or directory: 'data/avg_60/(26, 13.0).csv'
-2025-08-29 01:47:32,042 - INFO - Completed arrival rate 26 for avg_90 in 1830.47s (26/35 total tasks)
-Processing avg_90 arrival rates:  36%|███▋      | 4/11 [2:09:13<3:43:27, 1915.36s/it]Saved 4 results to phase1/phase1_results_avg_90_26.csv
+2025-08-31 05:57:23,906 - INFO - Completed arrival rate 26 for avg_90 in 1635.68s (26/35 total tasks)
+Processing avg_90 arrival rates:  36%|███▋      | 4/11 [1:58:18<3:24:22, 1751.81s/it]Saved 4 results to phase1/phase1_results_avg_90_26.csv
 Error processing data/avg_30/(28, 32.3).csv: [Errno 2] No such file or directory: 'data/avg_30/(28, 32.3).csv'
 Error processing data/avg_30/(28, 19.7).csv: [Errno 2] No such file or directory: 'data/avg_30/(28, 19.7).csv'
 Error processing data/avg_30/(28, 15.3).csv: [Errno 2] No such file or directory: 'data/avg_30/(28, 15.3).csv'
@@ -324,8 +324,8 @@ Error processing data/avg_60/(28, 32.3).csv: [Errno 2] No such file or directory
 Error processing data/avg_60/(28, 19.7).csv: [Errno 2] No such file or directory: 'data/avg_60/(28, 19.7).csv'
 Error processing data/avg_60/(28, 15.3).csv: [Errno 2] No such file or directory: 'data/avg_60/(28, 15.3).csv'
 Error processing data/avg_60/(28, 13.0).csv: [Errno 2] No such file or directory: 'data/avg_60/(28, 13.0).csv'
-2025-08-29 02:19:08,416 - INFO - Completed arrival rate 28 for avg_90 in 1896.27s (27/35 total tasks)
-Processing avg_90 arrival rates:  45%|████▌     | 5/11 [2:40:50<3:10:51, 1908.51s/it]Saved 4 results to phase1/phase1_results_avg_90_28.csv
+2025-08-31 06:23:34,819 - INFO - Completed arrival rate 28 for avg_90 in 1570.81s (27/35 total tasks)
+Processing avg_90 arrival rates:  45%|████▌     | 5/11 [2:24:28<2:48:39, 1686.57s/it]Saved 4 results to phase1/phase1_results_avg_90_28.csv
 Error processing data/avg_30/(30, 32.3).csv: [Errno 2] No such file or directory: 'data/avg_30/(30, 32.3).csv'
 Error processing data/avg_30/(30, 19.7).csv: [Errno 2] No such file or directory: 'data/avg_30/(30, 19.7).csv'
 Error processing data/avg_30/(30, 15.3).csv: [Errno 2] No such file or directory: 'data/avg_30/(30, 15.3).csv'
@@ -334,8 +334,8 @@ Error processing data/avg_60/(30, 32.3).csv: [Errno 2] No such file or directory
 Error processing data/avg_60/(30, 19.7).csv: [Errno 2] No such file or directory: 'data/avg_60/(30, 19.7).csv'
 Error processing data/avg_60/(30, 15.3).csv: [Errno 2] No such file or directory: 'data/avg_60/(30, 15.3).csv'
 Error processing data/avg_60/(30, 13.0).csv: [Errno 2] No such file or directory: 'data/avg_60/(30, 13.0).csv'
-2025-08-29 02:47:37,223 - INFO - Completed arrival rate 30 for avg_90 in 1708.71s (28/35 total tasks)
-Processing avg_90 arrival rates:  55%|█████▍    | 6/11 [3:09:19<2:33:23, 1840.61s/it]Saved 4 results to phase1/phase1_results_avg_90_30.csv
+2025-08-31 06:48:17,554 - INFO - Completed arrival rate 30 for avg_90 in 1482.63s (28/35 total tasks)
+Processing avg_90 arrival rates:  55%|█████▍    | 6/11 [2:49:11<2:14:46, 1617.27s/it]Saved 4 results to phase1/phase1_results_avg_90_30.csv
 Error processing data/avg_30/(32, 32.3).csv: [Errno 2] No such file or directory: 'data/avg_30/(32, 32.3).csv'
 Error processing data/avg_30/(32, 19.7).csv: [Errno 2] No such file or directory: 'data/avg_30/(32, 19.7).csv'
 Error processing data/avg_30/(32, 15.3).csv: [Errno 2] No such file or directory: 'data/avg_30/(32, 15.3).csv'
@@ -344,8 +344,8 @@ Error processing data/avg_60/(32, 32.3).csv: [Errno 2] No such file or directory
 Error processing data/avg_60/(32, 19.7).csv: [Errno 2] No such file or directory: 'data/avg_60/(32, 19.7).csv'
 Error processing data/avg_60/(32, 15.3).csv: [Errno 2] No such file or directory: 'data/avg_60/(32, 15.3).csv'
 Error processing data/avg_60/(32, 13.0).csv: [Errno 2] No such file or directory: 'data/avg_60/(32, 13.0).csv'
-2025-08-29 03:17:36,344 - INFO - Completed arrival rate 32 for avg_90 in 1799.02s (29/35 total tasks)
-Processing avg_90 arrival rates:  64%|██████▎   | 7/11 [3:39:18<2:01:48, 1827.05s/it]Saved 4 results to phase1/phase1_results_avg_90_32.csv
+2025-08-31 07:14:19,016 - INFO - Completed arrival rate 32 for avg_90 in 1561.36s (29/35 total tasks)
+Processing avg_90 arrival rates:  64%|██████▎   | 7/11 [3:15:13<1:46:36, 1599.02s/it]Saved 4 results to phase1/phase1_results_avg_90_32.csv
 Error processing data/avg_30/(34, 32.3).csv: [Errno 2] No such file or directory: 'data/avg_30/(34, 32.3).csv'
 Error processing data/avg_30/(34, 19.7).csv: [Errno 2] No such file or directory: 'data/avg_30/(34, 19.7).csv'
 Error processing data/avg_30/(34, 15.3).csv: [Errno 2] No such file or directory: 'data/avg_30/(34, 15.3).csv'
@@ -354,8 +354,8 @@ Error processing data/avg_60/(34, 32.3).csv: [Errno 2] No such file or directory
 Error processing data/avg_60/(34, 19.7).csv: [Errno 2] No such file or directory: 'data/avg_60/(34, 19.7).csv'
 Error processing data/avg_60/(34, 15.3).csv: [Errno 2] No such file or directory: 'data/avg_60/(34, 15.3).csv'
 Error processing data/avg_60/(34, 13.0).csv: [Errno 2] No such file or directory: 'data/avg_60/(34, 13.0).csv'
-2025-08-29 03:44:11,892 - INFO - Completed arrival rate 34 for avg_90 in 1595.45s (30/35 total tasks)
-Processing avg_90 arrival rates:  73%|███████▎  | 8/11 [4:05:53<1:27:40, 1753.35s/it]Saved 4 results to phase1/phase1_results_avg_90_34.csv
+2025-08-31 07:36:50,337 - INFO - Completed arrival rate 34 for avg_90 in 1351.22s (30/35 total tasks)
+Processing avg_90 arrival rates:  73%|███████▎  | 8/11 [3:37:44<1:16:00, 1520.17s/it]Saved 4 results to phase1/phase1_results_avg_90_34.csv
 Error processing data/avg_30/(36, 32.3).csv: [Errno 2] No such file or directory: 'data/avg_30/(36, 32.3).csv'
 Error processing data/avg_30/(36, 19.7).csv: [Errno 2] No such file or directory: 'data/avg_30/(36, 19.7).csv'
 Error processing data/avg_30/(36, 15.3).csv: [Errno 2] No such file or directory: 'data/avg_30/(36, 15.3).csv'
@@ -364,8 +364,8 @@ Error processing data/avg_60/(36, 32.3).csv: [Errno 2] No such file or directory
 Error processing data/avg_60/(36, 19.7).csv: [Errno 2] No such file or directory: 'data/avg_60/(36, 19.7).csv'
 Error processing data/avg_60/(36, 15.3).csv: [Errno 2] No such file or directory: 'data/avg_60/(36, 15.3).csv'
 Error processing data/avg_60/(36, 13.0).csv: [Errno 2] No such file or directory: 'data/avg_60/(36, 13.0).csv'
-2025-08-29 04:11:47,556 - INFO - Completed arrival rate 36 for avg_90 in 1655.56s (31/35 total tasks)
-Processing avg_90 arrival rates:  82%|████████▏ | 9/11 [4:33:29<57:25, 1722.81s/it]  Saved 4 results to phase1/phase1_results_avg_90_36.csv
+2025-08-31 07:59:24,601 - INFO - Completed arrival rate 36 for avg_90 in 1354.16s (31/35 total tasks)
+Processing avg_90 arrival rates:  82%|████████▏ | 9/11 [4:00:18<48:56, 1468.30s/it]  Saved 4 results to phase1/phase1_results_avg_90_36.csv
 Error processing data/avg_30/(38, 32.3).csv: [Errno 2] No such file or directory: 'data/avg_30/(38, 32.3).csv'
 Error processing data/avg_30/(38, 19.7).csv: [Errno 2] No such file or directory: 'data/avg_30/(38, 19.7).csv'
 Error processing data/avg_30/(38, 15.3).csv: [Errno 2] No such file or directory: 'data/avg_30/(38, 15.3).csv'
@@ -374,8 +374,8 @@ Error processing data/avg_60/(38, 32.3).csv: [Errno 2] No such file or directory
 Error processing data/avg_60/(38, 19.7).csv: [Errno 2] No such file or directory: 'data/avg_60/(38, 19.7).csv'
 Error processing data/avg_60/(38, 15.3).csv: [Errno 2] No such file or directory: 'data/avg_60/(38, 15.3).csv'
 Error processing data/avg_60/(38, 13.0).csv: [Errno 2] No such file or directory: 'data/avg_60/(38, 13.0).csv'
-2025-08-29 04:37:42,205 - INFO - Completed arrival rate 38 for avg_90 in 1554.55s (32/35 total tasks)
-Processing avg_90 arrival rates:  91%|█████████ | 10/11 [4:59:24<27:50, 1670.90s/it]Saved 4 results to phase1/phase1_results_avg_90_38.csv
+2025-08-31 08:20:29,730 - INFO - Completed arrival rate 38 for avg_90 in 1265.03s (32/35 total tasks)
+Processing avg_90 arrival rates:  91%|█████████ | 10/11 [4:21:23<23:25, 1405.58s/it]Saved 4 results to phase1/phase1_results_avg_90_38.csv
 Error processing data/avg_30/(40, 32.3).csv: [Errno 2] No such file or directory: 'data/avg_30/(40, 32.3).csv'
 Error processing data/avg_30/(40, 19.7).csv: [Errno 2] No such file or directory: 'data/avg_30/(40, 19.7).csv'
 Error processing data/avg_30/(40, 15.3).csv: [Errno 2] No such file or directory: 'data/avg_30/(40, 15.3).csv'
@@ -384,10 +384,10 @@ Error processing data/avg_60/(40, 32.3).csv: [Errno 2] No such file or directory
 Error processing data/avg_60/(40, 19.7).csv: [Errno 2] No such file or directory: 'data/avg_60/(40, 19.7).csv'
 Error processing data/avg_60/(40, 15.3).csv: [Errno 2] No such file or directory: 'data/avg_60/(40, 15.3).csv'
 Error processing data/avg_60/(40, 13.0).csv: [Errno 2] No such file or directory: 'data/avg_60/(40, 13.0).csv'
-2025-08-29 05:02:43,753 - INFO - Completed arrival rate 40 for avg_90 in 1501.45s (33/35 total tasks)
-Processing avg_90 arrival rates: 100%|██████████| 11/11 [5:24:25<00:00, 1619.07s/it]Processing avg_90 arrival rates: 100%|██████████| 11/11 [5:24:25<00:00, 1769.61s/it]
-2025-08-29 05:02:43,854 - INFO - Completed avg_90: 11 successful, 0 failed in 19465.67s
-2025-08-29 05:02:43,854 - INFO - Processing frequency-based random data...
+2025-08-31 08:40:58,413 - INFO - Completed arrival rate 40 for avg_90 in 1228.58s (33/35 total tasks)
+Processing avg_90 arrival rates: 100%|██████████| 11/11 [4:41:52<00:00, 1351.44s/it]Processing avg_90 arrival rates: 100%|██████████| 11/11 [4:41:52<00:00, 1537.50s/it]
+2025-08-31 08:40:58,514 - INFO - Completed avg_90: 11 successful, 0 failed in 16912.55s
+2025-08-31 08:40:58,514 - INFO - Processing frequency-based random data...
 Saved 4 results to phase1/phase1_results_avg_90_40.csv
 Processing freq_1...
 Successfully processed data/freq_1/(20).csv
@@ -460,8 +460,8 @@ Successfully processed data/freq_10000/(32).csv
 Successfully processed data/freq_10000/(34).csv
 Successfully processed data/freq_10000/(36).csv
 Successfully processed data/freq_10000/(38).csv
-2025-08-29 08:20:57,663 - INFO - Completed random frequency data processing in 11893.81s (34/35 total tasks)
-2025-08-29 08:20:57,663 - INFO - Processing softrandom frequency-based data...
+2025-08-31 11:35:42,249 - INFO - Completed random frequency data processing in 10483.73s (34/35 total tasks)
+2025-08-31 11:35:42,249 - INFO - Processing softrandom frequency-based data...
 Successfully processed data/freq_10000/(40).csv
 Saved combined results for freq_1 with 11 arrival rates
 Saved combined results for freq_10 with 11 arrival rates
@@ -540,17 +540,17 @@ Successfully processed data/softrandom/freq_10000/(32).csv
 Successfully processed data/softrandom/freq_10000/(34).csv
 Successfully processed data/softrandom/freq_10000/(36).csv
 Successfully processed data/softrandom/freq_10000/(38).csv
-2025-08-29 12:01:12,611 - INFO - Completed softrandom frequency data processing in 13214.95s (35/35 total tasks)
-2025-08-29 12:01:12,611 - INFO - Validating generated results...
-2025-08-29 12:01:12,611 - INFO - Generated 33 phase1 result files
-2025-08-29 12:01:12,611 - INFO - Generated 6 frequency result files
-2025-08-29 12:01:12,611 - INFO - Generated 6 softrandom result files
-2025-08-29 12:01:12,612 - INFO - All expected algorithm columns present in results
-2025-08-29 12:01:12,612 - INFO - Sample file has 5 rows
-2025-08-29 12:01:12,612 - INFO - ============================================================
-2025-08-29 12:01:12,612 - INFO - DATASET CREATION COMPLETED SUCCESSFULLY
-2025-08-29 12:01:12,612 - INFO - Total execution time: 63481.27 seconds (1058.02 minutes)
-2025-08-29 12:01:12,613 - INFO - ============================================================
+2025-08-31 15:24:05,058 - INFO - Completed softrandom frequency data processing in 13702.81s (35/35 total tasks)
+2025-08-31 15:24:05,059 - INFO - Validating generated results...
+2025-08-31 15:24:05,059 - INFO - Generated 33 phase1 result files
+2025-08-31 15:24:05,059 - INFO - Generated 6 frequency result files
+2025-08-31 15:24:05,059 - INFO - Generated 6 softrandom result files
+2025-08-31 15:24:05,060 - INFO - All expected algorithm columns present in results
+2025-08-31 15:24:05,060 - INFO - Sample file has 5 rows
+2025-08-31 15:24:05,060 - INFO - ============================================================
+2025-08-31 15:24:05,060 - INFO - DATASET CREATION COMPLETED SUCCESSFULLY
+2025-08-31 15:24:05,060 - INFO - Total execution time: 58537.45 seconds (975.62 minutes)
+2025-08-31 15:24:05,060 - INFO - ============================================================
 Successfully processed data/softrandom/freq_10000/(40).csv
 Saved combined results for softrandom/freq_1 with 11 arrival rates
 Saved combined results for softrandom/freq_10 with 11 arrival rates
