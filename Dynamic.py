@@ -134,7 +134,7 @@ def Fcfs(jobs):
         l2_norm_flow_time = 0
 
     return avg_flow_time, l2_norm_flow_time
-def DYNAMIC(jobs, nJobsPerRound = 3333):
+def DYNAMIC(jobs, nJobsPerRound = 333):
     total_jobs = len(jobs)
 
     # If nJobsPerRound is greater than or equal to total_jobs, use SRPT for all jobs
