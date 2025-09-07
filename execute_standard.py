@@ -1,6 +1,6 @@
 import multiprocessing
 import Read_csv
-import RR, SRPT, SETF, FCFS, RMLF, Dynamic, RFdynamic, BAL
+import RR, SRPT, SETF, FCFS, RMLF, Dynamic, RFdynamic_C, RFdynamic_NC, BAL, SJF
 import time
 import pandas as pd
 import numpy as np
@@ -23,13 +23,13 @@ def convert_jobs(jobs, include_index=False, as_list=False):
                  'job_size': float(job[1])} for job in jobs]
     return jobs
 
-def run_algorithm(algo, jobs, needs_index, as_list):
-    """Run a single algorithm"""
+def run_algorithm(algo, jobs, needs_index, as_list, **kwargs):
+    """Run a single algorithm with optional parameters"""
     if not jobs:
         return None
     try:
         converted_jobs = convert_jobs(jobs.copy(), include_index=needs_index, as_list=as_list)
-        _, l2n = algo(converted_jobs)
+        _, l2n = algo(converted_jobs, **kwargs)
         return l2n
     except Exception as e:
         print(f"Error running algorithm {algo.__name__}: {str(e)}")
@@ -40,16 +40,33 @@ def run_all_algorithms_parallel(job_list, algorithms):
     results = {}
     with ProcessPoolExecutor(max_workers=len(algorithms)) as executor:
         future_to_algo = {}
-        for algo, jobs, needs_index, as_list in algorithms:
-            if not jobs:
+        for algo_info in algorithms:
+            if not job_list:
                 return None
-            future = executor.submit(run_algorithm, algo, jobs, needs_index, as_list)
-            future_to_algo[future] = algo.__name__
+            algo = algo_info[0]
+            jobs = algo_info[1]
+            needs_index = algo_info[2]
+            as_list = algo_info[3]
+            kwargs = algo_info[4] if len(algo_info) > 4 else {}
+            
+            future = executor.submit(run_algorithm, algo, jobs, needs_index, as_list, **kwargs)
+            # Create unique key for algorithms with parameters
+            if kwargs:
+                algo_key = f"{algo.__name__}"
+                if 'mode' in kwargs:
+                    algo_key += f"_mode{kwargs['mode']}"
+                if 'nJobsPerRound' in kwargs:
+                    algo_key += f"_njobs{kwargs['nJobsPerRound']}"
+                if 'checkpoint' in kwargs:
+                    algo_key += f"_cp{kwargs['checkpoint']}"
+            else:
+                algo_key = algo.__name__
+            future_to_algo[future] = algo_key
 
         try:
-            for future in as_completed(future_to_algo, timeout=3000):  # 50 minute timeout
+            for future in as_completed(future_to_algo, timeout=30000):
                 algo_name = future_to_algo[future]
-                l2n = future.result(timeout=120)  # 2 minute timeout per algorithm
+                l2n = future.result(timeout=1200)
                 if l2n is None:
                     print(f"Algorithm {algo_name} returned None")
                     return None
@@ -76,35 +93,76 @@ def execute_phase1(Arrival_rate, bp_parameter):
                 if not job_list:
                     continue
 
-                # Set up algorithms including Dynamic, RFdynamic, and BAL
-                algorithms = [
-                    (RR.RR, job_list.copy(), False, True),
-                    (SRPT.Srpt, job_list.copy(), False, False),
-                    (SETF.Setf, job_list.copy(), False, True),
-                    (FCFS.Fcfs, job_list.copy(), False, False),
-                    (RMLF.RMLF, job_list.copy(), True, False),
-                    (Dynamic.DYNAMIC, job_list.copy(), False, False),
-                    (RFdynamic.RFdynamic, job_list.copy(), True, False),
-                    (BAL.Bal, job_list.copy(), False, False)
+                # Test different parameter combinations for Dynamic, RFdynamic_C, RFdynamic_NC
+                modes = [1, 2, 3]
+                njobs_per_round = [10, 100, 500, 1000, 5000, 10000]
+                checkpoints = [100, 500, 1000, 5000, 10000]
+                
+                # Base algorithms (without parameters)
+                base_algorithms = [
+                    (RR.RR, job_list.copy(), False, True, {}),
+                    (SRPT.Srpt, job_list.copy(), False, False, {}),
+                    (SETF.Setf, job_list.copy(), False, True, {}),
+                    (FCFS.Fcfs, job_list.copy(), False, False, {}),
+                    (RMLF.RMLF, job_list.copy(), True, False, {}),
+                    (BAL.Bal, job_list.copy(), False, False, {}),
+                    (SJF.Sjf, job_list.copy(), False, True, {})
                 ]
                 
-                # Run algorithms and collect results
-                algorithm_results = run_all_algorithms_parallel(job_list, algorithms)
-                if algorithm_results and all(v is not None for v in algorithm_results.values()):
-                    results.append({
-                        "arrival_rate": Arrival_rate,
-                        "bp_parameter": {"L": i["L"], "H": i["H"]},  # Include both L and H values
-                        "RR_L2_Norm": algorithm_results['RR'],
-                        "SRPT_L2_Norm": algorithm_results['Srpt'],
-                        "SETF_L2_Norm": algorithm_results['Setf'],
-                        "FCFS_L2_Norm": algorithm_results['Fcfs'],
-                        "RMLF_L2_Norm": algorithm_results['RMLF'],
-                        "DYNAMIC_L2_Norm": algorithm_results['DYNAMIC'],
-                        "RFdynamic_L2_Norm": algorithm_results['RFdynamic'],
-                        "BAL_L2_Norm": algorithm_results['Bal']
-                    })
-                else:
-                    print(f"Failed to get results for {file_path}")
+                # Run base algorithms
+                base_results = run_all_algorithms_parallel(job_list, base_algorithms)
+                
+                if not base_results or not all(v is not None for v in base_results.values()):
+                    print(f"Failed to get base results for {file_path}")
+                    continue
+                
+                # Test Dynamic with different parameters
+                for mode in modes:
+                    for njobs in njobs_per_round:
+                        dynamic_algo = [
+                            (Dynamic.DYNAMIC, job_list.copy(), False, False, 
+                             {'nJobsPerRound': njobs, 'mode': mode, 'input_file_name': file_path})
+                        ]
+                        dynamic_result = run_all_algorithms_parallel(job_list, dynamic_algo)
+                        
+                        if dynamic_result:
+                            key = f"DYNAMIC_mode{mode}_njobs{njobs}"
+                            base_results[key] = list(dynamic_result.values())[0]
+                
+                # Test RFdynamic_C and RFdynamic_NC with different parameters
+                for mode in modes:
+                    for checkpoint in checkpoints:
+                        # RFdynamic_C
+                        rfc_algo = [
+                            (RFdynamic_C.RFdynamic_C, job_list.copy(), True, False,
+                             {'checkpoint': checkpoint, 'mode': mode, 'input_filename': file_path})
+                        ]
+                        rfc_result = run_all_algorithms_parallel(job_list, rfc_algo)
+                        
+                        if rfc_result:
+                            key = f"RFdynamic_C_mode{mode}_cp{checkpoint}"
+                            base_results[key] = list(rfc_result.values())[0]
+                        
+                        # RFdynamic_NC
+                        rfnc_algo = [
+                            (RFdynamic_NC.RFdynamic_NC, job_list.copy(), True, False,
+                             {'checkpoint': checkpoint, 'mode': mode, 'input_filename': file_path})
+                        ]
+                        rfnc_result = run_all_algorithms_parallel(job_list, rfnc_algo)
+                        
+                        if rfnc_result:
+                            key = f"RFdynamic_NC_mode{mode}_cp{checkpoint}"
+                            base_results[key] = list(rfnc_result.values())[0]
+                
+                # Create result dictionary
+                result_entry = {
+                    "arrival_rate": Arrival_rate,
+                    "bp_parameter_L": i["L"],
+                    "bp_parameter_H": i["H"]
+                }
+                result_entry.update(base_results)
+                results.append(result_entry)
+                
             except Exception as e:
                 print(f"Error processing {file_path}: {str(e)}")
                 continue
@@ -119,156 +177,212 @@ def execute_phase1(Arrival_rate, bp_parameter):
             df.to_csv(csv_filename, index=False)
             print(f"Saved {len(results)} results to {csv_filename}")
 
-def execute_phase1_random(Arrival_rates):
+def execute_phase1_random(freq_folders):
     """
-    Execute phase 1 for frequency-based random data, combining results from 
-    the same frequency but different arrival times
+    Execute phase 1 for frequency-based random data
     
     Args:
-        Arrival_rates: List of arrival rates to process
+        freq_folders: List of frequency folders to process
     """
-    # Frequency folders from 1 to 10000
-    freq_folders = [f"freq_{i}" for i in [1,10,100,500,1000,10000]]
-    
-    # Dictionary to store results for each frequency
-    freq_results = {freq: [] for freq in freq_folders}
+    all_results = []
     
     # Process each frequency folder
     for freq_folder in freq_folders:
-        print(f"Processing {freq_folder}...")
+        print(f"Processing random {freq_folder}...")
         
-        # Process each arrival rate for this frequency
-        for Arrival_rate in Arrival_rates:
-            try:
-                # Modified file path to include freq folder
-                file_path = f'data/{freq_folder}/({Arrival_rate}).csv'
-                
-                # Read job list
-                job_list = Read_csv.Read_csv(file_path)
-                if not job_list:
-                    print(f"No data found for {file_path}")
-                    continue
-                
-                # Set up algorithms including Dynamic, RFdynamic, and BAL
-                algorithms = [
-                    (RR.RR, job_list.copy(), False, True),
-                    (SRPT.Srpt, job_list.copy(), False, False),
-                    (SETF.Setf, job_list.copy(), False, True),
-                    (FCFS.Fcfs, job_list.copy(), False, False),
-                    (RMLF.RMLF, job_list.copy(), True, False),
-                    (Dynamic.DYNAMIC, job_list.copy(), False, False),
-                    (RFdynamic.RFdynamic, job_list.copy(), True, False),
-                    (BAL.Bal, job_list.copy(), False, False)
-                ]
-                
-                # Run algorithms and collect results
-                algorithm_results = run_all_algorithms_parallel(job_list, algorithms)
-                if algorithm_results and all(v is not None for v in algorithm_results.values()):
-                    result_row = {
-                        "arrival_rate": Arrival_rate,
-                        "RR_L2_Norm": algorithm_results['RR'],
-                        "SRPT_L2_Norm": algorithm_results['Srpt'],
-                        "SETF_L2_Norm": algorithm_results['Setf'],
-                        "FCFS_L2_Norm": algorithm_results['Fcfs'],
-                        "RMLF_L2_Norm": algorithm_results['RMLF'],
-                        "DYNAMIC_L2_Norm": algorithm_results['DYNAMIC'],
-                        "RFdynamic_L2_Norm": algorithm_results['RFdynamic'],
-                        "BAL_L2_Norm": algorithm_results['Bal']
-                    }
-                    
-                    # Add result to the corresponding frequency list
-                    freq_results[freq_folder].append(result_row)
-                    print(f"Successfully processed {file_path}")
-                else:
-                    print(f"Failed to get results for {file_path}")
-            except Exception as e:
-                print(f"Error processing {file_path}: {str(e)}")
-                continue
-    
-    # Save combined results for each frequency
-    for freq_folder, results in freq_results.items():
-        if results:
-            # Create directory if it doesn't exist
-            os.makedirs('freq', exist_ok=True)
+        try:
+            # Modified file path for random frequency data
+            file_path = f'data/{freq_folder}/random_{freq_folder}.csv'
             
-            df = pd.DataFrame(results)
-            csv_filename = f'freq/{freq_folder}_combined_results.csv'
-            df.to_csv(csv_filename, index=False)
-            print(f"Saved combined results for {freq_folder} with {len(results)} arrival rates")
+            # Read job list
+            job_list = Read_csv.Read_csv(file_path)
+            if not job_list:
+                print(f"No data found for {file_path}")
+                continue
+            
+            # Test different parameter combinations
+            modes = [1, 2, 3]
+            njobs_per_round = [10, 100, 500, 1000, 5000, 10000]
+            checkpoints = [100, 500, 1000, 5000, 10000]
+            
+            # Base algorithms
+            base_algorithms = [
+                (RR.RR, job_list.copy(), False, True, {}),
+                (SRPT.Srpt, job_list.copy(), False, False, {}),
+                (SETF.Setf, job_list.copy(), False, True, {}),
+                (FCFS.Fcfs, job_list.copy(), False, False, {}),
+                (RMLF.RMLF, job_list.copy(), True, False, {}),
+                (BAL.Bal, job_list.copy(), False, False, {}),
+                (SJF.Sjf, job_list.copy(), False, True, {})
+            ]
+            
+            # Run base algorithms
+            base_results = run_all_algorithms_parallel(job_list, base_algorithms)
+            
+            if not base_results or not all(v is not None for v in base_results.values()):
+                print(f"Failed to get base results for {file_path}")
+                continue
+            
+            # Test Dynamic with different parameters
+            for mode in modes:
+                for njobs in njobs_per_round:
+                    dynamic_algo = [
+                        (Dynamic.DYNAMIC, job_list.copy(), False, False, 
+                         {'nJobsPerRound': njobs, 'mode': mode, 'input_file_name': file_path})
+                    ]
+                    dynamic_result = run_all_algorithms_parallel(job_list, dynamic_algo)
+                    
+                    if dynamic_result:
+                        key = f"DYNAMIC_mode{mode}_njobs{njobs}"
+                        base_results[key] = list(dynamic_result.values())[0]
+            
+            # Test RFdynamic_C and RFdynamic_NC with different parameters
+            for mode in modes:
+                for checkpoint in checkpoints:
+                    # RFdynamic_C
+                    rfc_algo = [
+                        (RFdynamic_C.RFdynamic_C, job_list.copy(), True, False,
+                         {'checkpoint': checkpoint, 'mode': mode, 'input_filename': file_path})
+                    ]
+                    rfc_result = run_all_algorithms_parallel(job_list, rfc_algo)
+                    
+                    if rfc_result:
+                        key = f"RFdynamic_C_mode{mode}_cp{checkpoint}"
+                        base_results[key] = list(rfc_result.values())[0]
+                    
+                    # RFdynamic_NC
+                    rfnc_algo = [
+                        (RFdynamic_NC.RFdynamic_NC, job_list.copy(), True, False,
+                         {'checkpoint': checkpoint, 'mode': mode, 'input_filename': file_path})
+                    ]
+                    rfnc_result = run_all_algorithms_parallel(job_list, rfnc_algo)
+                    
+                    if rfnc_result:
+                        key = f"RFdynamic_NC_mode{mode}_cp{checkpoint}"
+                        base_results[key] = list(rfnc_result.values())[0]
+            
+            # Create result entry
+            result_entry = {"frequency": freq_folder}
+            result_entry.update(base_results)
+            all_results.append(result_entry)
+            
+            print(f"Successfully processed random {freq_folder}")
+            
+        except Exception as e:
+            print(f"Error processing {file_path}: {str(e)}")
+            continue
+    
+    # Save merged results for all random frequencies
+    if all_results:
+        # Create directory if it doesn't exist
+        os.makedirs('result', exist_ok=True)
+        
+        df = pd.DataFrame(all_results)
+        csv_filename = 'result/random_result.csv'
+        df.to_csv(csv_filename, index=False)
+        print(f"Saved merged random results to {csv_filename} with {len(all_results)} frequency configurations")
 
-def execute_phase1_softrandom(Arrival_rates):
+def execute_phase1_softrandom(freq_folders):
     """
-    Execute phase 1 for softrandom frequency-based data, combining results from 
-    the same frequency but different arrival times
+    Execute phase 1 for softrandom frequency-based data
     
     Args:
-        Arrival_rates: List of arrival rates to process
+        freq_folders: List of frequency folders to process
     """
-    # Frequency folders from freq_1 to freq_10000
-    freq_folders = [f"freq_{i}" for i in [1,10,100,500,1000,10000]]
-    
-    # Dictionary to store results for each frequency
-    freq_results = {freq: [] for freq in freq_folders}
+    all_results = []
     
     # Process each frequency folder
     for freq_folder in freq_folders:
-        print(f"Processing softrandom/{freq_folder}...")
+        print(f"Processing softrandom {freq_folder}...")
         
-        # Process each arrival rate for this frequency
-        for Arrival_rate in Arrival_rates:
-            try:
-                # Modified file path to include softrandom/freq folder
-                file_path = f'data/softrandom/{freq_folder}/({Arrival_rate}).csv'
-                
-                # Read job list
-                job_list = Read_csv.Read_csv(file_path)
-                if not job_list:
-                    print(f"No data found for {file_path}")
-                    continue
-                
-                # Set up algorithms including Dynamic, RFdynamic, and BAL
-                algorithms = [
-                    (RR.RR, job_list.copy(), False, True),
-                    (SRPT.Srpt, job_list.copy(), False, False),
-                    (SETF.Setf, job_list.copy(), False, True),
-                    (FCFS.Fcfs, job_list.copy(), False, False),
-                    (RMLF.RMLF, job_list.copy(), True, False),
-                    (Dynamic.DYNAMIC, job_list.copy(), False, False),
-                    (RFdynamic.RFdynamic, job_list.copy(), True, False),
-                    (BAL.Bal, job_list.copy(), False, False)
-                ]
-                
-                # Run algorithms and collect results
-                algorithm_results = run_all_algorithms_parallel(job_list, algorithms)
-                if algorithm_results and all(v is not None for v in algorithm_results.values()):
-                    result_row = {
-                        "arrival_rate": Arrival_rate,
-                        "RR_L2_Norm": algorithm_results['RR'],
-                        "SRPT_L2_Norm": algorithm_results['Srpt'],
-                        "SETF_L2_Norm": algorithm_results['Setf'],
-                        "FCFS_L2_Norm": algorithm_results['Fcfs'],
-                        "RMLF_L2_Norm": algorithm_results['RMLF'],
-                        "DYNAMIC_L2_Norm": algorithm_results['DYNAMIC'],
-                        "RFdynamic_L2_Norm": algorithm_results['RFdynamic'],
-                        "BAL_L2_Norm": algorithm_results['Bal']
-                    }
-                    
-                    # Add result to the corresponding frequency list
-                    freq_results[freq_folder].append(result_row)
-                    print(f"Successfully processed {file_path}")
-                else:
-                    print(f"Failed to get results for {file_path}")
-            except Exception as e:
-                print(f"Error processing {file_path}: {str(e)}")
-                continue
-    
-    # Save combined results for each frequency
-    for freq_folder, results in freq_results.items():
-        if results:
-            # Create directory if it doesn't exist
-            os.makedirs('softrandom', exist_ok=True)
+        try:
+            # Modified file path for softrandom frequency data
+            file_path = f'data/softrandom/{freq_folder}/softrandom_{freq_folder}.csv'
             
-            df = pd.DataFrame(results)
-            csv_filename = f'softrandom/{freq_folder}_combined_results.csv'
-            df.to_csv(csv_filename, index=False)
-            print(f"Saved combined results for softrandom/{freq_folder} with {len(results)} arrival rates")
+            # Read job list
+            job_list = Read_csv.Read_csv(file_path)
+            if not job_list:
+                print(f"No data found for {file_path}")
+                continue
+            
+            # Test different parameter combinations
+            modes = [1, 2, 3]
+            njobs_per_round = [10, 100, 500, 1000, 5000, 10000]
+            checkpoints = [100, 500, 1000, 5000, 10000]
+            
+            # Base algorithms
+            base_algorithms = [
+                (RR.RR, job_list.copy(), False, True, {}),
+                (SRPT.Srpt, job_list.copy(), False, False, {}),
+                (SETF.Setf, job_list.copy(), False, True, {}),
+                (FCFS.Fcfs, job_list.copy(), False, False, {}),
+                (RMLF.RMLF, job_list.copy(), True, False, {}),
+                (BAL.Bal, job_list.copy(), False, False, {}),
+                (SJF.Sjf, job_list.copy(), False, True, {})
+            ]
+            
+            # Run base algorithms
+            base_results = run_all_algorithms_parallel(job_list, base_algorithms)
+            
+            if not base_results or not all(v is not None for v in base_results.values()):
+                print(f"Failed to get base results for {file_path}")
+                continue
+            
+            # Test Dynamic with different parameters
+            for mode in modes:
+                for njobs in njobs_per_round:
+                    dynamic_algo = [
+                        (Dynamic.DYNAMIC, job_list.copy(), False, False, 
+                         {'nJobsPerRound': njobs, 'mode': mode, 'input_file_name': file_path})
+                    ]
+                    dynamic_result = run_all_algorithms_parallel(job_list, dynamic_algo)
+                    
+                    if dynamic_result:
+                        key = f"DYNAMIC_mode{mode}_njobs{njobs}"
+                        base_results[key] = list(dynamic_result.values())[0]
+            
+            # Test RFdynamic_C and RFdynamic_NC with different parameters
+            for mode in modes:
+                for checkpoint in checkpoints:
+                    # RFdynamic_C
+                    rfc_algo = [
+                        (RFdynamic_C.RFdynamic_C, job_list.copy(), True, False,
+                         {'checkpoint': checkpoint, 'mode': mode, 'input_filename': file_path})
+                    ]
+                    rfc_result = run_all_algorithms_parallel(job_list, rfc_algo)
+                    
+                    if rfc_result:
+                        key = f"RFdynamic_C_mode{mode}_cp{checkpoint}"
+                        base_results[key] = list(rfc_result.values())[0]
+                    
+                    # RFdynamic_NC
+                    rfnc_algo = [
+                        (RFdynamic_NC.RFdynamic_NC, job_list.copy(), True, False,
+                         {'checkpoint': checkpoint, 'mode': mode, 'input_filename': file_path})
+                    ]
+                    rfnc_result = run_all_algorithms_parallel(job_list, rfnc_algo)
+                    
+                    if rfnc_result:
+                        key = f"RFdynamic_NC_mode{mode}_cp{checkpoint}"
+                        base_results[key] = list(rfnc_result.values())[0]
+            
+            # Create result entry
+            result_entry = {"frequency": freq_folder}
+            result_entry.update(base_results)
+            all_results.append(result_entry)
+            
+            print(f"Successfully processed softrandom {freq_folder}")
+            
+        except Exception as e:
+            print(f"Error processing {file_path}: {str(e)}")
+            continue
+    
+    # Save merged results for all softrandom frequencies
+    if all_results:
+        # Create directory if it doesn't exist
+        os.makedirs('result', exist_ok=True)
+        
+        df = pd.DataFrame(all_results)
+        csv_filename = 'result/softrandom_result.csv'
+        df.to_csv(csv_filename, index=False)
+        print(f"Saved merged softrandom results to {csv_filename} with {len(all_results)} frequency configurations")

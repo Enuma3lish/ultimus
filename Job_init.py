@@ -93,14 +93,13 @@ def job_init(num_jobs, avg_inter_arrival_time, xmin, xmax):
         samples.append({"arrival_time": arrival_times[k], "job_size": job_sizes[k]})
     return samples
 
-def random_job_init(num_jobs, avg_inter_arrival_time, coherence_time=1):
+def random_job_init(num_jobs, coherence_time=1):
     """
     Create jobs with randomly selected parameters that properly simulate an online scenario
-    where parameters change after coherence_time jobs.
+    where both bounded Pareto parameters and inter-arrival times change after coherence_time jobs.
     
     Parameters:
     num_jobs (int): Number of jobs to generate
-    avg_inter_arrival_time (float): Average inter-arrival time
     coherence_time (int): Number of jobs to use the same parameter set before potentially changing
     """
     samples = []
@@ -108,16 +107,18 @@ def random_job_init(num_jobs, avg_inter_arrival_time, coherence_time=1):
     for param_set in parameter_sets.values():
         all_parameters.extend(param_set)
     
-    # Initialize with a random parameter set
+    # Initialize with random parameter set and inter-arrival time
     current_param = random.choice(all_parameters)
+    current_avg_inter_arrival = random.choice(inter_arrival_time)
     current_time = 0
     jobs_with_current_param = 0
     
     # Generate jobs one by one in an online manner
     for _ in range(num_jobs):
-        # Check if we need to change the parameter set
+        # Check if we need to change the parameter set and inter-arrival time
         if jobs_with_current_param >= coherence_time:
             current_param = random.choice(all_parameters)
+            current_avg_inter_arrival = random.choice(inter_arrival_time)
             jobs_with_current_param = 0
         
         # Get bounds from current parameter set
@@ -126,8 +127,8 @@ def random_job_init(num_jobs, avg_inter_arrival_time, coherence_time=1):
         # Generate a single job size using bounded Pareto
         job_size = math.ceil(generate_bounded_pareto(1.1, xmin, xmax, size=1)[0])
         
-        # Generate arrival time
-        inter_arrival = round(np.random.exponential(scale=avg_inter_arrival_time))
+        # Generate arrival time using current inter-arrival time
+        inter_arrival = round(np.random.exponential(scale=current_avg_inter_arrival))
         inter_arrival = max(1, inter_arrival)
         current_time += inter_arrival
         
@@ -139,11 +140,12 @@ def random_job_init(num_jobs, avg_inter_arrival_time, coherence_time=1):
     
     return samples
 
-def soft_random_job_init(num_jobs, avg_inter_arrival_time, coherence_time=1):
+def soft_random_job_init(num_jobs, coherence_time=1):
     """
     Create jobs with soft randomness in an online manner.
     First chooses a parameter set family (30, 60, 90) randomly, then smoothly transitions
     between parameters within that family using probabilistic rules.
+    Inter-arrival times are also randomly selected and change every coherence_time jobs.
     
     Transition Rules:
     - First parameter (highest L): 1/2 to move to next index (lower L), 1/2 to stay
@@ -152,7 +154,6 @@ def soft_random_job_init(num_jobs, avg_inter_arrival_time, coherence_time=1):
     
     Parameters:
     num_jobs (int): Number of jobs to generate
-    avg_inter_arrival_time (float): Average inter-arrival time
     coherence_time (int): Number of jobs before potentially selecting new parameters
     """
     samples = []
@@ -165,12 +166,15 @@ def soft_random_job_init(num_jobs, avg_inter_arrival_time, coherence_time=1):
     # Step 2: Start with a random parameter within the chosen family
     current_param_index = random.randint(0, len(current_param_set) - 1)
     
+    # Step 3: Initialize with a random inter-arrival time
+    current_avg_inter_arrival = random.choice(inter_arrival_time)
+    
     current_time = 0
     jobs_since_last_change = 0  # Counter for jobs since last parameter change
     
     # Generate jobs one by one in an online manner
     for _ in range(num_jobs):
-        # Check if we need to potentially change the parameter within the same family
+        # Check if we need to potentially change the parameter within the same family and inter-arrival time
         if jobs_since_last_change >= coherence_time:
             num_params = len(current_param_set)
             
@@ -200,6 +204,9 @@ def soft_random_job_init(num_jobs, avg_inter_arrival_time, coherence_time=1):
                     # go to next index (lower L value)
                     current_param_index += 1
             
+            # Randomly select new inter-arrival time
+            current_avg_inter_arrival = random.choice(inter_arrival_time)
+            
             # Reset job counter
             jobs_since_last_change = 0
         
@@ -210,8 +217,8 @@ def soft_random_job_init(num_jobs, avg_inter_arrival_time, coherence_time=1):
         # Generate a single job size using bounded Pareto
         job_size = math.ceil(generate_bounded_pareto(1.1, xmin, xmax, size=1)[0])
         
-        # Generate arrival time
-        inter_arrival = round(np.random.exponential(scale=avg_inter_arrival_time))
+        # Generate arrival time using current inter-arrival time
+        inter_arrival = round(np.random.exponential(scale=current_avg_inter_arrival))
         inter_arrival = max(1, inter_arrival)
         current_time += inter_arrival
         
@@ -247,30 +254,28 @@ def Save_file(num_jobs):
                 Write_csv.Write_raw(filename, job_list)
     
     # Generate and save job lists for each coherence time
-    for ct in coherence_times:
-        for avg_inter_arrival in tqdm.tqdm(inter_arrival_time, desc=f"Processing freq_{ct}"):
-            # Generate job list with random parameters and specified coherence time
-            job_list = random_job_init(num_jobs, avg_inter_arrival, coherence_time=ct)
-            
-            # Save to the frequency-specific folder
-            filename = f"data/freq_{ct}/({avg_inter_arrival}).csv"
-            Write_csv.Write_raw(filename, job_list)
+    for ct in tqdm.tqdm(coherence_times, desc="Processing random jobs"):
+        # Generate job list with random parameters and specified coherence time
+        job_list = random_job_init(num_jobs, coherence_time=ct)
+        
+        # Save to the frequency-specific folder with coherence time in filename
+        filename = f"data/freq_{ct}/random_freq_{ct}.csv"
+        Write_csv.Write_raw(filename, job_list)
     
     # Create soft random folder and generate soft random job lists for each coherence time
     os.makedirs("data/softrandom", exist_ok=True)
     
     # Create coherence time subfolders within softrandom
-    for ct in coherence_times:
+    for ct in tqdm.tqdm(coherence_times, desc="Processing soft random jobs"):
         softrandom_folder = f"data/softrandom/freq_{ct}"
         os.makedirs(softrandom_folder, exist_ok=True)
         
-        for avg_inter_arrival in tqdm.tqdm(inter_arrival_time, desc=f"Processing soft random freq_{ct}"):
-            # Generate job list with soft random parameters and specified coherence time
-            job_list = soft_random_job_init(num_jobs, avg_inter_arrival, coherence_time=ct)
-            
-            # Save to the soft random coherence-specific folder
-            filename = f"{softrandom_folder}/({avg_inter_arrival}).csv"
-            Write_csv.Write_raw(filename, job_list)
+        # Generate job list with soft random parameters and specified coherence time
+        job_list = soft_random_job_init(num_jobs, coherence_time=ct)
+        
+        # Save to the soft random coherence-specific folder with coherence time in filename
+        filename = f"{softrandom_folder}/softrandom_freq_{ct}.csv"
+        Write_csv.Write_raw(filename, job_list)
 
 if __name__ == "__main__":
-    Save_file(10000)
+    Save_file(100000)
