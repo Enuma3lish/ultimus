@@ -235,7 +235,7 @@ def Save_file(num_jobs):
     os.makedirs("data", exist_ok=True)
     
     # Create frequency/coherence time folders
-    coherence_times = [1, 10, 100, 500, 1000, 10000]
+    coherence_times = [pow(2,i) for i in range(1, 17, 1)]
     for ct in coherence_times:
         freq_folder = f"data/freq_{ct}"
         os.makedirs(freq_folder, exist_ok=True)

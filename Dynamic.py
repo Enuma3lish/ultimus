@@ -330,6 +330,17 @@ def save_round_details(input_file_name, nJobsPerRound, mode, algorithm_history):
             writer.writerow([i, algo])
 
 def DYNAMIC(jobs, nJobsPerRound = 100, mode=1, input_file_name=None):
+    """
+    Dynamic scheduling algorithm with 6 modes:
+    Mode 1: Use previous round's L2 norm to decide current round's schedule
+    Mode 2: Use average L2 norm of 2 rounds prior (requires current round >= 2)
+    Mode 3: Use average L2 norm of 4 rounds prior (requires current round >= 5)
+    Mode 4: Use average L2 norm of 8 rounds prior (requires current round >= 9)
+    Mode 5: Use average L2 norm of 16 rounds prior (requires current round >= 17)
+    Mode 6: Use average L2 norm from round 1 to current round-1
+    
+    If current round doesn't meet mode requirements, fallback to mode 1
+    """
     total_jobs = len(jobs)
 
     current_time = 0
@@ -389,64 +400,67 @@ def DYNAMIC(jobs, nJobsPerRound = 100, mode=1, input_file_name=None):
                     is_srpt_better = True
                     algorithm_history.append('SRPT')
                 else:
-                    # Apply the selected mode to decide for the current round
-                    if mode == 1:
-                        # Mode 1: Check from round 2 to current round-1
-                        if len(srpt_l2_history) >= 2:
-                            # Calculate average from round 2 to current round-1
-                            # (indices 1 to len(history)-1, which is current_round-1)
-                            srpt_avg_l2 = sum(srpt_l2_history[1:]) / len(srpt_l2_history[1:])
-                            fcfs_avg_l2 = sum(fcfs_l2_history[1:]) / len(fcfs_l2_history[1:])
-                            is_srpt_better = srpt_avg_l2 <= fcfs_avg_l2
-                        else:
-                            # For round 2, use the comparison of round 1
-                            is_srpt_better = srpt_l2_history[0] <= fcfs_l2_history[0]
+                    # Determine effective mode based on current round
+                    effective_mode = mode
                     
-                    elif mode == 2:
-                        # Mode 2: Check the last ceil(sqrt(current_round)) rounds
-                        check_rounds = math.ceil(math.sqrt(current_round))
-                        # We have current_round-1 completed rounds in history
-                        available_rounds = len(srpt_l2_history)
-                        
-                        if available_rounds >= check_rounds:
-                            # Get the last check_rounds rounds
-                            srpt_recent = srpt_l2_history[-check_rounds:]
-                            fcfs_recent = fcfs_l2_history[-check_rounds:]
-                            srpt_avg_l2 = sum(srpt_recent) / len(srpt_recent)
-                            fcfs_avg_l2 = sum(fcfs_recent) / len(fcfs_recent)
-                            is_srpt_better = srpt_avg_l2 <= fcfs_avg_l2
-                        else:
-                            # Use all available previous rounds
-                            srpt_avg_l2 = sum(srpt_l2_history) / len(srpt_l2_history)
-                            fcfs_avg_l2 = sum(fcfs_l2_history) / len(fcfs_l2_history)
-                            is_srpt_better = srpt_avg_l2 <= fcfs_avg_l2
+                    # Check if we need to fallback to mode 1
+                    if mode == 2 and current_round < 2:
+                        effective_mode = 1
+                    elif mode == 3 and current_round < 5:
+                        effective_mode = 1
+                    elif mode == 4 and current_round < 9:
+                        effective_mode = 1
+                    elif mode == 5 and current_round < 17:
+                        effective_mode = 1
                     
-                    elif mode == 3:
-                        # Mode 3: Check the last ceil(current_round/2) rounds if current_round >= 4
-                        if current_round >= 4:
-                            check_rounds = math.ceil(current_round / 2)
-                            available_rounds = len(srpt_l2_history)
-                            
-                            if available_rounds >= check_rounds:
-                                # Get the last check_rounds rounds
-                                srpt_recent = srpt_l2_history[-check_rounds:]
-                                fcfs_recent = fcfs_l2_history[-check_rounds:]
-                                srpt_avg_l2 = sum(srpt_recent) / len(srpt_recent)
-                                fcfs_avg_l2 = sum(fcfs_recent) / len(fcfs_recent)
-                                is_srpt_better = srpt_avg_l2 <= fcfs_avg_l2
-                            else:
-                                # Use all available previous rounds
-                                srpt_avg_l2 = sum(srpt_l2_history) / len(srpt_l2_history)
-                                fcfs_avg_l2 = sum(fcfs_l2_history) / len(fcfs_l2_history)
-                                is_srpt_better = srpt_avg_l2 <= fcfs_avg_l2
-                        else:
-                            # For rounds 2 and 3, use all previous rounds
-                            if len(srpt_l2_history) > 0:
-                                srpt_avg_l2 = sum(srpt_l2_history) / len(srpt_l2_history)
-                                fcfs_avg_l2 = sum(fcfs_l2_history) / len(fcfs_l2_history)
-                                is_srpt_better = srpt_avg_l2 <= fcfs_avg_l2
-                            else:
-                                is_srpt_better = True  # Default to SRPT
+                    # Apply the effective mode to decide for the current round
+                    if effective_mode == 1:
+                        # Mode 1: Use previous round's L2 norm
+                        # Look at the most recent round (last element in history)
+                        is_srpt_better = srpt_l2_history[-1] <= fcfs_l2_history[-1]
+                    
+                    elif effective_mode == 2:
+                        # Mode 2: Average of 2 rounds prior to current
+                        # Get the last 2 rounds
+                        srpt_recent = srpt_l2_history[-2:]
+                        fcfs_recent = fcfs_l2_history[-2:]
+                        srpt_avg_l2 = sum(srpt_recent) / len(srpt_recent)
+                        fcfs_avg_l2 = sum(fcfs_recent) / len(fcfs_recent)
+                        is_srpt_better = srpt_avg_l2 <= fcfs_avg_l2
+                    
+                    elif effective_mode == 3:
+                        # Mode 3: Average of 4 rounds prior to current
+                        # Get the last 4 rounds
+                        srpt_recent = srpt_l2_history[-4:]
+                        fcfs_recent = fcfs_l2_history[-4:]
+                        srpt_avg_l2 = sum(srpt_recent) / len(srpt_recent)
+                        fcfs_avg_l2 = sum(fcfs_recent) / len(fcfs_recent)
+                        is_srpt_better = srpt_avg_l2 <= fcfs_avg_l2
+                    
+                    elif effective_mode == 4:
+                        # Mode 4: Average of 8 rounds prior to current
+                        # Get the last 8 rounds
+                        srpt_recent = srpt_l2_history[-8:]
+                        fcfs_recent = fcfs_l2_history[-8:]
+                        srpt_avg_l2 = sum(srpt_recent) / len(srpt_recent)
+                        fcfs_avg_l2 = sum(fcfs_recent) / len(fcfs_recent)
+                        is_srpt_better = srpt_avg_l2 <= fcfs_avg_l2
+                    
+                    elif effective_mode == 5:
+                        # Mode 5: Average of 16 rounds prior to current
+                        # Get the last 16 rounds
+                        srpt_recent = srpt_l2_history[-16:]
+                        fcfs_recent = fcfs_l2_history[-16:]
+                        srpt_avg_l2 = sum(srpt_recent) / len(srpt_recent)
+                        fcfs_avg_l2 = sum(fcfs_recent) / len(fcfs_recent)
+                        is_srpt_better = srpt_avg_l2 <= fcfs_avg_l2
+                    
+                    elif effective_mode == 6:
+                        # Mode 6: Average from round 1 to current round-1
+                        # Use all history
+                        srpt_avg_l2 = sum(srpt_l2_history) / len(srpt_l2_history)
+                        fcfs_avg_l2 = sum(fcfs_l2_history) / len(fcfs_l2_history)
+                        is_srpt_better = srpt_avg_l2 <= fcfs_avg_l2
                     
                     # Record which algorithm was chosen
                     algorithm_history.append('SRPT' if is_srpt_better else 'FCFS')

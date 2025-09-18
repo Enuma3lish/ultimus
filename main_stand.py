@@ -21,7 +21,11 @@ TEST_RANDOM = True  # Currently enabled
 TEST_SOFTRANDOM = True  # Currently enabled
 
 # Define frequency folders for random/softrandom testing
-FREQ_FOLDERS = ["freq_1", "freq_10", "freq_100", "freq_500", "freq_1000", "freq_10000"]
+# Using powers of 2 from 2^1 to 2^16
+FREQ_FOLDERS = [f"freq_{pow(2, i)}" for i in range(1, 17, 1)]
+# This creates: ["freq_2", "freq_4", "freq_8", "freq_16", "freq_32", "freq_64", "freq_128", 
+#                "freq_256", "freq_512", "freq_1024", "freq_2048", "freq_4096", "freq_8192", 
+#                "freq_16384", "freq_32768", "freq_65536"]
 
 # Define arrival rates
 ARRIVAL_RATES = [i for i in range(20, 42, 2)]
@@ -80,9 +84,9 @@ def create_dataset():
         enabled_tests.append("softrandom")
     
     logger.info(f"Enabled tests: {', '.join(enabled_tests)}")
-    logger.info("Processing with algorithms: RR, SRPT, SETF, FCFS, RMLF, SJF, BAL, RFdynamic")
-    logger.info("Testing Dynamic with modes [1,2,3] and nJobsPerRound [10,100,500,1000,5000,10000]")
-    logger.info("Testing RFdynamic_C and RFdynamic_NC with modes [1,2,3] and checkpoints [100,500,1000,5000,10000]")
+    logger.info("Processing with algorithms: RR, SRPT, SETF, FCFS, SJF, BAL")
+    logger.info("Testing Dynamic with modes [1,2,3,4,5,6] and nJobsPerRound=100")
+    logger.info(f"Frequency folders: {len(FREQ_FOLDERS)} folders from freq_2 to freq_65536")
 
     # Create the log directory if it doesn't exist
     log_dir = "log"
@@ -90,10 +94,8 @@ def create_dataset():
     
     # Create output directories
     os.makedirs("phase1", exist_ok=True)
-    os.makedirs("result", exist_ok=True)  # Changed from freq and softrandom to result
+    os.makedirs("result", exist_ok=True)
     os.makedirs("Dynamic_analysis", exist_ok=True)
-    os.makedirs("RFdynamic_C_analysis", exist_ok=True)
-    os.makedirs("RFdynamic_NC_analysis", exist_ok=True)
     
     # Calculate total tasks
     total_tasks = len(parameter_map) * len(ARRIVAL_RATES)
@@ -190,30 +192,20 @@ def validate_results():
                 try:
                     df = pd.read_csv(sample_file)
                     
-                    # Check for base algorithm columns
+                    # Check for base algorithm columns (updated without RMLF)
                     base_columns = ['arrival_rate', 'bp_parameter_L', 'bp_parameter_H', 
-                                  'RR', 'Srpt', 'Setf', 'Fcfs', 'RMLF', 'RFdynamic', 'Bal', 'Sjf']
+                                  'RR', 'Srpt', 'Setf', 'Fcfs', 'Bal', 'Sjf']
                     
-                    # Check for Dynamic parameter columns (should have mode x njobs combinations)
+                    # Check for Dynamic parameter columns (6 modes with njobs=100)
                     dynamic_columns = []
-                    for mode in [1, 2, 3]:
-                        for njobs in [10, 100, 500, 1000, 5000, 10000]:
-                            dynamic_columns.append(f"DYNAMIC_mode{mode}_njobs{njobs}")
-                    
-                    # Check for RFdynamic_C and RFdynamic_NC columns
-                    rf_columns = []
-                    for mode in [1, 2, 3]:
-                        for checkpoint in [100, 500, 1000, 5000, 10000]:
-                            rf_columns.append(f"RFdynamic_C_mode{mode}_cp{checkpoint}")
-                            rf_columns.append(f"RFdynamic_NC_mode{mode}_cp{checkpoint}")
+                    for mode in [1, 2, 3, 4, 5, 6]:
+                        dynamic_columns.append(f"DYNAMIC_mode{mode}_njobs100")
                     
                     missing_base = [col for col in base_columns if col not in df.columns]
                     if missing_base:
                         logger.warning(f"Missing base columns: {missing_base}")
                     
-                    logger.info(f"Found {sum(1 for col in dynamic_columns if col in df.columns)}/18 Dynamic configurations")
-                    logger.info(f"Found {sum(1 for col in rf_columns[:15] if col in df.columns)}/15 RFdynamic_C configurations")
-                    logger.info(f"Found {sum(1 for col in rf_columns[15:] if col in df.columns)}/15 RFdynamic_NC configurations")
+                    logger.info(f"Found {sum(1 for col in dynamic_columns if col in df.columns)}/6 Dynamic configurations")
                     logger.info(f"Sample file has {len(df)} rows")
                     
                 except Exception as e:
@@ -226,7 +218,16 @@ def validate_results():
             try:
                 df = pd.read_csv(random_result_file)
                 logger.info(f"Random result file has {len(df)} frequency configurations")
+                logger.info(f"Expected {len(FREQ_FOLDERS)} configurations for powers of 2 from 2^1 to 2^16")
                 logger.info(f"Random result file has {len(df.columns)} columns")
+                
+                # Check for expected columns
+                expected_base = ['frequency', 'RR', 'Srpt', 'Setf', 'Fcfs', 'Bal', 'Sjf']
+                expected_dynamic = [f'DYNAMIC_mode{mode}_njobs100' for mode in range(1, 7)]
+                missing = [col for col in expected_base + expected_dynamic if col not in df.columns]
+                if missing:
+                    logger.warning(f"Missing expected columns: {missing}")
+                    
             except Exception as e:
                 logger.error(f"Error validating random result file: {e}")
         else:
@@ -239,18 +240,25 @@ def validate_results():
             try:
                 df = pd.read_csv(softrandom_result_file)
                 logger.info(f"Softrandom result file has {len(df)} frequency configurations")
+                logger.info(f"Expected {len(FREQ_FOLDERS)} configurations for powers of 2 from 2^1 to 2^16")
                 logger.info(f"Softrandom result file has {len(df.columns)} columns")
+                
+                # Check for expected columns
+                expected_base = ['frequency', 'RR', 'Srpt', 'Setf', 'Fcfs', 'Bal', 'Sjf']
+                expected_dynamic = [f'DYNAMIC_mode{mode}_njobs100' for mode in range(1, 7)]
+                missing = [col for col in expected_base + expected_dynamic if col not in df.columns]
+                if missing:
+                    logger.warning(f"Missing expected columns: {missing}")
+                    
             except Exception as e:
                 logger.error(f"Error validating softrandom result file: {e}")
         else:
             logger.warning("Softrandom result file not found at result/softrandom_result.csv")
     
-    # Check for algorithm-specific analysis directories
-    analysis_dirs = ["Dynamic_analysis", "RFdynamic_C_analysis", "RFdynamic_NC_analysis"]
-    for dir_name in analysis_dirs:
-        if os.path.exists(dir_name):
-            subdirs = [d for d in os.listdir(dir_name) if os.path.isdir(os.path.join(dir_name, d))]
-            logger.info(f"{dir_name} contains {len(subdirs)} subdirectories")
+    # Check for Dynamic analysis directory
+    if os.path.exists("Dynamic_analysis"):
+        subdirs = [d for d in os.listdir("Dynamic_analysis") if os.path.isdir(os.path.join("Dynamic_analysis", d))]
+        logger.info(f"Dynamic_analysis contains {len(subdirs)} subdirectories")
 
 if __name__ == "__main__":
     # Set start time
