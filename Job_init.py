@@ -230,44 +230,47 @@ def soft_random_job_init(num_jobs, coherence_time=1):
     
     return samples
 
-def Save_file(num_jobs):
+def Save_file(num_jobs, i):
     # Create base data directory if it doesn't exist
     os.makedirs("data", exist_ok=True)
     
-    # Create frequency/coherence time folders
-    coherence_times = [pow(2,i) for i in range(1, 17, 1)]
+    # Create frequency/coherence time folders WITH the _i suffix
+    coherence_times = [pow(2, j) for j in range(1, 17, 1)]
     for ct in coherence_times:
-        freq_folder = f"data/freq_{ct}"
+        freq_folder = f"data/freq_{ct}_{i}"
         os.makedirs(freq_folder, exist_ok=True)
     
     # Process normal parameter sets (30, 60, 90)
     for param_name, param_set in parameter_sets.items():
-        # Create folder for this parameter set
-        os.makedirs(f"data/{param_name}", exist_ok=True)
+        # Create folder for this parameter set WITH the _i suffix
+        param_folder = f"data/{param_name}_{i}"
+        os.makedirs(param_folder, exist_ok=True)
         
         for avg_inter_arrival in inter_arrival_time:
-            for b in tqdm.tqdm(param_set, desc=f"Processing {param_name}, inter_arrival={avg_inter_arrival}"):
+            for b in tqdm.tqdm(param_set, desc=f"Processing {param_name}_{i}, inter_arrival={avg_inter_arrival}"):
                 job_list = job_init(num_jobs, avg_inter_arrival, b["L"], b["H"])
                 bl = b["L"]
-                # Format the filename as (inter_arrival, bl).csv
-                filename = f"data/{param_name}/({avg_inter_arrival}, {bl}).csv"
+                bh = b["H"]
+                # Format the filename using the CORRECT folder path with _i suffix
+                filename = f"{param_folder}/({avg_inter_arrival}, {bl}_{bh}).csv"
                 Write_csv.Write_raw(filename, job_list)
     
     # Generate and save job lists for each coherence time
-    for ct in tqdm.tqdm(coherence_times, desc="Processing random jobs"):
+    for ct in tqdm.tqdm(coherence_times, desc=f"Processing random jobs _{i}"):
         # Generate job list with random parameters and specified coherence time
         job_list = random_job_init(num_jobs, coherence_time=ct)
         
-        # Save to the frequency-specific folder with coherence time in filename
-        filename = f"data/freq_{ct}/random_freq_{ct}.csv"
+        # Save to the frequency-specific folder WITH the _i suffix
+        filename = f"data/freq_{ct}_{i}/random_freq_{ct}.csv"
         Write_csv.Write_raw(filename, job_list)
     
-    # Create soft random folder and generate soft random job lists for each coherence time
-    os.makedirs("data/softrandom", exist_ok=True)
+    # Create soft random folder WITH the _i suffix
+    softrandom_base = f"data/softrandom_{i}"
+    os.makedirs(softrandom_base, exist_ok=True)
     
-    # Create coherence time subfolders within softrandom
-    for ct in tqdm.tqdm(coherence_times, desc="Processing soft random jobs"):
-        softrandom_folder = f"data/softrandom/freq_{ct}"
+    # Create coherence time subfolders within softrandom_{i}
+    for ct in tqdm.tqdm(coherence_times, desc=f"Processing soft random jobs _{i}"):
+        softrandom_folder = f"{softrandom_base}/freq_{ct}_{i}"
         os.makedirs(softrandom_folder, exist_ok=True)
         
         # Generate job list with soft random parameters and specified coherence time
@@ -278,4 +281,5 @@ def Save_file(num_jobs):
         Write_csv.Write_raw(filename, job_list)
 
 if __name__ == "__main__":
-    Save_file(100000)
+    for i in range(1, 11):
+        Save_file(100000, i)

@@ -277,7 +277,7 @@ def execute_phase1_softrandom(freq_folders):
             
             # Create all configurations using list comprehensions
             modes = [1, 2, 3, 4, 5, 6]
-            njobs_per_round = [100]
+            njobs_per_round = [10]
             
             base_algorithms = [
                 (RR.RR, job_list, False, True, {}),

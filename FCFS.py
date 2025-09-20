@@ -2,7 +2,18 @@ import math
 import csv
 from FCFS_Selector import select_next_job
 import time
+import os
+import csv
+import re
+import glob
+import copy
+import logging
 
+import process_avg_folders as paf
+import process_random_folders as prf
+import process_softrandom_folders as psf
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 def Fcfs(jobs):
     current_time = 0
     completed_jobs = []
@@ -68,3 +79,44 @@ def Fcfs(jobs):
         l2_norm_flow_time = 0
 
     return avg_flow_time, l2_norm_flow_time
+
+def main():
+    """Main function to process all data"""
+    
+    # Configuration
+    data_dir = 'data'  # Base directory containing avg_30, freq_*, and softrandom folders
+    output_dir = 'FCFS_result'  # Output directory for results
+    
+    logger.info("="*60)
+    logger.info(f"Starting FCFS batch processing:")
+    logger.info(f"  Data directory: {data_dir}")
+    logger.info(f"  Output directory: {output_dir}")
+    logger.info("="*60)
+    
+    # Create main output directory
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Process avg30 files
+    logger.info("\n" + "="*40)
+    logger.info("Processing avg_30 files...")
+    logger.info("="*40)
+    paf.process_avg_folders(Fcfs,'FCFS',data_dir, output_dir)
+    
+    # Process random files
+    logger.info("\n" + "="*40)
+    logger.info("Processing random files...")
+    logger.info("="*40)
+    prf.process_random_folders(Fcfs,'FCFS',data_dir, output_dir)
+    
+    # Process softrandom files
+    logger.info("\n" + "="*40)
+    logger.info("Processing softrandom files...")
+    logger.info("="*40)
+    psf.process_softrandom_folders(Fcfs,'FCFS',data_dir, output_dir)
+    
+    logger.info("\n" + "="*60)
+    logger.info("FCFS batch processing completed successfully!")
+    logger.info("="*60)
+
+if __name__ == "__main__":
+    main()
