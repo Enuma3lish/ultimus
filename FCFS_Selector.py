@@ -1,34 +1,36 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import heapq
+
 def select_next_job(waiting_queue):
-    """
-    Select the next job to execute based on FCFS (First-Come, First-Served) policy.
-    
-    Selection criteria (in order of priority):
-    1. Earliest arrival time
-    2. If arrival times are equal, smallest job size
-    3. If both are equal, smallest job index
-    
-    Args:
-        waiting_queue: List of jobs waiting to be processed
-        
-    Returns:
-        The job that should be executed next, or None if queue is empty
+    """Backward-compatible O(n) FCFS selector.
+    Priority: earliest arrival, then smaller job_size, then smaller job_index.
     """
     if not waiting_queue:
         return None
-    
-    best_job = waiting_queue[0]
-    
-    for job in waiting_queue:
-        # Primary criterion: Earlier arrival time
-        if job['arrival_time'] < best_job['arrival_time']:
-            best_job = job
-        elif job['arrival_time'] == best_job['arrival_time']:
-            # Tie-breaker 1: Smaller job size
-            if job['job_size'] < best_job['job_size']:
-                best_job = job
-            elif job['job_size'] == best_job['job_size']:
-                # Tie-breaker 2: Smaller job index
-                if job['job_index'] < best_job['job_index']:
-                    best_job = job
-    
-    return best_job
+    best = waiting_queue[0]
+    for j in waiting_queue:
+        if (j["arrival_time"], j.get("job_size", 0), j.get("job_index", 0)) < \
+           (best["arrival_time"], best.get("job_size", 0), best.get("job_index", 0)):
+            best = j
+    return best
+
+
+def select_next_job_optimized(waiting_queue):
+    """O(log n) heap-based selector. Same priority order as select_next_job.
+    Automatically falls back to linear scan when small (<=10).
+    Returns a *dict* representing the selected job (not removed from input).
+    """
+    n = len(waiting_queue)
+    if n == 0:
+        return None
+    if n <= 10:
+        return select_next_job(waiting_queue)
+
+    # Build heap of tuples
+    heap = []
+    for j in waiting_queue:
+        heap.append((j["arrival_time"], j.get("job_size", 0), j.get("job_index", 0), j))
+    heapq.heapify(heap)
+    return heapq.heappop(heap)[-1]

@@ -4,131 +4,193 @@ import copy
 import os
 import re
 import glob
-from SRPT_Selector import select_next_job as srpt_select_next_job
-from FCFS_Selector import select_next_job as fcfs_select_next_job
+from SRPT_Selector import select_next_job_optimized as srpt_select_next_job
+from FCFS_Selector import select_next_job_optimized as fcfs_select_next_job
 import logging
+from typing import List, Dict, Tuple, Optional
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-def Srpt(jobs):
-    current_time = 0
-    completed_jobs = []
-    job_queue = []
-    total_jobs = len(jobs)
-    jobs_pointer = 0
+# -----------------------------
+# Optimized, API-compatible SRPT
+# -----------------------------
+def Srpt(jobs: List[Dict]) -> Tuple[float, float]:
+    """
+    Optimized SRPT simulator (same I/O, same results).
+    - Event-driven time advance: run until next arrival or completion (min step).
+    - Avoid per-tick loops; drastically fewer iterations.
+    - Keeps selectors and outputs identical to the old version.
+    """
+    if not jobs:
+        return 0.0, 0.0
 
-    # Assign job indices
+    # Assign job indices (stable and explicit)
     for idx, job in enumerate(jobs):
         job['job_index'] = idx
 
-    # Sort jobs by arrival time
-    jobs.sort(key=lambda x: x['arrival_time'])
+    # Sort by arrival once
+    jobs_sorted = sorted(jobs, key=lambda x: x['arrival_time'])
+    total_jobs = len(jobs_sorted)
 
-    while len(completed_jobs) < total_jobs:
-        # Add jobs that arrive at the current time
-        while jobs_pointer < total_jobs and jobs[jobs_pointer]['arrival_time'] <= current_time:
-            job = jobs[jobs_pointer]
-            job_copy = {
-                'arrival_time': job['arrival_time'],
-                'job_size': job['job_size'],
-                'remaining_time': job['job_size'],
-                'job_index': job['job_index'],
+    current_time = 0
+    jobs_pointer = 0  # next job to admit
+    completed_jobs: List[Dict] = []
+    job_queue: List[Dict] = []  # waiting jobs
+
+    # Helper to admit all arrivals up to current_time
+    def admit_until_now(t: int):
+        nonlocal jobs_pointer
+        while jobs_pointer < total_jobs and jobs_sorted[jobs_pointer]['arrival_time'] <= t:
+            j = jobs_sorted[jobs_pointer]
+            job_queue.append({
+                'arrival_time': j['arrival_time'],
+                'job_size': j['job_size'],
+                'remaining_time': j['job_size'],
+                'job_index': j['job_index'],
                 'completion_time': None,
-                'start_time': None
-            }
-            job_queue.append(job_copy)
+                'start_time': None,
+            })
             jobs_pointer += 1
 
-        # Select the next job
+    while len(completed_jobs) < total_jobs:
+        # Admit any arrived jobs for current_time
+        admit_until_now(current_time)
+
+        # Pick next job (SRPT) using optimized selector
         selected_job = srpt_select_next_job(job_queue) if job_queue else None
 
-        # Process selected job
         if selected_job:
-            job_queue.remove(selected_job)
-
-            # Record start_time if not already set
-            if selected_job['start_time'] is None:
-                selected_job['start_time'] = current_time
-
-            selected_job['remaining_time'] -= 1
-
-            # Check if job is completed
-            if selected_job['remaining_time'] == 0:
-                selected_job['completion_time'] = current_time + 1  # Adjusted here
-                completed_jobs.append(selected_job)
+            # Determine delta until next arrival (if any) to keep preemption points correct
+            next_arrival_t = jobs_sorted[jobs_pointer]['arrival_time'] if jobs_pointer < total_jobs else None
+            if next_arrival_t is None:
+                # No more arrivals: run to completion
+                delta = selected_job['remaining_time']
             else:
-                # Re-add the job to the queue
-                job_queue.append(selected_job)
+                # Run only until either next arrival or completion
+                gap = max(1, next_arrival_t - current_time)  # at least 1 time unit
+                delta = min(selected_job['remaining_time'], gap)
 
-        # Increment time
-        current_time += 1
+            # Remove selected from queue (find by identity keys, stable)
+            for idx, j in enumerate(job_queue):
+                if (j['job_index'] == selected_job['job_index'] and
+                    j['arrival_time'] == selected_job['arrival_time'] and
+                    j['job_size'] == selected_job['job_size'] and
+                    j['remaining_time'] == selected_job['remaining_time']):
+                    job = job_queue.pop(idx)
+                    break
+            else:
+                # Fallback (shouldn't happen): just pop first
+                job = job_queue.pop(0)
 
-    # Calculate metrics
+            # Start time - ensure it's at or after arrival time
+            if job['start_time'] is None:
+                job['start_time'] = max(current_time, job['arrival_time'])
+
+            # Execute
+            job['remaining_time'] -= delta
+            current_time += delta
+
+            if job['remaining_time'] == 0:
+                job['completion_time'] = current_time
+                completed_jobs.append(job)
+            else:
+                # Re-queue for potential preemption
+                job_queue.append(job)
+        else:
+            # Idle: jump to next arrival
+            if jobs_pointer < total_jobs:
+                current_time = max(current_time, jobs_sorted[jobs_pointer]['arrival_time'])
+            else:
+                break  # nothing left
+
+    # Metrics (identical to old version)
     total_flow_time = sum(job['completion_time'] - job['arrival_time'] for job in completed_jobs)
     if total_jobs > 0:
         avg_flow_time = total_flow_time / total_jobs
-        l2_norm_flow_time = (sum((job['completion_time'] - job['arrival_time']) ** 2 for job in completed_jobs)) ** 0.5
+        l2_norm_flow_time = math.sqrt(sum((job['completion_time'] - job['arrival_time']) ** 2 for job in completed_jobs))
     else:
         avg_flow_time = 0
         l2_norm_flow_time = 0
 
     return avg_flow_time, l2_norm_flow_time
 
-def Fcfs(jobs):
-    current_time = 0
-    completed_jobs = []
-    waiting_queue = []
-    total_jobs = len(jobs)
-    jobs_pointer = 0
-    current_job = None
+
+# -----------------------------
+# Optimized, API-compatible FCFS
+# -----------------------------
+def Fcfs(jobs: List[Dict]) -> Tuple[float, float]:
+    """
+    Optimized FCFS simulator (same I/O, same results):
+    - Event-driven; non-preemptive job runs to completion.
+    - Avoid per-tick loops; admit arrivals in batches.
+    """
+    if not jobs:
+        return 0.0, 0.0
 
     # Assign job indices
     for idx, job in enumerate(jobs):
         job['job_index'] = idx
 
-    # Sort jobs by arrival time
-    jobs.sort(key=lambda x: x['arrival_time'])
+    jobs_sorted = sorted(jobs, key=lambda x: x['arrival_time'])
+    total_jobs = len(jobs_sorted)
 
-    while len(completed_jobs) < total_jobs:
-        # Add jobs that arrive at the current time
-        while jobs_pointer < total_jobs and jobs[jobs_pointer]['arrival_time'] <= current_time:
-            job = jobs[jobs_pointer]
-            # Copy job to avoid modifying the original
-            job_copy = {
-                'arrival_time': job['arrival_time'],
-                'job_size': job['job_size'],
-                'remaining_time': job['job_size'],
-                'job_index': job['job_index'],
+    current_time = 0
+    jobs_pointer = 0
+    completed_jobs: List[Dict] = []
+    waiting_queue: List[Dict] = []
+    current_job: Optional[Dict] = None
+
+    def admit_until_now(t: int):
+        nonlocal jobs_pointer
+        while jobs_pointer < total_jobs and jobs_sorted[jobs_pointer]['arrival_time'] <= t:
+            j = jobs_sorted[jobs_pointer]
+            waiting_queue.append({
+                'arrival_time': j['arrival_time'],
+                'job_size': j['job_size'],
+                'remaining_time': j['job_size'],
+                'job_index': j['job_index'],
                 'completion_time': None,
-                'start_time': None
-            }
-            waiting_queue.append(job_copy)
+                'start_time': None,
+            })
             jobs_pointer += 1
 
-        # Select the next job using the FCFS selector
+    while len(completed_jobs) < total_jobs:
+        admit_until_now(current_time)
+
         if current_job is None and waiting_queue:
-            current_job = fcfs_select_next_job(waiting_queue)
-            if current_job:
-                waiting_queue.remove(current_job)
-                # Record start_time if not already set
-                if current_job['start_time'] is None:
-                    current_job['start_time'] = current_time
+            # FCFS selector picks earliest arrival using optimized selector
+            selected = fcfs_select_next_job(waiting_queue)
+            # Remove the selected item
+            for idx, j in enumerate(waiting_queue):
+                if (j['job_index'] == selected['job_index'] and
+                    j['arrival_time'] == selected['arrival_time'] and
+                    j['job_size'] == selected['job_size']):
+                    current_job = waiting_queue.pop(idx)
+                    break
+            else:
+                current_job = waiting_queue.pop(0)
 
-        # Process current job
-        if current_job:
-            current_job['remaining_time'] -= 1
+            if current_job['start_time'] is None:
+                # Ensure start time is at or after arrival
+                current_time = max(current_time, current_job['arrival_time'])
+                current_job['start_time'] = current_time
 
-            # Check if job is completed
-            if current_job['remaining_time'] == 0:
-                current_job['completion_time'] = current_time + 1
-                completed_jobs.append(current_job)
-                current_job = None
+        if current_job is not None:
+            # Non-preemptive: run to completion in one step
+            current_time += current_job['remaining_time']
+            current_job['remaining_time'] = 0
+            current_job['completion_time'] = current_time
+            completed_jobs.append(current_job)
+            current_job = None
+            continue
 
-        # Increment time
-        current_time += 1
+        # If nothing to run, jump to next arrival
+        if jobs_pointer < total_jobs:
+            current_time = max(current_time, jobs_sorted[jobs_pointer]['arrival_time'])
+        else:
+            break
 
-    # Calculate metrics
     total_flow_time = sum(job['completion_time'] - job['arrival_time'] for job in completed_jobs)
     if total_jobs > 0:
         avg_flow_time = total_flow_time / total_jobs
@@ -139,6 +201,10 @@ def Fcfs(jobs):
 
     return avg_flow_time, l2_norm_flow_time
 
+
+# ----------------------------------
+# FIXED AND OPTIMIZED DYNAMIC
+# ----------------------------------
 def save_analysis_results(input_file_path, nJobsPerRound, mode, algorithm_history, total_rounds):
     """Save analysis results to CSV file with version handling"""
     if not input_file_path or not algorithm_history:
@@ -266,13 +332,16 @@ def DYNAMIC(jobs, nJobsPerRound = 100, mode=1, input_file_name=None):
     Mode 6: Use all jobs from round 1 to current round-1
     
     If current round doesn't meet mode requirements, fallback to mode 1
+    
+    BUG FIX: Properly carry over excess jobs to next round count
+    OPTIMIZATION: Use optimized selectors
     """
     total_jobs = len(jobs)
 
     current_time = 0
     active_jobs = []
     completed_jobs = []
-    n_arrival_jobs = 0
+    n_arrival_jobs = 0  # Jobs counted for current round
     n_completed_jobs = 0
     is_srpt_better = True  # Start with SRPT by default for first round
     jobs_pointer = 0
@@ -291,15 +360,15 @@ def DYNAMIC(jobs, nJobsPerRound = 100, mode=1, input_file_name=None):
         job['job_index'] = idx
         job['remaining_time'] = job['job_size']
         job['completion_time'] = None
+        job['start_time'] = None
 
     # Sort jobs by arrival time
     jobs.sort(key=lambda x: x['arrival_time'])
 
     while n_completed_jobs < total_jobs:
-        # Check for new job arrivals - FIXED: use <= instead of ==
+        # Admit all jobs up to current_time (batch, not tick-by-tick)
         while jobs_pointer < total_jobs and jobs[jobs_pointer]['arrival_time'] <= current_time:
             job = jobs[jobs_pointer]
-            # Create a clean copy for the active queue (without completion_time)
             job_copy = {
                 'arrival_time': job['arrival_time'],
                 'job_size': job['job_size'],
@@ -310,33 +379,33 @@ def DYNAMIC(jobs, nJobsPerRound = 100, mode=1, input_file_name=None):
             }
             active_jobs.append(job_copy)
             
-            # Create a clean copy for round tracking (only essential info for simulation)
-            round_job = {
+            # Track only essential fields for history
+            jobs_in_current_round.append({
                 'arrival_time': job['arrival_time'],
                 'job_size': job['job_size'],
                 'job_index': job['job_index']
-            }
-            jobs_in_current_round.append(round_job)
+            })
             
             n_arrival_jobs += 1
             jobs_pointer += 1
 
-        # Checkpoint logic
-        if n_arrival_jobs >= nJobsPerRound:
-            if jobs_in_current_round:
-                # Store the current round's jobs for future use
-                round_jobs_history.append(copy.deepcopy(jobs_in_current_round))
+        # Checkpoint logic when we have nJobsPerRound arrivals
+        # BUG FIX: Properly handle excess jobs
+        while n_arrival_jobs >= nJobsPerRound:
+            # Process exactly nJobsPerRound jobs for this round
+            jobs_for_this_round = jobs_in_current_round[:nJobsPerRound]
+            
+            if jobs_for_this_round:
+                # Store the current round's jobs
+                round_jobs_history.append(list(jobs_for_this_round))
                 
                 # Decide which algorithm to use for the CURRENT round
                 if current_round == 1:
-                    # First round defaults to SRPT
                     is_srpt_better = True
                     algorithm_history.append('SRPT')
                 else:
-                    # Determine effective mode based on current round
+                    # Fallback rules to mode 1 when not enough history yet
                     effective_mode = mode
-                    
-                    # Check if we need to fallback to mode 1
                     if mode == 2 and current_round < 3:
                         effective_mode = 1
                     elif mode == 3 and current_round < 5:
@@ -346,77 +415,102 @@ def DYNAMIC(jobs, nJobsPerRound = 100, mode=1, input_file_name=None):
                     elif mode == 5 and current_round < 17:
                         effective_mode = 1
                     
-                    # Collect jobs from previous rounds based on effective mode
+                    # Collect jobs from previous rounds per effective mode
                     jobs_to_simulate = []
-                    
                     if effective_mode == 1:
-                        # Mode 1: Use only the previous round's jobs
-                        jobs_to_simulate = copy.deepcopy(round_jobs_history[-1])
-                    
+                        jobs_to_simulate = list(round_jobs_history[-1])
                     elif effective_mode == 2:
-                        # Mode 2: Use jobs from last 2 rounds
-                        for round_jobs in round_jobs_history[-2:]:
-                            jobs_to_simulate.extend(copy.deepcopy(round_jobs))
-                    
+                        for r in round_jobs_history[-2:]:
+                            jobs_to_simulate.extend(r)
                     elif effective_mode == 3:
-                        # Mode 3: Use jobs from last 4 rounds
-                        for round_jobs in round_jobs_history[-4:]:
-                            jobs_to_simulate.extend(copy.deepcopy(round_jobs))
-                    
+                        for r in round_jobs_history[-4:]:
+                            jobs_to_simulate.extend(r)
                     elif effective_mode == 4:
-                        # Mode 4: Use jobs from last 8 rounds
-                        for round_jobs in round_jobs_history[-8:]:
-                            jobs_to_simulate.extend(copy.deepcopy(round_jobs))
-                    
+                        for r in round_jobs_history[-8:]:
+                            jobs_to_simulate.extend(r)
                     elif effective_mode == 5:
-                        # Mode 5: Use jobs from last 16 rounds
-                        for round_jobs in round_jobs_history[-16:]:
-                            jobs_to_simulate.extend(copy.deepcopy(round_jobs))
-                    
+                        for r in round_jobs_history[-16:]:
+                            jobs_to_simulate.extend(r)
                     elif effective_mode == 6:
-                        # Mode 6: Use all jobs from round 1 to current round-1
-                        for round_jobs in round_jobs_history:
-                            jobs_to_simulate.extend(copy.deepcopy(round_jobs))
+                        for r in round_jobs_history:
+                            jobs_to_simulate.extend(r)
                     
-                    # Simulate SRPT and FCFS on the collected jobs
-                    srpt_jobs_copy = copy.deepcopy(jobs_to_simulate)
-                    fcfs_jobs_copy = copy.deepcopy(jobs_to_simulate)
-                    
-                    srpt_avg, srpt_l2 = Srpt(srpt_jobs_copy)
-                    fcfs_avg, fcfs_l2 = Fcfs(fcfs_jobs_copy)
+                    # Run SRPT and FCFS on the collected jobs
+                    srpt_avg, srpt_l2 = Srpt([{'arrival_time': j['arrival_time'], 'job_size': j['job_size']} for j in jobs_to_simulate])
+                    fcfs_avg, fcfs_l2 = Fcfs([{'arrival_time': j['arrival_time'], 'job_size': j['job_size']} for j in jobs_to_simulate])
                          
                     # Choose algorithm based on L2 norm comparison
                     is_srpt_better = srpt_l2 <= fcfs_l2
                     algorithm_history.append('SRPT' if is_srpt_better else 'FCFS')
                 
                 current_round += 1
-                
-            jobs_in_current_round = []
-            n_arrival_jobs = 0  # Reset the arrival counter
+            
+            # Move excess jobs to next round
+            jobs_in_current_round = jobs_in_current_round[nJobsPerRound:]
+            n_arrival_jobs -= nJobsPerRound
 
         # Select next job based on the current scheduling policy
-        if is_srpt_better:
-            # SRPT mode: preemptive scheduling
-            selected_job = srpt_select_next_job(active_jobs) 
+        if active_jobs:
+            if is_srpt_better:
+                selected_job = srpt_select_next_job(active_jobs)
+            else:
+                selected_job = fcfs_select_next_job(active_jobs)
         else:
-            # FCFS mode: non-preemptive scheduling
-            selected_job = fcfs_select_next_job(active_jobs)
+            selected_job = None
 
-        # Process current job
         if selected_job:
-            active_jobs.remove(selected_job)
-            selected_job['remaining_time'] -= 1
-            if selected_job['remaining_time'] == 0:
-                selected_job['completion_time'] = current_time + 1
-                completed_jobs.append(selected_job)
+            # Decide event-driven step:
+            next_arrival_t = jobs[jobs_pointer]['arrival_time'] if jobs_pointer < total_jobs else None
+            if is_srpt_better:
+                # SRPT: allow preemption at arrivals, run until min(next arrival, completion)
+                if next_arrival_t is None:
+                    delta = selected_job['remaining_time']
+                else:
+                    delta = min(selected_job['remaining_time'], max(1, next_arrival_t - current_time))
+            else:
+                # FCFS mode inside DYNAMIC is non-preemptive: run to completion
+                delta = selected_job['remaining_time']
+
+            # Remove selected
+            for idx, j in enumerate(active_jobs):
+                if (j['job_index'] == selected_job['job_index'] and
+                    j['arrival_time'] == selected_job['arrival_time'] and
+                    j['job_size'] == selected_job['job_size'] and
+                    j['remaining_time'] == selected_job['remaining_time']):
+                    job = active_jobs.pop(idx)
+                    break
+            else:
+                job = active_jobs.pop(0)
+
+            # Set start time if not set (ensure >= arrival_time)
+            if job['start_time'] is None:
+                job['start_time'] = max(current_time, job['arrival_time'])
+
+            job['remaining_time'] -= delta
+            current_time += delta
+
+            if job['remaining_time'] == 0:
+                job['completion_time'] = current_time
+                completed_jobs.append(job)
                 n_completed_jobs += 1
             else:
-                active_jobs.append(selected_job)            
+                # Only SRPT can be preempted here
+                active_jobs.append(job)
+        else:
+            # No job to run; jump to next arrival
+            if jobs_pointer < total_jobs:
+                current_time = max(current_time, jobs[jobs_pointer]['arrival_time'])
+            else:
+                break
 
-        # Increment time
-        current_time += 1
+    # Process any remaining jobs in the last incomplete round
+    if jobs_in_current_round and n_arrival_jobs > 0:
+        round_jobs_history.append(list(jobs_in_current_round))
+        # The last round uses the same algorithm as determined for current state
+        algorithm_history.append('SRPT' if is_srpt_better else 'FCFS')
+        current_round += 1
 
-    # Calculate metrics
+    # Metrics
     total_flow_time = sum(job['completion_time'] - job['arrival_time'] for job in completed_jobs)
     if total_jobs > 0:
         avg_flow_time = total_flow_time / total_jobs
@@ -425,15 +519,18 @@ def DYNAMIC(jobs, nJobsPerRound = 100, mode=1, input_file_name=None):
         avg_flow_time = 0
         l2_norm_flow_time = 0
     
-    # Save analysis results if input file name is provided
+    # Save analysis for avg_* files only
     if input_file_name:
         save_analysis_results(input_file_name, nJobsPerRound, mode, algorithm_history, current_round - 1)
 
     return avg_flow_time, l2_norm_flow_time
 
+
+# -----------------------------
+# Helpers and batch processors (unchanged)
+# -----------------------------
 def extract_version_from_path(folder_path):
     """Extract version number (1-10) from folder path like 'avg_30_2' or 'freq_16_2'"""
-    # Match patterns like avg_30_1, freq_16_2, softrandom_3, etc.
     pattern = r'_(\d+)$'
     match = re.search(pattern, folder_path)
     if match:
@@ -460,8 +557,6 @@ def read_jobs_from_csv(filepath):
 
 def parse_avg30_filename(filename):
     """Parse avg30 filename to extract arrival_rate, bp_L, and bp_H"""
-    # Pattern: (arrival_rate, bp_L_bp_H).csv
-    # Example: (20, 4.073_262144).csv or (28, 7.918_512).csv
     pattern = r'\((\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)_(\d+)\)'
     match = re.search(pattern, filename)
     if match:
@@ -473,7 +568,6 @@ def parse_avg30_filename(filename):
 
 def parse_freq_from_folder(folder_name):
     """Extract frequency value from folder name like freq_2_1"""
-    # Pattern now handles freq_2_1, freq_16_2, etc.
     pattern = r'freq_(\d+)(?:_\d+)?'
     match = re.search(pattern, folder_name)
     if match:
@@ -486,13 +580,13 @@ def run_all_modes_for_file(jobs, nJobsPerRound, input_file_path=None):
     
     for mode in range(1, 7):
         try:
-            # Create a deep copy to ensure each mode gets fresh job data
-            jobs_copy = copy.deepcopy(jobs)
+            # Create a shallow copy list for each run
+            jobs_copy = [{'arrival_time': j['arrival_time'], 'job_size': j['job_size']} for j in jobs]
             avg_flow_time, l2_norm_flow_time = DYNAMIC(
                 jobs_copy,
                 nJobsPerRound=nJobsPerRound,
                 mode=mode,
-                input_file_name=input_file_path  # Pass the file path for analysis
+                input_file_name=input_file_path
             )
             mode_results[mode] = l2_norm_flow_time
             logger.info(f"    Mode {mode}: L2 norm = {l2_norm_flow_time:.4f}")
@@ -574,7 +668,7 @@ def process_avg_folders(data_dir, output_dir, nJobsPerRound):
                 with open(output_file, 'w', newline='') as f:
                     writer = csv.writer(f)
                     
-                    # Create header with all mode columns - FIXED format
+                    # Create header with all mode columns
                     header = ['arrival_rate', 'bp_parameter_L', 'bp_parameter_H']
                     for mode in range(1, 7):
                         header.append(f'Dynamic_njobs{nJobsPerRound}_mode{mode}_L2_norm_flow_time')
@@ -655,7 +749,7 @@ def process_random_folders(data_dir, output_dir, nJobsPerRound):
             with open(output_file, 'w', newline='') as f:
                 writer = csv.writer(f)
                 
-                # Create header - FIXED format
+                # Create header
                 header = ['frequency']
                 for mode in range(1, 7):
                     header.append(f'Dynamic_njobs{nJobsPerRound}_mode{mode}_L2_norm_flow_time')
@@ -747,7 +841,7 @@ def process_softrandom_folders(data_dir, output_dir, nJobsPerRound):
             with open(output_file, 'w', newline='') as f:
                 writer = csv.writer(f)
                 
-                # Create header - FIXED format
+                # Create header
                 header = ['frequency']
                 for mode in range(1, 7):
                     header.append(f'Dynamic_njobs{nJobsPerRound}_mode{mode}_L2_norm_flow_time')
@@ -785,11 +879,11 @@ def main():
     # Create main output directory
     os.makedirs(output_dir, exist_ok=True)
     
-    # # Process avg folders
-    # logger.info("\n" + "="*40)
-    # logger.info("Processing avg folders...")
-    # logger.info("="*40)
-    # process_avg_folders(data_dir, output_dir, nJobsPerRound)
+    # Process avg folders
+    logger.info("\n" + "="*40)
+    logger.info("Processing avg folders...")
+    logger.info("="*40)
+    process_avg_folders(data_dir, output_dir, nJobsPerRound)
     
     # Process random files
     logger.info("\n" + "="*40)

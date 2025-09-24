@@ -38,3 +38,50 @@ def RR_Selector(jobs_info: List[Tuple[int, int, int]],
         if jobs_info:
             return None, jobs_info[0][1], False
         return None, current_time, False
+
+from collections import deque
+from typing import Deque, List, Tuple, Optional
+
+def RR_Selector_optimized(jobs_info, 
+                          current_time: int, 
+                          ready_queue: Deque[Tuple[int, int]], 
+                          time_quantum: int = 1) -> Tuple[Optional[int], int, bool]:
+    """
+    Optimized Round Robin selector (event-driven & O(1) amortized admission):
+      - Expects jobs_info as a deque of (orig_idx, arrival_time, remaining_time) sorted by arrival_time.
+      - Moves all arrived jobs into ready_queue (orig_idx, remaining_time) via popleft.
+      - If ready_queue has a job, returns (orig_idx, execution_time, True), where execution_time is
+        min(time_quantum, remaining_time, time_until_next_arrival). This allows event-driven jumps.
+      - If no job is ready:
+          * returns (None, next_arrival_time, False) if future jobs exist
+          * otherwise (None, current_time, False)
+    """
+    # Ensure deque for O(1) popleft
+    if not isinstance(jobs_info, deque):
+        try:
+            jobs_info = deque(jobs_info)
+        except Exception:
+            # Fallback but will be O(n) on pops; caller should pass deque
+            jobs_info = deque(list(jobs_info))
+
+    # Admit all jobs that have arrived by current_time
+    while jobs_info and jobs_info[0][1] <= current_time:
+        orig_idx, at, rem = jobs_info.popleft()
+        ready_queue.append((orig_idx, rem))
+
+    if ready_queue:
+        # Choose next RR candidate (peek at leftmost)
+        orig_idx, remaining = ready_queue[0]
+        exec_time = min(time_quantum, remaining)
+        # Consider next arrival to keep event-driven steps
+        if jobs_info:
+            next_arrival = jobs_info[0][1]
+            # If a new job arrives before we finish the quantum, slice the run
+            if current_time + exec_time > next_arrival:
+                exec_time = max(1, next_arrival - current_time)
+        return orig_idx, exec_time, True
+
+    # No job ready; suggest jump time
+    if jobs_info:
+        return None, jobs_info[0][1], False
+    return None, current_time, False

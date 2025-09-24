@@ -76,7 +76,7 @@ def main():
     data_dir = 'data'  # Base directory containing avg_30, freq_*, and softrandom folders
     output_dir = 'SJF_result'  # Output directory for results
     logger.info("="*60)
-    logger.info(f"Starting RR batch processing:")
+    logger.info(f"Starting SJF batch processing:")
     logger.info(f"  Data directory: {data_dir}")
     logger.info(f"  Output directory: {output_dir}")
     logger.info("="*60)

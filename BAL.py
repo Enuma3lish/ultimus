@@ -1,6 +1,6 @@
 import math
-from SRPT_Selector import select_next_job as srpt_select_next_job
-from BAL_Selector import select_starving_job
+from SRPT_Selector import select_next_job_optimized as srpt_select_next_job
+from BAL_Selector import select_starving_job, select_starving_job_optimized
 import os
 import csv
 import re
@@ -12,94 +12,133 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 def Bal(jobs):
-    current_time = 0
-    completed_jobs = []
-    job_queue = []
-    total_jobs = len(jobs)
-    jobs_pointer = 0
+    """
+    Optimized BAL scheduler:
+    - Starvation rule: waiting_time_ratio = (t - arrival_time) / max(1, remaining_time);
+      a job becomes starving when this ratio > N^(2/3) (N = total jobs). We store its first
+      starving_time and prefer the earliest starving_time, then larger ratio, then smaller index.
+    - Event-driven time advance: run selected job until min(next_arrival, completion).
+    - Selection:
+        * If starving jobs exist: use select_starving_job_optimized (heap-backed).
+        * Else: use SRPT selector (heap-backed) on (remaining_time, arrival_time, job_index).
+    Returns (avg_flow_time, l2_norm_flow_time).
+    """
+    # Normalize jobs & index
+    norm = [{"arrival_time": int(j["arrival_time"]), "job_size": int(j["job_size"]), "job_index": i}
+            for i, j in enumerate(jobs)]
+    norm.sort(key=lambda x: x["arrival_time"])
+
+    total_jobs = len(norm)
+    if total_jobs == 0:
+        return 0.0, 0.0
+
     starvation_threshold = total_jobs ** (2/3)
-    
-    # Assign job indices
-    for idx, job in enumerate(jobs):
-        job['job_index'] = idx
-    
-    # Sort jobs by arrival time
-    jobs.sort(key=lambda x: x['arrival_time'])
-    
-    while len(completed_jobs) < total_jobs:
-        # Add jobs that arrive at or before current time
-        while jobs_pointer < total_jobs and jobs[jobs_pointer]['arrival_time'] <= current_time:
-            job = jobs[jobs_pointer]
-            job_copy = {
-                'arrival_time': job['arrival_time'],
-                'job_size': job['job_size'],
-                'remaining_time': job['job_size'],
-                'job_index': job['job_index'],
-                'completion_time': None,
-                'start_time': None,
-                'starving_time': None,  # Time when job became starving
-                'waiting_time_ratio': 0
-            }
-            if job_copy['job_size'] == 0:
-                job_copy['start_time'] = current_time
-                job_copy['completion_time'] = current_time
-                completed_jobs.append(job_copy)
+
+    t = 0
+    i = 0  # next arrival pointer
+    q = []  # waiting queue of dicts with runtime fields
+    completed = []
+
+    while len(completed) < total_jobs:
+        # Admit arrivals up to time t
+        while i < total_jobs and norm[i]["arrival_time"] <= t:
+            q.append({
+                "arrival_time": norm[i]["arrival_time"],
+                "job_index": norm[i]["job_index"],
+                "remaining_time": norm[i]["job_size"],
+                "start_time": None,
+                "completion_time": None,
+                "starving_time": None,
+                "waiting_time_ratio": 0.0,
+            })
+            i += 1
+
+        # Update ratios and starving_time stamps
+        if q:
+            for job in q:
+                if job["remaining_time"] > 0:
+                    job["waiting_time_ratio"] = (t - job["arrival_time"]) / max(1, job["remaining_time"])
+                    if job["waiting_time_ratio"] > starvation_threshold and job["starving_time"] is None:
+                        job["starving_time"] = t
+
+        # Separate starving / non-starving
+        starving = [job for job in q if job["waiting_time_ratio"] > starvation_threshold]
+
+        # Choose job
+        selected = None
+        if starving:
+            picked = select_starving_job_optimized(starving)
+            # locate the exact dict in q
+            sel_idx = None
+            for idx, job in enumerate(q):
+                if job is picked or (job.get("starving_time") == picked.get("starving_time") and
+                                     job.get("waiting_time_ratio") == picked.get("waiting_time_ratio") and
+                                     job.get("job_index") == picked.get("job_index")):
+                    sel_idx = idx; break
+            if sel_idx is None:
+                # fallback: compute by key
+                sel_idx = min(range(len(q)),
+                              key=lambda k: (
+                                  0 if q[k] in starving else 1,
+                                  q[k].get("starving_time", float("inf")),
+                                  -float(q[k].get("waiting_time_ratio", 0.0)),
+                                  q[k].get("job_index", 0)))
+            selected = q.pop(sel_idx)
+        elif q:
+            # SRPT selection among waiting jobs
+            picked = srpt_select_next_job([
+                {"remaining_time": j["remaining_time"], "arrival_time": j["arrival_time"], "job_index": j["job_index"]}
+                for j in q
+            ])
+            sel_idx = min(range(len(q)),
+                          key=lambda k: (q[k]["remaining_time"], q[k]["arrival_time"], q[k]["job_index"]))
+            for k, j in enumerate(q):
+                if (j["remaining_time"], j["arrival_time"], j["job_index"]) == \
+                   (picked["remaining_time"], picked["arrival_time"], picked["job_index"]):
+                    sel_idx = k; break
+            selected = q.pop(sel_idx)
+
+        # If nothing to run, jump to next arrival
+        if selected is None:
+            if i < total_jobs:
+                t = max(t, norm[i]["arrival_time"])
+                continue
             else:
-                job_queue.append(job_copy)
-            jobs_pointer += 1
-        
-        # Update waiting_time_ratio for all jobs in queue
-        for job in job_queue:
-            if job['remaining_time'] > 0:
-                job['waiting_time_ratio'] = (current_time - job['arrival_time']) / max(1, job['remaining_time'])
-                # Check if job just became starving
-                if job['waiting_time_ratio'] > starvation_threshold and job['starving_time'] is None:
-                    job['starving_time'] = current_time
-        
-        # Separate starving and non-starving jobs
-        starving_jobs = [job for job in job_queue if job['waiting_time_ratio'] > starvation_threshold]
-        
-        selected_job = None
-        
-        if starving_jobs:
-            # Use BAL's starving job selection
-            selected_job = select_starving_job(starving_jobs)
+                break
+
+        # Start time record
+        if selected["start_time"] is None:
+            selected["start_time"] = t
+
+        # Compute next arrival time
+        next_arrival_t = norm[i]["arrival_time"] if i < total_jobs else None
+
+        if next_arrival_t is None:
+            # No more arrivals: run to completion
+            t += selected["remaining_time"]
+            selected["completion_time"] = t
+            selected["remaining_time"] = 0
+            completed.append(selected)
         else:
-            # Use SRPT selector when no starving jobs
-            selected_job = srpt_select_next_job(job_queue)
-        
-        # Process selected job
-        if selected_job:
-            job_queue.remove(selected_job)
-            
-            # Record start_time if not already set
-            if selected_job['start_time'] is None:
-                selected_job['start_time'] = current_time
-            
-            # Execute job for one time unit
-            selected_job['remaining_time'] -= 1
-            
-            # Check if job is completed
-            if selected_job['remaining_time'] == 0:
-                selected_job['completion_time'] = current_time + 1
-                completed_jobs.append(selected_job)
+            # Run until either next arrival or completion
+            delta = min(selected["remaining_time"], max(1, next_arrival_t - t))
+            t += delta
+            selected["remaining_time"] -= delta
+            if selected["remaining_time"] == 0:
+                selected["completion_time"] = t
+                completed.append(selected)
             else:
-                # Re-add the job to the queue
-                job_queue.append(selected_job)
-        
-        # Increment time
-        current_time += 1
-    
-    # Calculate metrics
-    total_flow_time = sum(job['completion_time'] - job['arrival_time'] for job in completed_jobs)
-    if total_jobs > 0:
-        avg_flow_time = total_flow_time / total_jobs
-        l2_norm_flow_time = (sum((job['completion_time'] - job['arrival_time']) ** 2 for job in completed_jobs)) ** 0.5
-    else:
-        avg_flow_time = 0
-        l2_norm_flow_time = 0
-    
-    return avg_flow_time, l2_norm_flow_time
+                # Put back to queue for reconsideration at new time
+                q.append(selected)
+
+    # Metrics
+    flows = [c["completion_time"] - c["arrival_time"] for c in completed]
+    n = len(flows)
+    if n == 0:
+        return 0.0, 0.0
+    avg_flow = sum(flows) / n
+    l2 = (sum(f * f for f in flows)) ** 0.5
+    return avg_flow, l2
 def extract_version_from_path(folder_path):
     """Extract version number (1-10) from folder path like 'avg_30_2' or 'freq_16_2'"""
     # Match patterns like avg_30_1, freq_16_2, softrandom_3, etc.
@@ -424,11 +463,11 @@ def main():
     # Create main output directory
     os.makedirs(output_dir, exist_ok=True)
     
-    # # Process avg30 files
-    # logger.info("\n" + "="*40)
-    # logger.info("Processing avg_30 files...")
-    # logger.info("="*40)
-    # process_avg_folders(data_dir, output_dir)
+    # Process avg30 files
+    logger.info("\n" + "="*40)
+    logger.info("Processing avg_30 files...")
+    logger.info("="*40)
+    process_avg_folders(data_dir, output_dir)
     
     # Process random files
     logger.info("\n" + "="*40)

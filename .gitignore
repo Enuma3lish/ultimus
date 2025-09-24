@@ -1,0 +1,11 @@
+logs
+build
+.venv
+dist
+FCFS.spec
+SETF.spec
+RR.spec
+SRPT.spec
+Dynamic.spec
+SJF.spec
+__pycache__

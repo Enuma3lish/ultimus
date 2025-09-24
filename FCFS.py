@@ -1,6 +1,6 @@
 import math
 import csv
-from FCFS_Selector import select_next_job
+from FCFS_Selector import select_next_job_optimized as fcfs_select
 import time
 import os
 import csv
@@ -15,70 +15,82 @@ import process_softrandom_folders as psf
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 def Fcfs(jobs):
-    current_time = 0
-    completed_jobs = []
-    waiting_queue = []
+    """
+    Optimized non-preemptive FCFS:
+    - Event-driven time advance (jump to next arrival or completion).
+    - Heap-based pick via fcfs_select (O(log n)) for large queues, linear for small queues.
+    - Returns (avg_flow_time, l2_norm_flow_time).
+    """
+    # Normalize & index
+    jobs = [{"arrival_time": int(j["arrival_time"]), "job_size": int(j["job_size"]), "job_index": i} 
+            for i, j in enumerate(jobs)]
+    # Sort by arrival time once
+    jobs.sort(key=lambda x: x["arrival_time"])
+
     total_jobs = len(jobs)
-    jobs_pointer = 0
-    current_job = None  # Track the currently executing job
-    
-    # Assign job indices
-    for idx, job in enumerate(jobs):
-        job['job_index'] = idx
+    if total_jobs == 0:
+        return 0.0, 0.0
 
-    # Sort jobs by arrival time
-    jobs.sort(key=lambda x: x['arrival_time'])
+    t = 0
+    i = 0
+    waiting = []
+    current = None
+    completed = []
 
-    while len(completed_jobs) < total_jobs:
-        # Add jobs that arrive at or before the current time
-        # Note: Using <= to catch any jobs that might have arrived earlier
-        while jobs_pointer < total_jobs and jobs[jobs_pointer]['arrival_time'] <= current_time:
-            job = jobs[jobs_pointer]
-            # Copy job to avoid modifying the original
-            job_copy = {
-                'arrival_time': job['arrival_time'],
-                'job_size': job['job_size'],
-                'remaining_time': job['job_size'],
-                'job_index': job['job_index'],
-                'completion_time': None,
-                'start_time': None
-            }
-            waiting_queue.append(job_copy)
-            jobs_pointer += 1
+    while len(completed) < total_jobs:
+        # Add arrivals up to current time
+        while i < total_jobs and jobs[i]["arrival_time"] <= t:
+            waiting.append({
+                "arrival_time": jobs[i]["arrival_time"],
+                "job_size": jobs[i]["job_size"],
+                "job_index": jobs[i]["job_index"],
+                "remaining_time": jobs[i]["job_size"],
+                "start_time": None,
+                "completion_time": None,
+            })
+            i += 1
 
-        # Select the next job ONLY if no job is currently running
-        if current_job is None and waiting_queue:
-            current_job = select_next_job(waiting_queue)
-            if current_job:
-                waiting_queue.remove(current_job)
-                # Record start_time if not already set
-                if current_job['start_time'] is None:
-                    current_job['start_time'] = current_time
+        if current is None and waiting:
+            picked = fcfs_select(waiting)  # dict
+            # locate same dict (by identity keys)
+            sel_idx = min(
+                range(len(waiting)),
+                key=lambda k: (waiting[k]["arrival_time"], waiting[k].get("job_size", 0), waiting[k].get("job_index", 0))
+            )
+            # Better: match exact picked
+            for k, w in enumerate(waiting):
+                if (w["arrival_time"], w.get("job_size", 0), w.get("job_index", 0)) == \
+                   (picked["arrival_time"], picked.get("job_size", 0), picked.get("job_index", 0)):
+                    sel_idx = k
+                    break
+            current = waiting.pop(sel_idx)
+            if current["start_time"] is None:
+                current["start_time"] = t
 
-        # Process current job (non-preemptive - job runs until completion)
-        if current_job:
-            current_job['remaining_time'] -= 1
+        if current is not None:
+            # Non-preemptive: run to completion
+            t += current["remaining_time"]
+            current["completion_time"] = t
+            current["remaining_time"] = 0
+            completed.append(current)
+            current = None
+            continue  # loop to admit more arrivals or pick next
 
-            # Check if job is completed
-            if current_job['remaining_time'] == 0:
-                current_job['completion_time'] = current_time + 1
-                completed_jobs.append(current_job)
-                current_job = None  # Free up for next job selection
-                # Do NOT add back to waiting_queue - job is done!
+        # If idle, jump to next arrival (no 1-tick loops)
+        if i < total_jobs:
+            t = max(t, jobs[i]["arrival_time"])
+            continue
+        else:
+            break  # no jobs left
 
-        # Increment time
-        current_time += 1
-
-    # Calculate metrics
-    total_flow_time = sum(job['completion_time'] - job['arrival_time'] for job in completed_jobs)
-    if total_jobs > 0:
-        avg_flow_time = total_flow_time / total_jobs
-        l2_norm_flow_time = (sum((job['completion_time'] - job['arrival_time']) ** 2 for job in completed_jobs)) ** 0.5
-    else:
-        avg_flow_time = 0
-        l2_norm_flow_time = 0
-
-    return avg_flow_time, l2_norm_flow_time
+    # Metrics
+    flows = [c["completion_time"] - c["arrival_time"] for c in completed]
+    n = len(flows)
+    if n == 0:
+        return 0.0, 0.0
+    avg_flow = sum(flows) / n
+    l2 = (sum(f * f for f in flows)) ** 0.5
+    return avg_flow, l2
 
 def main():
     """Main function to process all data"""

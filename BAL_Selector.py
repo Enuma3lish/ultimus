@@ -34,3 +34,24 @@ def select_starving_job(starving_jobs):
             best_job = job
     
     return best_job
+
+import heapq
+
+def select_starving_job_optimized(starving_jobs):
+    """
+    Optimized BAL selector using a heap.
+    Priority (min-heap):
+      1) earliest starving_time
+      2) largest waiting_time_ratio (so we push negative for max)
+      3) smallest job_index
+    Returns a job dict from the input list (not removed from the original list).
+    """
+    if not starving_jobs:
+        return None
+    if len(starving_jobs) <= 10:
+        return select_starving_job(starving_jobs)
+    heap = []
+    for j in starving_jobs:
+        heap.append((j.get('starving_time', 0), -float(j.get('waiting_time_ratio', 0)), int(j.get('job_index', 0)), j))
+    heapq.heapify(heap)
+    return heapq.heappop(heap)[-1]

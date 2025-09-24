@@ -1,6 +1,6 @@
 import csv
 import math
-from SRPT_Selector import select_next_job as srpt_select_next_job
+from SRPT_Selector import select_next_job_optimized as srpt_select_next_job
 import os
 import csv
 import re
@@ -13,68 +13,100 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 def Srpt(jobs):
-    current_time = 0
-    completed_jobs = []
-    job_queue = []
-    total_jobs = len(jobs)
-    jobs_pointer = 0
+    """
+    Optimized preemptive SRPT:
+    - Event-driven time advance: run until next arrival or completion (min step).
+    - Selection uses srpt_select_next_job (heap-backed) on dict views of waiting queue.
+    - Returns (avg_flow_time, l2_norm_flow_time).
+    """
+    # Normalize & index
+    jobs = [{"arrival_time": int(j["arrival_time"]), "job_size": int(j["job_size"]), "job_index": i} 
+            for i, j in enumerate(jobs)]
+    jobs.sort(key=lambda x: x["arrival_time"])
 
-    # Assign job indices
-    for idx, job in enumerate(jobs):
-        job['job_index'] = idx
+    total = len(jobs)
+    if total == 0:
+        return 0.0, 0.0
 
-    # Sort jobs by arrival time
-    jobs.sort(key=lambda x: x['arrival_time'])
+    t = 0
+    i = 0
+    waiting = []
+    current = None
+    completed = []
 
-    while len(completed_jobs) < total_jobs:
-        # Add jobs that arrive at the current time
-        while jobs_pointer < total_jobs and jobs[jobs_pointer]['arrival_time'] <= current_time:
-            job = jobs[jobs_pointer]
-            job_copy = {
-                'arrival_time': job['arrival_time'],
-                'job_size': job['job_size'],
-                'remaining_time': job['job_size'],
-                'job_index': job['job_index'],
-                'completion_time': None,
-                'start_time': None
-            }
-            job_queue.append(job_copy)
-            jobs_pointer += 1
+    while len(completed) < total:
+        # Admit arrivals at time t
+        while i < total and jobs[i]["arrival_time"] <= t:
+            waiting.append({
+                "arrival_time": jobs[i]["arrival_time"],
+                "job_index": jobs[i]["job_index"],
+                "remaining_time": jobs[i]["job_size"],
+                "start_time": None,
+                "completion_time": None,
+            })
+            i += 1
 
-        # Select the next job
-        selected_job = srpt_select_next_job(job_queue) if job_queue else None
+        # If there's a current job, consider preemption by pushing it back to waiting
+        if current is not None:
+            waiting.append(current)
+            current = None
 
-        # Process selected job
-        if selected_job:
-            job_queue.remove(selected_job)
+        # Pick SRPT job if available
+        if waiting:
+            picked = srpt_select_next_job([
+                {"remaining_time": w["remaining_time"], "arrival_time": w["arrival_time"], "job_index": w["job_index"]}
+                for w in waiting
+            ])
+            # Find the selected in waiting
+            sel_idx = min(
+                range(len(waiting)),
+                key=lambda k: (waiting[k]["remaining_time"], waiting[k]["arrival_time"], waiting[k]["job_index"])
+            )
+            for k, w in enumerate(waiting):
+                if (w["remaining_time"], w["arrival_time"], w["job_index"]) == \
+                   (picked["remaining_time"], picked["arrival_time"], picked["job_index"]):
+                    sel_idx = k
+                    break
+            current = waiting.pop(sel_idx)
+            if current["start_time"] is None:
+                current["start_time"] = t
 
-            # Record start_time if not already set
-            if selected_job['start_time'] is None:
-                selected_job['start_time'] = current_time
+            # Determine next arrival time
+            next_arrival_t = jobs[i]["arrival_time"] if i < total else None
 
-            selected_job['remaining_time'] -= 1
-
-            # Check if job is completed
-            if selected_job['remaining_time'] == 0:
-                selected_job['completion_time'] = current_time + 1  # Adjusted here
-                completed_jobs.append(selected_job)
+            if next_arrival_t is None:
+                # No more arrivals: run to completion
+                t += current["remaining_time"]
+                current["completion_time"] = t
+                current["remaining_time"] = 0
+                completed.append(current)
+                current = None
+                continue
             else:
-                # Re-add the job to the queue
-                job_queue.append(selected_job)
+                # Run until either next arrival or completion
+                delta = min(current["remaining_time"], max(1, next_arrival_t - t))
+                t += delta
+                current["remaining_time"] -= delta
+                if current["remaining_time"] == 0:
+                    current["completion_time"] = t
+                    completed.append(current)
+                    current = None
+                # Loop; new arrivals will be admitted at the updated t in the next iteration
+                continue
 
-        # Increment time
-        current_time += 1
+        # If nothing waiting, jump to next arrival
+        if i < total:
+            t = max(t, jobs[i]["arrival_time"])
+        else:
+            break
 
-    # Calculate metrics
-    total_flow_time = sum(job['completion_time'] - job['arrival_time'] for job in completed_jobs)
-    if total_jobs > 0:
-        avg_flow_time = total_flow_time / total_jobs
-        l2_norm_flow_time = (sum((job['completion_time'] - job['arrival_time']) ** 2 for job in completed_jobs)) ** 0.5
-    else:
-        avg_flow_time = 0
-        l2_norm_flow_time = 0
-
-    return avg_flow_time, l2_norm_flow_time
+    flows = [c["completion_time"] - c["arrival_time"] for c in completed]
+    n = len(flows)
+    if n == 0:
+        return 0.0, 0.0
+    avg_flow = sum(flows) / n
+    l2 = (sum(f * f for f in flows)) ** 0.5
+    return avg_flow, l2
 
 def main():
     """Main function to process all data"""
