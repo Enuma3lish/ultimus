@@ -7,9 +7,11 @@ import logging
 import read_jobs_from_csv as rjfc
 import csv
 import parse_avg30_filename as paf
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
-def process_avg_folders(algo,algo_name,data_dir, output_dir):
+
+def process_avg_folders(algo, algo_name, data_dir, output_dir):
     """Process all avg_30_*, avg_60_*, avg_90_* folders"""
     
     # Find all avg folders with version numbers
@@ -59,7 +61,8 @@ def process_avg_folders(algo,algo_name,data_dir, output_dir):
                     continue
                 
                 # Run Algorithm
-                _results = run.run(algo,jobs)
+                _results = run.run(algo, jobs)
+                
                 # Store results
                 if arrival_rate not in results_by_arrival_rate:
                     results_by_arrival_rate[arrival_rate] = []
@@ -73,14 +76,15 @@ def process_avg_folders(algo,algo_name,data_dir, output_dir):
             # Write results grouped by arrival_rate with version number
             for arrival_rate, results in results_by_arrival_rate.items():
                 if version:
-                    output_file = os.path.join(avg_result_dir, f"{int(arrival_rate)}_{algo_name}_{version}.csv")
+                    output_file = os.path.join(avg_result_dir, f"{int(arrival_rate)}_{algo_name}_{version}_result.csv")
                 else:
                     output_file = os.path.join(avg_result_dir, f"{int(arrival_rate)}_{algo_name}_result.csv")
                 
                 with open(output_file, 'w', newline='') as f:
                     writer = csv.writer(f)
                     
-                    header = ['arrival_rate', 'bp_parameter_L', 'bp_parameter_H']
+                    # Header format: arrival_rate,bp_parameter_L,bp_parameter_H,{algo_name}_L2_norm_flow_time
+                    header = ['arrival_rate', 'bp_parameter_L', 'bp_parameter_H', f'{algo_name}_L2_norm_flow_time']
                     writer.writerow(header)
                     
                     # Sort results by bp_L and bp_H for consistency
@@ -89,6 +93,7 @@ def process_avg_folders(algo,algo_name,data_dir, output_dir):
                     # Write data rows
                     for result in results:
                         row = [arrival_rate, result['bp_parameter_L'], result['bp_parameter_H']]
+                        # Put calculated L2 norm flow time under the corresponding column
                         value = result['results']
                         row.append(value if value is not None else '')
                         writer.writerow(row)

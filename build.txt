@@ -1,9 +1,0 @@
-CC=/usr/bin/gcc CXX=/usr/bin/g++ python3 -m nuitka BAL.py \
-    --standalone \
-    --follow-imports \
-    --output-dir=dist_bal \
-    --include-module=_json \
-    --python-flag=no_docstrings \
-    --python-flag=no_asserts \
-    --lto=yes \
-    --verbose

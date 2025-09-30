@@ -21,7 +21,7 @@ def Bal(jobs):
     - Selection:
         * If starving jobs exist: use select_starving_job_optimized (heap-backed).
         * Else: use SRPT selector (heap-backed) on (remaining_time, arrival_time, job_index).
-    Returns (avg_flow_time, l2_norm_flow_time).
+    Returns (avg_flow_time, l2_norm_flow_time,max_flow_time).
     """
     # Normalize jobs & index
     norm = [{"arrival_time": int(j["arrival_time"]), "job_size": int(j["job_size"]), "job_index": i}
@@ -30,7 +30,7 @@ def Bal(jobs):
 
     total_jobs = len(norm)
     if total_jobs == 0:
-        return 0.0, 0.0
+        return 0.0, 0.0,0.0
 
     starvation_threshold = total_jobs ** (2/3)
 
@@ -135,10 +135,11 @@ def Bal(jobs):
     flows = [c["completion_time"] - c["arrival_time"] for c in completed]
     n = len(flows)
     if n == 0:
-        return 0.0, 0.0
+        return 0.0, 0.0,0.0
     avg_flow = sum(flows) / n
     l2 = (sum(f * f for f in flows)) ** 0.5
-    return avg_flow, l2
+    max_flow = max(flows)
+    return avg_flow, l2, max_flow
 def extract_version_from_path(folder_path):
     """Extract version number (1-10) from folder path like 'avg_30_2' or 'freq_16_2'"""
     # Match patterns like avg_30_1, freq_16_2, softrandom_3, etc.
@@ -165,7 +166,7 @@ def read_jobs_from_csv(filepath):
         logger.error(f"Error reading {filepath}: {e}")
         return None
 
-def parse_avg30_filename(filename):
+def parse_avg_filename(filename):
     """Parse avg30 filename to extract arrival_rate, bp_L, and bp_H"""
     # Pattern: (arrival_rate, bp_L_bp_H).csv
     # Example: (20, 4.073_262144).csv or (28, 7.918_512).csv
@@ -188,12 +189,16 @@ def parse_freq_from_folder(folder_name):
 def run(jobs):
     #Create a deep copy to ensure each mode gets fresh job data
     jobs_copy = copy.deepcopy(jobs)
-    _, l2_norm_flow_time = Bal(jobs_copy)
+    _, l2_norm_flow_time ,_ = Bal(jobs_copy)
     logger.info(f"BAL: L2 norm = {l2_norm_flow_time:.4f}")
-    
     return l2_norm_flow_time
 
-def process_avg_folders(data_dir, output_dir):
+def run_random(jobs):
+    jobs_copy = copy.deepcopy(jobs)
+    _, l2_norm_flow_time, max_flow = Bal(jobs_copy)
+    logger.info(f"BAL: L2 norm = {l2_norm_flow_time:.4f}, maximum flow time = {max_flow:.4f}")
+    return l2_norm_flow_time, max_flow
+def process_avg_folders( data_dir, output_dir,algo_name="BAL"):
     """Process all avg_30_*, avg_60_*, avg_90_* folders"""
     
     # Find all avg folders with version numbers
@@ -229,7 +234,7 @@ def process_avg_folders(data_dir, output_dir):
             
             for csv_file in csv_files:
                 filename = os.path.basename(csv_file)
-                arrival_rate, bp_L, bp_H = parse_avg30_filename(filename)
+                arrival_rate, bp_L, bp_H = parse_avg_filename(filename)
                 
                 if arrival_rate is None:
                     logger.warning(f"Could not parse filename: {filename}")
@@ -242,7 +247,7 @@ def process_avg_folders(data_dir, output_dir):
                 if jobs is None:
                     continue
                 
-                # Run BAL
+                # Run Algorithm
                 _results = run(jobs)
                 
                 # Store results
@@ -258,14 +263,15 @@ def process_avg_folders(data_dir, output_dir):
             # Write results grouped by arrival_rate with version number
             for arrival_rate, results in results_by_arrival_rate.items():
                 if version:
-                    output_file = os.path.join(avg_result_dir, f"{int(arrival_rate)}_BAL_result_{version}.csv")
+                    output_file = os.path.join(avg_result_dir, f"{int(arrival_rate)}_{algo_name}_{version}_result.csv")
                 else:
-                    output_file = os.path.join(avg_result_dir, f"{int(arrival_rate)}_BAL_result.csv")
+                    output_file = os.path.join(avg_result_dir, f"{int(arrival_rate)}_{algo_name}_result.csv")
                 
                 with open(output_file, 'w', newline='') as f:
                     writer = csv.writer(f)
                     
-                    header = ['arrival_rate', 'bp_parameter_L', 'bp_parameter_H']
+                    # Header format: arrival_rate,bp_parameter_L,bp_parameter_H,{algo_name}_L2_norm_flow_time
+                    header = ['arrival_rate', 'bp_parameter_L', 'bp_parameter_H', f'{algo_name}_L2_norm_flow_time']
                     writer.writerow(header)
                     
                     # Sort results by bp_L and bp_H for consistency
@@ -274,12 +280,12 @@ def process_avg_folders(data_dir, output_dir):
                     # Write data rows
                     for result in results:
                         row = [arrival_rate, result['bp_parameter_L'], result['bp_parameter_H']]
+                        # Put calculated L2 norm flow time under the corresponding column
                         value = result['results']
                         row.append(value if value is not None else '')
                         writer.writerow(row)
                 
                 logger.info(f"  Saved results for arrival_rate={arrival_rate} to {output_file}")
-
 def process_random_folders(data_dir, output_dir):
     """Process all freq_* folders for random files"""
     
@@ -290,7 +296,7 @@ def process_random_folders(data_dir, output_dir):
     # Group results by version number
     results_by_version = {}
     
-    # Find all freq folders
+    # Find all freq folders (these should contain random_freq_*.csv files directly)
     freq_folders = glob.glob(os.path.join(data_dir, 'freq_*'))
     
     for freq_folder in sorted(freq_folders):
@@ -307,8 +313,12 @@ def process_random_folders(data_dir, output_dir):
         
         logger.info(f"Processing folder: {folder_name} (freq={frequency}, version={version})")
         
-        # Look for random_freq_*.csv files
+        # Look for random_freq_*.csv files DIRECTLY in this folder
         random_files = glob.glob(os.path.join(freq_folder, 'random_freq_*.csv'))
+        
+        if not random_files:
+            logger.warning(f"No random_freq_*.csv files found in {folder_name}")
+            continue
         
         for random_file in random_files:
             filename = os.path.basename(random_file)
@@ -317,10 +327,16 @@ def process_random_folders(data_dir, output_dir):
             # Read jobs
             jobs = read_jobs_from_csv(random_file)
             if jobs is None:
+                logger.warning(f"Failed to read jobs from {random_file}")
                 continue
             
-            # Run BAL
-            _results = run(jobs)
+            # Run algorithm and unpack results
+            try:
+                l2_results, max_flow_results = run_random(jobs)
+                logger.info(f"  Results: L2={l2_results:.4f}, Max Flow={max_flow_results:.4f}")
+            except Exception as e:
+                logger.error(f"Error processing {random_file}: {e}")
+                continue
             
             # Group results by version
             if version not in results_by_version:
@@ -328,7 +344,8 @@ def process_random_folders(data_dir, output_dir):
             
             results_by_version[version].append({
                 'frequency': frequency,
-                'results': _results
+                'l2_results': l2_results,
+                'max_flow_results': max_flow_results
             })
     
     # Write results grouped by version
@@ -339,11 +356,13 @@ def process_random_folders(data_dir, output_dir):
             else:
                 output_file = os.path.join(random_result_dir, f"random_result_BAL.csv")
             
+            logger.info(f"Writing {len(results)} results to {output_file}")
+            
             with open(output_file, 'w', newline='') as f:
                 writer = csv.writer(f)
                 
-                # Create header - FIXED format
-                header = ['frequency']
+                # Create header
+                header = ['frequency', 'BAL_L2_norm_flow_time', 'BAL_maximum_flow_time']
                 writer.writerow(header)
                 
                 # Sort by frequency
@@ -351,13 +370,16 @@ def process_random_folders(data_dir, output_dir):
                 
                 # Write data rows
                 for result in results:
-                    row = [result['frequency']]
-                    value = result['results']
-                    row.append(value if value is not None else '')
+                    row = [
+                        result['frequency'],
+                        result['l2_results'] if result['l2_results'] is not None else '',
+                        result['max_flow_results'] if result['max_flow_results'] is not None else ''
+                    ]
                     writer.writerow(row)
+                    logger.debug(f"  Wrote row: {row}")
             
-            logger.info(f"  Saved random results (version {version}) to {output_file}")
-
+            logger.info(f"Successfully saved random results (version {version}) to {output_file}")
+            
 def process_softrandom_folders(data_dir, output_dir):
     """Process all softrandom_* folders"""
     
@@ -408,8 +430,8 @@ def process_softrandom_folders(data_dir, output_dir):
                 if jobs is None:
                     continue
                 
-                # Run BAL
-                _results = run(jobs)
+                # FIXED: Unpack both L2 norm and maximum flow time results
+                l2_results, max_flow_results = run_random(jobs)
                 
                 # Group results by version
                 if base_version not in results_by_version:
@@ -417,7 +439,8 @@ def process_softrandom_folders(data_dir, output_dir):
                 
                 results_by_version[base_version].append({
                     'frequency': frequency,
-                    'results':_results
+                    'l2_results': l2_results,           # Store L2 norm separately
+                    'max_flow_results': max_flow_results # Store max flow time separately
                 })
     
     # Write results grouped by version
@@ -432,17 +455,24 @@ def process_softrandom_folders(data_dir, output_dir):
                 writer = csv.writer(f)
                 
                 # Create header - FIXED format
-                header = ['frequency']
+                header = ['frequency', 'BAL_L2_norm_flow_time', 'BAL_maximum_flow_time']
                 writer.writerow(header)
                 
                 # Sort by frequency
                 results.sort(key=lambda x: x['frequency'])
                 
-                # Write data rows
+                # FIXED: Write both L2 norm and max flow time values
                 for result in results:
                     row = [result['frequency']]
-                    value = result['results']
-                    row.append(value if value is not None else '')
+                    
+                    # Add L2 norm value
+                    l2_value = result['l2_results']
+                    row.append(l2_value if l2_value is not None else '')
+                    
+                    # Add max flow time value
+                    max_value = result['max_flow_results']
+                    row.append(max_value if max_value is not None else '')
+                    
                     writer.writerow(row)
             
             logger.info(f"  Saved softrandom results (version {version}) to {output_file}")
@@ -463,9 +493,9 @@ def main():
     # Create main output directory
     os.makedirs(output_dir, exist_ok=True)
     
-    # Process avg30 files
+    # Process avg files
     logger.info("\n" + "="*40)
-    logger.info("Processing avg_30 files...")
+    logger.info("Processing avg_30, avg_60, avg_90 files...")
     logger.info("="*40)
     process_avg_folders(data_dir, output_dir)
     

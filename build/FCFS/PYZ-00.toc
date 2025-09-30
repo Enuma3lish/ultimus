@@ -155,6 +155,7 @@
    '/home/melowu/Work/ultimus/read_jobs_from_csv.py',
    'PYMODULE'),
   ('run', '/home/melowu/Work/ultimus/run.py', 'PYMODULE'),
+  ('run_random', '/home/melowu/Work/ultimus/run_random.py', 'PYMODULE'),
   ('selectors', '/usr/lib/python3.13/selectors.py', 'PYMODULE'),
   ('shutil', '/usr/lib/python3.13/shutil.py', 'PYMODULE'),
   ('signal', '/usr/lib/python3.13/signal.py', 'PYMODULE'),

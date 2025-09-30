@@ -96,11 +96,11 @@ def job_init(num_jobs, avg_inter_arrival_time, xmin, xmax):
 def random_job_init(num_jobs, coherence_time=1):
     """
     Create jobs with randomly selected parameters that properly simulate an online scenario
-    where both bounded Pareto parameters and inter-arrival times change after coherence_time jobs.
+    where both bounded Pareto parameters and inter-arrival times change after coherence_time units of time.
     
     Parameters:
     num_jobs (int): Number of jobs to generate
-    coherence_time (int): Number of jobs to use the same parameter set before potentially changing
+    coherence_time (int): Time units after which parameters may change
     """
     samples = []
     all_parameters = []
@@ -111,15 +111,15 @@ def random_job_init(num_jobs, coherence_time=1):
     current_param = random.choice(all_parameters)
     current_avg_inter_arrival = random.choice(inter_arrival_time)
     current_time = 0
-    jobs_with_current_param = 0
+    last_change_time = 0  # Track when parameters were last changed
     
     # Generate jobs one by one in an online manner
     for _ in range(num_jobs):
-        # Check if we need to change the parameter set and inter-arrival time
-        if jobs_with_current_param >= coherence_time:
+        # Check if we need to change the parameter set and inter-arrival time based on elapsed time
+        if current_time - last_change_time >= coherence_time:
             current_param = random.choice(all_parameters)
             current_avg_inter_arrival = random.choice(inter_arrival_time)
-            jobs_with_current_param = 0
+            last_change_time = current_time  # Update the last change time
         
         # Get bounds from current parameter set
         xmin, xmax = current_param["L"], current_param["H"]
@@ -134,9 +134,6 @@ def random_job_init(num_jobs, coherence_time=1):
         
         # Add job to samples
         samples.append({"arrival_time": current_time, "job_size": job_size})
-        
-        # Increment counter for jobs with current param
-        jobs_with_current_param += 1
     
     return samples
 
@@ -145,7 +142,7 @@ def soft_random_job_init(num_jobs, coherence_time=1):
     Create jobs with soft randomness in an online manner.
     First chooses a parameter set family (30, 60, 90) randomly, then smoothly transitions
     between parameters within that family using probabilistic rules.
-    Inter-arrival times are also randomly selected and change every coherence_time jobs.
+    Inter-arrival times are also randomly selected and change every coherence_time units of time.
     
     Transition Rules:
     - First parameter (highest L): 1/2 to move to next index (lower L), 1/2 to stay
@@ -154,7 +151,7 @@ def soft_random_job_init(num_jobs, coherence_time=1):
     
     Parameters:
     num_jobs (int): Number of jobs to generate
-    coherence_time (int): Number of jobs before potentially selecting new parameters
+    coherence_time (int): Time units after which parameters may change
     """
     samples = []
     param_set_keys = list(parameter_sets.keys())  # ["avg_30", "avg_60", "avg_90"]
@@ -170,12 +167,12 @@ def soft_random_job_init(num_jobs, coherence_time=1):
     current_avg_inter_arrival = random.choice(inter_arrival_time)
     
     current_time = 0
-    jobs_since_last_change = 0  # Counter for jobs since last parameter change
+    last_change_time = 0  # Track when parameters were last changed
     
     # Generate jobs one by one in an online manner
     for _ in range(num_jobs):
-        # Check if we need to potentially change the parameter within the same family and inter-arrival time
-        if jobs_since_last_change >= coherence_time:
+        # Check if we need to potentially change the parameter within the same family and inter-arrival time based on elapsed time
+        if current_time - last_change_time >= coherence_time:
             num_params = len(current_param_set)
             
             # Apply smooth transition rules based on current position
@@ -207,8 +204,8 @@ def soft_random_job_init(num_jobs, coherence_time=1):
             # Randomly select new inter-arrival time
             current_avg_inter_arrival = random.choice(inter_arrival_time)
             
-            # Reset job counter
-            jobs_since_last_change = 0
+            # Reset time tracker
+            last_change_time = current_time
         
         # Get bounds from current parameter
         current_param = current_param_set[current_param_index]
@@ -224,9 +221,6 @@ def soft_random_job_init(num_jobs, coherence_time=1):
         
         # Add job to samples
         samples.append({"arrival_time": current_time, "job_size": job_size})
-        
-        # Increment job counter
-        jobs_since_last_change += 1
     
     return samples
 
@@ -282,4 +276,4 @@ def Save_file(num_jobs, i):
 
 if __name__ == "__main__":
     for i in range(1, 11):
-        Save_file(10000, i)
+        Save_file(20000, i)

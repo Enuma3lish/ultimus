@@ -5,10 +5,12 @@ import parse_freq_from_folder as pfff
 import read_jobs_from_csv as rjfc
 import csv
 import logging
-import run 
+import run_random 
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
-def process_softrandom_folders(algo,algo_name,data_dir, output_dir):
+
+def process_softrandom_folders(algo, algo_name, data_dir, output_dir):
     """Process all softrandom_* folders"""
     
     # Create output directory
@@ -59,14 +61,22 @@ def process_softrandom_folders(algo,algo_name,data_dir, output_dir):
                     continue
                 
                 # Run algorithm
-                _results = run.run(algo,jobs)
+                try:
+                    l2_results, max_flow_results = run_random.run_random(algo, jobs)
+                    logger.info(f"  Results: L2={l2_results:.4f}, Max Flow={max_flow_results:.4f}")
+                except Exception as e:
+                    logger.error(f"Error processing {softrandom_file}: {e}")  # FIXED: variable name
+                    continue
+                
                 # Group results by version
                 if base_version not in results_by_version:
                     results_by_version[base_version] = []
                 
+                # FIXED: Use base_version instead of version
                 results_by_version[base_version].append({
                     'frequency': frequency,
-                    'results':_results
+                    'l2_results': l2_results,
+                    'max_flow_results': max_flow_results
                 })
     
     # Write results grouped by version
@@ -77,11 +87,13 @@ def process_softrandom_folders(algo,algo_name,data_dir, output_dir):
             else:
                 output_file = os.path.join(softrandom_result_dir, f"softrandom_result_{algo_name}.csv")
             
+            logger.info(f"Writing {len(results)} results to {output_file}")  # Added logging
+            
             with open(output_file, 'w', newline='') as f:
                 writer = csv.writer(f)
                 
-                # Create header - FIXED format
-                header = ['frequency']
+                # Header format: frequency,{algo_name}_L2_norm_flow_time,{algo_name}_maximum_flow_time'
+                header = ['frequency', f'{algo_name}_L2_norm_flow_time', f'{algo_name}_maximum_flow_time']
                 writer.writerow(header)
                 
                 # Sort by frequency
@@ -89,9 +101,12 @@ def process_softrandom_folders(algo,algo_name,data_dir, output_dir):
                 
                 # Write data rows
                 for result in results:
-                    row = [result['frequency']]
-                    value = result['results']
-                    row.append(value if value is not None else '')
+                    row = [
+                        result['frequency'],
+                        result['l2_results'] if result['l2_results'] is not None else '',
+                        result['max_flow_results'] if result['max_flow_results'] is not None else ''
+                    ]
                     writer.writerow(row)
+                    logger.debug(f"  Wrote row: {row}")
             
             logger.info(f"  Saved softrandom results (version {version}) to {output_file}")

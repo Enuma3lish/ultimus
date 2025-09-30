@@ -87,10 +87,11 @@ def Fcfs(jobs):
     flows = [c["completion_time"] - c["arrival_time"] for c in completed]
     n = len(flows)
     if n == 0:
-        return 0.0, 0.0
+        return 0.0, 0.0,0.0
     avg_flow = sum(flows) / n
     l2 = (sum(f * f for f in flows)) ** 0.5
-    return avg_flow, l2
+    max_flow = max(flows)
+    return avg_flow, l2, max_flow
 
 def main():
     """Main function to process all data"""

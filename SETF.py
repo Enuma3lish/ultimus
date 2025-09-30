@@ -14,7 +14,7 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-def Setf(jobs: Union[List[Tuple[float, float]], List[Dict]]) -> Tuple[float, float]:
+def Setf(jobs: Union[List[Tuple[float, float]], List[Dict]]) -> Tuple[float, float,float]:
     """
     Shortest Elapsed Time First (SETF) scheduling algorithm
     
@@ -23,7 +23,7 @@ def Setf(jobs: Union[List[Tuple[float, float]], List[Dict]]) -> Tuple[float, flo
               or as dictionaries {'arrival_time': float, 'job_size': float}
     
     Returns:
-        Tuple of (average_flow_time, l2_norm_flow_time)
+        Tuple of (average_flow_time, l2_norm_flow_time, maximum_flow_time)
     """
     # Convert dictionary format to tuple format if needed
     if jobs and isinstance(jobs[0], dict):
@@ -41,7 +41,8 @@ def Setf(jobs: Union[List[Tuple[float, float]], List[Dict]]) -> Tuple[float, flo
     sorted_jobs = sorted(jobs, key=lambda x: x[0])
     n_jobs = len(sorted_jobs)
     job_pointer = 0
-    
+    flow_list =[]
+    max_flow =0.0
     while job_pointer < n_jobs or selector.has_active_jobs():
         # 1. Determine next event time
         next_arrival = sorted_jobs[job_pointer][0] if job_pointer < n_jobs else float('inf')
@@ -72,6 +73,7 @@ def Setf(jobs: Union[List[Tuple[float, float]], List[Dict]]) -> Tuple[float, flo
         # 5. Check if job completed
         if selector.is_job_completed(job_id, size):
             flow_time = current_time - arrival_time
+            flow_list.append(flow_time)
             total_flow_time += flow_time
             squared_flow_time += flow_time * flow_time
             completed_jobs += 1
@@ -84,12 +86,12 @@ def Setf(jobs: Union[List[Tuple[float, float]], List[Dict]]) -> Tuple[float, flo
             job_pointer += 1
     
     if completed_jobs == 0:
-        return 0.0, 0.0
+        return 0.0, 0.0,0.0
         
     average_flow_time = total_flow_time / completed_jobs
     l2_norm_flow_time = sqrt(squared_flow_time)
-    
-    return average_flow_time, l2_norm_flow_time
+    max_flow = max(flow_list)
+    return average_flow_time, l2_norm_flow_time,max_flow
 
 def main():
     """Main function to process all data"""

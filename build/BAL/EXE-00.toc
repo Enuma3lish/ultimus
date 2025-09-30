@@ -90,7 +90,7 @@
  [],
  False,
  False,
- 1758530858,
+ 1758982300,
  [('run',
    '/home/melowu/Work/ultimus/.venv/lib/python3.13/site-packages/PyInstaller/bootloader/Linux-64bit-intel/run',
    'EXECUTABLE')],

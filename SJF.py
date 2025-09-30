@@ -21,7 +21,7 @@ def Sjf(jobs):
              If dicts: [{'arrival_time': int, 'job_size': int}, ...]
     
     Returns:
-        Tuple of (average_flow_time, l2_norm_flow_time)
+        Tuple of (average_flow_time, l2_norm_flow_time,maximum_flow_time')
     """
     # Convert dictionary format to list format if needed
     if jobs and isinstance(jobs[0], dict):
@@ -33,7 +33,7 @@ def Sjf(jobs):
     waiting_time = []
     job_logs = []
     jobs_queue = []
-    
+    max_flow =0.0
     while jobs or jobs_queue:
         # Add jobs to the queue if they have arrived
         while jobs and jobs[0][0] <= time:
@@ -63,11 +63,12 @@ def Sjf(jobs):
     # Calculate average flow time
     total_flow_time = sum(waiting_time)
     avg_flow_time = total_flow_time / len(waiting_time) if waiting_time else 0
+    max_flow = max(waiting_time)
     
     # Calculate L2 norm of flow time
     l2_norm_flow_time = (sum(f ** 2 for f in waiting_time)) ** 0.5
     
-    return avg_flow_time, l2_norm_flow_time
+    return avg_flow_time, l2_norm_flow_time, max_flow
 
 def main():
     """Main function to process all data"""

@@ -12,12 +12,12 @@ import process_softrandom_folders as psf
 import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
-def Srpt(jobs):
+def SRPT(jobs):
     """
     Optimized preemptive SRPT:
     - Event-driven time advance: run until next arrival or completion (min step).
     - Selection uses srpt_select_next_job (heap-backed) on dict views of waiting queue.
-    - Returns (avg_flow_time, l2_norm_flow_time).
+    - Returns (avg_flow_time, l2_norm_flow_time, maximum flow time).
     """
     # Normalize & index
     jobs = [{"arrival_time": int(j["arrival_time"]), "job_size": int(j["job_size"]), "job_index": i} 
@@ -26,7 +26,7 @@ def Srpt(jobs):
 
     total = len(jobs)
     if total == 0:
-        return 0.0, 0.0
+        return 0.0, 0.0,0.0
 
     t = 0
     i = 0
@@ -103,10 +103,11 @@ def Srpt(jobs):
     flows = [c["completion_time"] - c["arrival_time"] for c in completed]
     n = len(flows)
     if n == 0:
-        return 0.0, 0.0
+        return 0.0, 0.0,0.0
     avg_flow = sum(flows) / n
+    max_flow = max(flows)
     l2 = (sum(f * f for f in flows)) ** 0.5
-    return avg_flow, l2
+    return avg_flow, l2, max_flow
 
 def main():
     """Main function to process all data"""
@@ -127,19 +128,19 @@ def main():
     logger.info("\n" + "="*40)
     logger.info("Processing avg_30 files...")
     logger.info("="*40)
-    paf.process_avg_folders(Srpt,'SRPT',data_dir, output_dir)
+    paf.process_avg_folders(SRPT,'SRPT',data_dir, output_dir)
     
     # Process random files
     logger.info("\n" + "="*40)
     logger.info("Processing random files...")
     logger.info("="*40)
-    prf.process_random_folders(Srpt,'SRPT',data_dir, output_dir)
+    prf.process_random_folders(SRPT,'SRPT',data_dir, output_dir)
     
     # Process softrandom files
     logger.info("\n" + "="*40)
     logger.info("Processing softrandom files...")
     logger.info("="*40)
-    psf.process_softrandom_folders(Srpt,'SRPT',data_dir, output_dir)
+    psf.process_softrandom_folders(SRPT,'SRPT',data_dir, output_dir)
     
     logger.info("\n" + "="*60)
     logger.info("SRPT batch processing completed successfully!")

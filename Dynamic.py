@@ -8,14 +8,14 @@ from SRPT_Selector import select_next_job_optimized as srpt_select_next_job
 from FCFS_Selector import select_next_job_optimized as fcfs_select_next_job
 import logging
 from typing import List, Dict, Tuple, Optional
-
+from multiprocessing import Pool, cpu_count,freeze_support
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 # -----------------------------
 # Optimized, API-compatible SRPT
 # -----------------------------
-def Srpt(jobs: List[Dict]) -> Tuple[float, float]:
+def Srpt(jobs: List[Dict]) -> Tuple[float, float,float]:
     """
     Optimized SRPT simulator (same I/O, same results).
     - Event-driven time advance: run until next arrival or completion (min step).
@@ -23,7 +23,7 @@ def Srpt(jobs: List[Dict]) -> Tuple[float, float]:
     - Keeps selectors and outputs identical to the old version.
     """
     if not jobs:
-        return 0.0, 0.0
+        return 0.0, 0.0,0.0
 
     # Assign job indices (stable and explicit)
     for idx, job in enumerate(jobs):
@@ -106,6 +106,7 @@ def Srpt(jobs: List[Dict]) -> Tuple[float, float]:
 
     # Metrics (identical to old version)
     total_flow_time = sum(job['completion_time'] - job['arrival_time'] for job in completed_jobs)
+    max_flow = max(job['completion_time'] - job['arrival_time'] for job in completed_jobs)
     if total_jobs > 0:
         avg_flow_time = total_flow_time / total_jobs
         l2_norm_flow_time = math.sqrt(sum((job['completion_time'] - job['arrival_time']) ** 2 for job in completed_jobs))
@@ -113,20 +114,20 @@ def Srpt(jobs: List[Dict]) -> Tuple[float, float]:
         avg_flow_time = 0
         l2_norm_flow_time = 0
 
-    return avg_flow_time, l2_norm_flow_time
+    return avg_flow_time, l2_norm_flow_time,max_flow
 
 
 # -----------------------------
 # Optimized, API-compatible FCFS
 # -----------------------------
-def Fcfs(jobs: List[Dict]) -> Tuple[float, float]:
+def Fcfs(jobs: List[Dict]) -> Tuple[float, float,float]:
     """
     Optimized FCFS simulator (same I/O, same results):
     - Event-driven; non-preemptive job runs to completion.
     - Avoid per-tick loops; admit arrivals in batches.
     """
     if not jobs:
-        return 0.0, 0.0
+        return 0.0, 0.0,0.0
 
     # Assign job indices
     for idx, job in enumerate(jobs):
@@ -192,6 +193,7 @@ def Fcfs(jobs: List[Dict]) -> Tuple[float, float]:
             break
 
     total_flow_time = sum(job['completion_time'] - job['arrival_time'] for job in completed_jobs)
+    max_flow = max(job['completion_time'] - job['arrival_time'] for job in completed_jobs)
     if total_jobs > 0:
         avg_flow_time = total_flow_time / total_jobs
         l2_norm_flow_time = (sum((job['completion_time'] - job['arrival_time']) ** 2 for job in completed_jobs))**0.5
@@ -199,7 +201,7 @@ def Fcfs(jobs: List[Dict]) -> Tuple[float, float]:
         avg_flow_time = 0
         l2_norm_flow_time = 0
 
-    return avg_flow_time, l2_norm_flow_time
+    return avg_flow_time, l2_norm_flow_time, max_flow
 
 
 # ----------------------------------
@@ -229,7 +231,7 @@ def save_analysis_results(input_file_path, nJobsPerRound, mode, algorithm_histor
     avg_type = avg_type_match.group(1)
     
     # Parse filename to get arrival_rate and other parameters
-    arrival_rate, bp_L, bp_H = parse_avg30_filename(filename)
+    arrival_rate, bp_L, bp_H = parse_avg_filename(filename)
     if arrival_rate is None:
         return
     
@@ -294,7 +296,7 @@ def save_round_details(input_file_path, nJobsPerRound, mode, algorithm_history, 
     avg_type = avg_type_match.group(1)
     
     # Parse filename to get parameters
-    arrival_rate, bp_L, bp_H = parse_avg30_filename(filename)
+    arrival_rate, bp_L, bp_H = parse_avg_filename(filename)
     if arrival_rate is None:
         return
     
@@ -330,6 +332,7 @@ def DYNAMIC(jobs, nJobsPerRound = 100, mode=1, input_file_name=None):
     Mode 4: Use jobs from 8 previous rounds (requires current round >= 9)
     Mode 5: Use jobs from 16 previous rounds (requires current round >= 17)
     Mode 6: Use all jobs from round 1 to current round-1
+    Mode 7: At round n: Re-execute the most recent ceil(0.5 * total_jobs) jobs
     
     If current round doesn't meet mode requirements, fallback to mode 1
     
@@ -434,10 +437,13 @@ def DYNAMIC(jobs, nJobsPerRound = 100, mode=1, input_file_name=None):
                     elif effective_mode == 6:
                         for r in round_jobs_history:
                             jobs_to_simulate.extend(r)
+                    elif effective_mode == 7:
+                        for r in round_jobs_history[-math.ceil(current_round*0.5):]:
+                            jobs_to_simulate.extend(r)
                     
                     # Run SRPT and FCFS on the collected jobs
-                    srpt_avg, srpt_l2 = Srpt([{'arrival_time': j['arrival_time'], 'job_size': j['job_size']} for j in jobs_to_simulate])
-                    fcfs_avg, fcfs_l2 = Fcfs([{'arrival_time': j['arrival_time'], 'job_size': j['job_size']} for j in jobs_to_simulate])
+                    srpt_avg, srpt_l2,max_flow_srpt = Srpt([{'arrival_time': j['arrival_time'], 'job_size': j['job_size']} for j in jobs_to_simulate])
+                    fcfs_avg, fcfs_l2,max_flow_fcfs = Fcfs([{'arrival_time': j['arrival_time'], 'job_size': j['job_size']} for j in jobs_to_simulate])
                          
                     # Choose algorithm based on L2 norm comparison
                     is_srpt_better = srpt_l2 <= fcfs_l2
@@ -512,18 +518,20 @@ def DYNAMIC(jobs, nJobsPerRound = 100, mode=1, input_file_name=None):
 
     # Metrics
     total_flow_time = sum(job['completion_time'] - job['arrival_time'] for job in completed_jobs)
+    max_flow = max(job['completion_time'] - job['arrival_time'] for job in completed_jobs)
     if total_jobs > 0:
         avg_flow_time = total_flow_time / total_jobs
         l2_norm_flow_time = math.sqrt(sum((job['completion_time'] - job['arrival_time']) ** 2 for job in completed_jobs))
     else:
         avg_flow_time = 0
         l2_norm_flow_time = 0
+        max_flow = 0
     
     # Save analysis for avg_* files only
     if input_file_name:
         save_analysis_results(input_file_name, nJobsPerRound, mode, algorithm_history, current_round - 1)
 
-    return avg_flow_time, l2_norm_flow_time
+    return avg_flow_time, l2_norm_flow_time, max_flow
 
 
 # -----------------------------
@@ -555,8 +563,8 @@ def read_jobs_from_csv(filepath):
         logger.error(f"Error reading {filepath}: {e}")
         return None
 
-def parse_avg30_filename(filename):
-    """Parse avg30 filename to extract arrival_rate, bp_L, and bp_H"""
+def parse_avg_filename(filename):
+    """Parse avg filename to extract arrival_rate, bp_L, and bp_H"""
     pattern = r'\((\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)_(\d+)\)'
     match = re.search(pattern, filename)
     if match:
@@ -573,29 +581,56 @@ def parse_freq_from_folder(folder_name):
     if match:
         return int(match.group(1))
     return None
-
-def run_all_modes_for_file(jobs, nJobsPerRound, input_file_path=None):
-    """Run all 6 modes for a given job set and return results"""
+def run_all_modes_for_file_normal(jobs, nJobsPerRound, input_file_path=None):
+    """Run all 7 modes for NORMAL cases - ONLY return L2 norm results"""
     mode_results = {}
     
-    for mode in range(1, 7):
+    for mode in range(1, 8):
         try:
-            # Create a shallow copy list for each run
             jobs_copy = [{'arrival_time': j['arrival_time'], 'job_size': j['job_size']} for j in jobs]
-            avg_flow_time, l2_norm_flow_time = DYNAMIC(
+            result = DYNAMIC(
                 jobs_copy,
                 nJobsPerRound=nJobsPerRound,
                 mode=mode,
                 input_file_name=input_file_path
             )
+            
+            # Handle both old and new return formats
+            if len(result) == 3:
+                _, l2_norm_flow_time, _ = result  # Ignore max flow time
+            else:
+                _, l2_norm_flow_time = result
+                
             mode_results[mode] = l2_norm_flow_time
             logger.info(f"    Mode {mode}: L2 norm = {l2_norm_flow_time:.4f}")
         except Exception as e:
             logger.error(f"    Error in mode {mode}: {e}")
             mode_results[mode] = None
     
-    return mode_results
-
+    return mode_results  # Returns dictionary, not tuple
+def run_all_modes_for_file_frequency(jobs, nJobsPerRound, input_file_path=None):
+    """Run all 6 modes for a given job set and return results with max flow time"""
+    mode_results = {}
+    max_flow_results = {}  # NEW: Track max flow time results
+    
+    for mode in range(1, 8):
+        try:
+            jobs_copy = [{'arrival_time': j['arrival_time'], 'job_size': j['job_size']} for j in jobs]
+            avg_flow_time, l2_norm_flow_time, max_flow_time = DYNAMIC(  # CHANGED: Capture third value
+                jobs_copy,
+                nJobsPerRound=nJobsPerRound,
+                mode=mode,
+                input_file_name=input_file_path
+            )
+            mode_results[mode] = l2_norm_flow_time
+            max_flow_results[mode] = max_flow_time  # NEW: Store max flow time
+            logger.info(f"    Mode {mode}: L2 norm = {l2_norm_flow_time:.4f}, Max flow = {max_flow_time:.4f}")
+        except Exception as e:
+            logger.error(f"    Error in mode {mode}: {e}")
+            mode_results[mode] = None
+            max_flow_results[mode] = None
+    
+    return mode_results, max_flow_results
 def process_avg_folders(data_dir, output_dir, nJobsPerRound):
     """Process all avg_30_*, avg_60_*, avg_90_* folders"""
     
@@ -632,7 +667,7 @@ def process_avg_folders(data_dir, output_dir, nJobsPerRound):
             
             for csv_file in csv_files:
                 filename = os.path.basename(csv_file)
-                arrival_rate, bp_L, bp_H = parse_avg30_filename(filename)
+                arrival_rate, bp_L, bp_H = parse_avg_filename(filename)
                 
                 if arrival_rate is None:
                     logger.warning(f"Could not parse filename: {filename}")
@@ -646,7 +681,7 @@ def process_avg_folders(data_dir, output_dir, nJobsPerRound):
                     continue
                 
                 # Run all 6 modes
-                mode_results = run_all_modes_for_file(jobs, nJobsPerRound, csv_file)
+                mode_results = run_all_modes_for_file_normal(jobs, nJobsPerRound, csv_file)
                 
                 # Store results
                 if arrival_rate not in results_by_arrival_rate:
@@ -670,7 +705,7 @@ def process_avg_folders(data_dir, output_dir, nJobsPerRound):
                     
                     # Create header with all mode columns
                     header = ['arrival_rate', 'bp_parameter_L', 'bp_parameter_H']
-                    for mode in range(1, 7):
+                    for mode in range(1, 8):
                         header.append(f'Dynamic_njobs{nJobsPerRound}_mode{mode}_L2_norm_flow_time')
                     writer.writerow(header)
                     
@@ -680,7 +715,7 @@ def process_avg_folders(data_dir, output_dir, nJobsPerRound):
                     # Write data rows
                     for result in results:
                         row = [arrival_rate, result['bp_parameter_L'], result['bp_parameter_H']]
-                        for mode in range(1, 7):
+                        for mode in range(1, 8):
                             value = result['mode_results'].get(mode, '')
                             row.append(value if value is not None else '')
                         writer.writerow(row)
@@ -726,8 +761,8 @@ def process_random_folders(data_dir, output_dir, nJobsPerRound):
             if jobs is None:
                 continue
             
-            # Run all 6 modes (no analysis needed for random files)
-            mode_results = run_all_modes_for_file(jobs, nJobsPerRound, None)
+            # FIXED: Properly unpack the tuple returned by frequency function
+            mode_results, max_flow_results = run_all_modes_for_file_frequency(jobs, nJobsPerRound, None)
             
             # Group results by version
             if version not in results_by_version:
@@ -735,7 +770,8 @@ def process_random_folders(data_dir, output_dir, nJobsPerRound):
             
             results_by_version[version].append({
                 'frequency': frequency,
-                'mode_results': mode_results
+                'mode_results': mode_results,        # This is now properly unpacked as a dictionary
+                'max_flow_results': max_flow_results # This is now properly unpacked as a dictionary
             })
     
     # Write results grouped by version
@@ -749,10 +785,12 @@ def process_random_folders(data_dir, output_dir, nJobsPerRound):
             with open(output_file, 'w', newline='') as f:
                 writer = csv.writer(f)
                 
-                # Create header
+                # Create header with both L2 norm and max flow time
                 header = ['frequency']
-                for mode in range(1, 7):
+                for mode in range(1, 8):
                     header.append(f'Dynamic_njobs{nJobsPerRound}_mode{mode}_L2_norm_flow_time')
+                for mode in range(1, 8):
+                    header.append(f'Dynamic_njobs{nJobsPerRound}_mode{mode}_max_flow_time')
                 writer.writerow(header)
                 
                 # Sort by frequency
@@ -761,8 +799,13 @@ def process_random_folders(data_dir, output_dir, nJobsPerRound):
                 # Write data rows
                 for result in results:
                     row = [result['frequency']]
-                    for mode in range(1, 7):
-                        value = result['mode_results'].get(mode, '')
+                    # Add L2 norm values
+                    for mode in range(1, 8):
+                        value = result['mode_results'].get(mode, '')  # This now works because mode_results is a dict
+                        row.append(value if value is not None else '')
+                    # Add max flow time values
+                    for mode in range(1, 8):
+                        value = result['max_flow_results'].get(mode, '')  # This now works because max_flow_results is a dict
                         row.append(value if value is not None else '')
                     writer.writerow(row)
             
@@ -818,8 +861,8 @@ def process_softrandom_folders(data_dir, output_dir, nJobsPerRound):
                 if jobs is None:
                     continue
                 
-                # Run all 6 modes (no analysis needed for softrandom files)
-                mode_results = run_all_modes_for_file(jobs, nJobsPerRound, None)
+                # FIXED: Properly unpack the tuple returned by frequency function
+                mode_results, max_flow_results = run_all_modes_for_file_frequency(jobs, nJobsPerRound, None)
                 
                 # Group results by version
                 if base_version not in results_by_version:
@@ -827,9 +870,9 @@ def process_softrandom_folders(data_dir, output_dir, nJobsPerRound):
                 
                 results_by_version[base_version].append({
                     'frequency': frequency,
-                    'mode_results': mode_results
+                    'mode_results': mode_results,        # This is now properly unpacked as a dictionary
+                    'max_flow_results': max_flow_results # This is now properly unpacked as a dictionary
                 })
-    
     # Write results grouped by version
     for version, results in results_by_version.items():
         if results:
@@ -841,10 +884,12 @@ def process_softrandom_folders(data_dir, output_dir, nJobsPerRound):
             with open(output_file, 'w', newline='') as f:
                 writer = csv.writer(f)
                 
-                # Create header
+                # Create header with both L2 norm and max flow time
                 header = ['frequency']
-                for mode in range(1, 7):
+                for mode in range(1, 8):
                     header.append(f'Dynamic_njobs{nJobsPerRound}_mode{mode}_L2_norm_flow_time')
+                for mode in range(1, 8):
+                    header.append(f'Dynamic_njobs{nJobsPerRound}_mode{mode}_max_flow_time')
                 writer.writerow(header)
                 
                 # Sort by frequency
@@ -853,53 +898,71 @@ def process_softrandom_folders(data_dir, output_dir, nJobsPerRound):
                 # Write data rows
                 for result in results:
                     row = [result['frequency']]
-                    for mode in range(1, 7):
-                        value = result['mode_results'].get(mode, '')
+                    # Add L2 norm values
+                    for mode in range(1, 8):
+                        value = result['mode_results'].get(mode, '')  # This now works because mode_results is a dict
+                        row.append(value if value is not None else '')
+                    # Add max flow time values
+                    for mode in range(1, 8):
+                        value = result['max_flow_results'].get(mode, '')  # This now works because max_flow_results is a dict
                         row.append(value if value is not None else '')
                     writer.writerow(row)
             
             logger.info(f"  Saved softrandom results (version {version}) to {output_file}")
 
 def main():
-    """Main function to process all data"""
-    
     # Configuration
-    data_dir = 'data'  # Base directory containing all folders
-    output_dir = 'Dynamic_result'  # Output directory for results
-    nJobsPerRound = 100  # Adjust as needed
+    data_dir = 'data'
+    output_dir = 'Dynamic_result'
+    nJobsPerRound = 100
+    
+    # Configure logging for multiprocessing
+    logging.basicConfig(
+        level=logging.INFO, 
+        format='%(asctime)s - %(processName)s - %(levelname)s - %(message)s'
+    )
     
     logger.info("="*60)
-    logger.info(f"Starting batch processing with settings:")
+    logger.info(f"Starting batch processing with multiprocessing")
     logger.info(f"  Data directory: {data_dir}")
     logger.info(f"  Output directory: {output_dir}")
     logger.info(f"  nJobsPerRound: {nJobsPerRound}")
-    logger.info(f"  Running all modes (1-6) for each file")
+    logger.info(f"  Available CPU cores: {cpu_count()}")
     logger.info("="*60)
     
     # Create main output directory
     os.makedirs(output_dir, exist_ok=True)
     
-    # Process avg folders
-    logger.info("\n" + "="*40)
-    logger.info("Processing avg folders...")
-    logger.info("="*40)
-    process_avg_folders(data_dir, output_dir, nJobsPerRound)
-    
-    # Process random files
-    logger.info("\n" + "="*40)
-    logger.info("Processing random files...")
-    logger.info("="*40)
-    process_random_folders(data_dir, output_dir, nJobsPerRound)
-    
-    # Process softrandom files
-    logger.info("\n" + "="*40)
-    logger.info("Processing softrandom files...")
-    logger.info("="*40)
-    process_softrandom_folders(data_dir, output_dir, nJobsPerRound)
+    # Create a pool with 3 workers (one for each task)
+    with Pool(processes=min(3, cpu_count())) as pool:
+        # Submit all three tasks asynchronously
+        avg_result = pool.apply_async(
+            process_avg_folders, 
+            args=(data_dir, output_dir, nJobsPerRound)
+        )
+        random_result = pool.apply_async(
+            process_random_folders, 
+            args=(data_dir, output_dir, nJobsPerRound)
+        )
+        softrandom_result = pool.apply_async(
+            process_softrandom_folders, 
+            args=(data_dir, output_dir, nJobsPerRound)
+        )
+        
+        # Wait for all tasks to complete
+        avg_result.get()
+        logger.info("Avg folders processing completed")
+        
+        random_result.get()
+        logger.info("Random files processing completed")
+        
+        softrandom_result.get()
+        logger.info("Softrandom files processing completed")
     
     logger.info("\n" + "="*60)
-    logger.info("Batch processing completed successfully!")
+    logger.info("All parallel processing completed successfully!")
     logger.info("="*60)
 
 if __name__ == "__main__":
+    freeze_support()
     main()

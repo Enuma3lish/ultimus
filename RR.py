@@ -13,7 +13,7 @@ import process_random_folders as prf
 import process_softrandom_folders as psf
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
-def RR(jobs: List, time_quantum: int = 1) -> Tuple[float, float]:
+def RR(jobs: List, time_quantum: int = 1) -> Tuple[float, float,float]:
     """
     Optimized online Round Robin:
     - Event-driven time advance: run slices of size min(quantum, remaining, time_to_next_arrival).
@@ -21,7 +21,7 @@ def RR(jobs: List, time_quantum: int = 1) -> Tuple[float, float]:
     - Returns (average_flow_time, l2_norm).
     """
     if not jobs:
-        return 0.0, 0.0
+        return 0.0, 0.0,0.0
 
     # Normalize input into list of (arrival, size) and assign original indices
     if isinstance(jobs[0], dict):
@@ -43,7 +43,8 @@ def RR(jobs: List, time_quantum: int = 1) -> Tuple[float, float]:
 
     total_flow_sum = 0.0
     l2_sum = 0.0
-
+    flow_list = []
+    max_flow= 0.0
     while completed < n:
         # Use optimized selector
         orig_idx, execution_time, has_job = RR_Selector(jobs_info, current_time, ready_queue, time_quantum)
@@ -61,6 +62,7 @@ def RR(jobs: List, time_quantum: int = 1) -> Tuple[float, float]:
                 ready_queue.popleft()
                 completion_times[orig_idx] = current_time
                 flow = completion_times[orig_idx] - base[orig_idx][0]
+                flow_list.append(flow)
                 total_flow_sum += flow
                 l2_sum += float(flow) * float(flow)
                 completed += 1
@@ -79,7 +81,8 @@ def RR(jobs: List, time_quantum: int = 1) -> Tuple[float, float]:
 
     avg_flow = total_flow_sum / n
     l2 = (l2_sum) ** 0.5
-    return avg_flow, l2
+    max_flow = max(flow_list)
+    return avg_flow, l2, max_flow
 
 def main():
     """Main function to process all data"""
