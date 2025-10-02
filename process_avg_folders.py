@@ -6,7 +6,7 @@ import run
 import logging
 import read_jobs_from_csv as rjfc
 import csv
-import parse_avg30_filename as paf
+import parse_avg_filename as paf
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ def process_avg_folders(algo, algo_name, data_dir, output_dir):
             
             for csv_file in csv_files:
                 filename = os.path.basename(csv_file)
-                arrival_rate, bp_L, bp_H = paf.parse_avg30_filename(filename)
+                arrival_rate, bp_L, bp_H = paf.parse_avg_filename(filename)
                 
                 if arrival_rate is None:
                     logger.warning(f"Could not parse filename: {filename}")

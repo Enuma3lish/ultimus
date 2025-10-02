@@ -1,23 +1,26 @@
 #!/usr/bin/env bash
-set -uo pipefail  # Removed -e to prevent early exit
+set -uo pipefail
 
 # ======== Configuration ========
-BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="/home/melowu/Work/ultimus"
+VENV_PATH="${PROJECT_ROOT}/.venv"
+JOB_INIT_SCRIPT="${PROJECT_ROOT}/Job_init.py"
+PLOTTER_SCRIPT="${PROJECT_ROOT}/algorithm_comparison_plotter.py"
 
-# Commands with CPU allocation
-# Dynamic needs 4 CPUs (1 main + 3 worker processes)
-# Others are single-threaded
-CMDS=(
-  "FCFS:${BIN_DIR}/FCFS:0"
-  "SRPT:${BIN_DIR}/SRPT:1"
-  "Dynamic:${BIN_DIR}/Dynamic:2,3,4,5"  # 4 CPUs for multiprocessing
-  "RR:${BIN_DIR}/RR:6"
-  "BAL:${BIN_DIR}/BAL:7"
-  "SETF:${BIN_DIR}/SETF:8"
-  "SJF:${BIN_DIR}/SJF:9"
+# Algorithm executables with CPU allocation
+# In run.sh, change this line:
+ALGORITHMS=(
+  "BAL:${PROJECT_ROOT}/Cpp_Optimization/algorithms/BAL/build/BAL:0"
+  "SRPT:${PROJECT_ROOT}/Cpp_Optimization/algorithms/SRPT/build/SRPT:1"
+  "Dynamic:${PROJECT_ROOT}/Cpp_Optimization/algorithms/Dynamic/build/Dynamic:2"  
+  "FCFS:${PROJECT_ROOT}/Cpp_Optimization/algorithms/FCFS/build/FCFS:3"
+  "RR:${PROJECT_ROOT}/Cpp_Optimization/algorithms/RR/build/RR:4"
+  "SETF:${PROJECT_ROOT}/Cpp_Optimization/algorithms/SETF/build/SETF:5"
+  "SJF:${PROJECT_ROOT}/Cpp_Optimization/algorithms/SJF/build/SJF:6"
 )
 
-LOG_DIR="${BIN_DIR}/logs"
+LOG_DIR="${PROJECT_ROOT}/logs"
 UNIT_PREFIX="sched"
 # ==========================
 
@@ -28,6 +31,14 @@ need_tools() {
 
 ensure_env() {
   mkdir -p "$LOG_DIR"
+  
+  # Check Python virtual environment
+  if [[ ! -d "$VENV_PATH" ]]; then
+    echo "Error: Virtual environment not found at $VENV_PATH"
+    echo "Please create it with: python3 -m venv $VENV_PATH"
+    exit 1
+  fi
+  
   local cores
   cores="$(nproc || echo 1)"
   echo "System has $cores CPU cores available"
@@ -43,7 +54,6 @@ unit_name_for() {
   echo "${UNIT_PREFIX}-${name}"
 }
 
-# Check if executable exists and is executable
 check_executable() {
   local cmd="$1" name="$2"
   
@@ -64,12 +74,11 @@ check_executable() {
   return 0
 }
 
-# Get command info by name
 get_cmd_info() {
   local search_name="$1"
-  for item in "${CMDS[@]}"; do
+  for item in "${ALGORITHMS[@]}"; do
     IFS=":" read -r name cmd cpu_list <<< "$item"
-    if [[ "${name,,}" == "${search_name,,}" ]]; then  # Case-insensitive comparison
+    if [[ "${name,,}" == "${search_name,,}" ]]; then
       echo "$item"
       return 0
     fi
@@ -77,32 +86,53 @@ get_cmd_info() {
   return 1
 }
 
-# Start single process
+# Run Job_init.py in virtual environment
+run_job_init() {
+  echo "=========================================="
+  echo "Step 1: Running Job Initialization"
+  echo "=========================================="
+  
+  if [[ ! -f "$JOB_INIT_SCRIPT" ]]; then
+    echo "Error: Job_init.py not found at $JOB_INIT_SCRIPT"
+    return 1
+  fi
+  
+  local logf="${LOG_DIR}/job_init.log"
+  echo "Running Job_init.py..."
+  echo "Log: $logf"
+  
+  if "${VENV_PATH}/bin/python" "$JOB_INIT_SCRIPT" > "$logf" 2>&1; then
+    echo "✓ Job initialization completed successfully"
+    return 0
+  else
+    echo "✗ Job initialization failed. Check log: $logf"
+    tail -n 20 "$logf"
+    return 1
+  fi
+}
+
+# Start single algorithm process
 start_one() {
   local name="$1" cmd="$2" cpu_list="$3"
   local unit; unit="$(unit_name_for "$name")"
   local logf="${LOG_DIR}/${name}.log"
 
-  # Check if already running
   if systemctl is-active "$unit" >/dev/null 2>&1; then
     echo "[already running] ${name} (unit=${unit})"
     return 0
   fi
 
-  # Check if executable exists and is runnable
   if ! check_executable "$cmd" "$name"; then
     echo "[failed] Could not start ${name} - executable issue"
     return 1
   fi
 
-  # Build systemd-run command
   local systemd_cmd=(
     systemd-run
     --unit="${unit}"
     --same-dir
     --collect
-    --property=Restart=on-failure
-    --property=RestartSec=5s
+    --property=Restart=no
     --property=CPUAffinity="${cpu_list}"
     --property=OOMPolicy=continue
     --property=OOMScoreAdjust=-900
@@ -114,19 +144,10 @@ start_one() {
     --property=StandardError=append:"${logf}"
     --property=KillSignal=SIGINT
     --property=TimeoutStopSec=30s
-    --property=Environment=PYTHONUNBUFFERED=1
-    --property=Environment=PYTHONHASHSEED=0
   )
 
-  # For Dynamic, set multiprocessing-specific environment
-  if [[ "$name" == "Dynamic" ]]; then
-    systemd_cmd+=("--property=Environment=OMP_NUM_THREADS=4")
-    echo "[starting] ${name} with CPUs: ${cpu_list} (multiprocessing enabled)"
-  else
-    echo "[starting] ${name} with CPU: ${cpu_list}"
-  fi
+  echo "[starting] ${name} with CPU: ${cpu_list}"
 
-  # Start the process
   if "${systemd_cmd[@]}" "$cmd" >/dev/null 2>&1; then
     sleep 0.3
     local pid
@@ -134,9 +155,161 @@ start_one() {
     echo "[started] ${name} (unit=${unit}, PID=${pid}) → ${logf}"
     return 0
   else
-    echo "[failed] Could not start ${name} - systemd-run failed"
+    echo "[failed] Could not start ${name}"
     return 1
   fi
+}
+
+# Run all algorithms in parallel
+run_all_algorithms() {
+  echo ""
+  echo "=========================================="
+  echo "Step 2: Running All Algorithms in Parallel"
+  echo "=========================================="
+  
+  need_tools
+  
+  local total=0
+  local succeeded=0
+  local failed=0
+  local failed_list=()
+  
+  # Start all algorithms
+  for item in "${ALGORITHMS[@]}"; do
+    IFS=":" read -r name cmd cpu_list <<< "$item"
+    ((total++))
+    
+    if start_one "$name" "$cmd" "$cpu_list"; then
+      ((succeeded++))
+    else
+      ((failed++))
+      failed_list+=("$name")
+    fi
+  done
+
+  echo ""
+  echo "Started: ${succeeded}/${total} algorithms"
+  
+  if [[ ${#failed_list[@]} -gt 0 ]]; then
+    echo "Failed to start: ${failed_list[*]}"
+    return 1
+  fi
+  
+  # Wait for all algorithms to complete
+  echo ""
+  echo "Waiting for all algorithms to complete..."
+  local all_units=()
+  for item in "${ALGORITHMS[@]}"; do
+    IFS=":" read -r name cmd cpu_list <<< "$item"
+    all_units+=("$(unit_name_for "$name")")
+  done
+  
+  local check_interval=5
+  local max_wait=7200  # 2 hours max
+  local elapsed=0
+  
+  while true; do
+    local running=0
+    local completed=0
+    
+    for unit in "${all_units[@]}"; do
+      if systemctl is-active "$unit" >/dev/null 2>&1; then
+        ((running++))
+      else
+        ((completed++))
+      fi
+    done
+    
+    echo "[$(date +%H:%M:%S)] Running: $running, Completed: $completed / $total"
+    
+    if [[ $running -eq 0 ]]; then
+      echo "✓ All algorithms completed"
+      break
+    fi
+    
+    if [[ $elapsed -ge $max_wait ]]; then
+      echo "✗ Timeout: Some algorithms still running after ${max_wait}s"
+      return 1
+    fi
+    
+    sleep $check_interval
+    ((elapsed += check_interval))
+  done
+  
+  return 0
+}
+
+# Run plotter in virtual environment
+run_plotter() {
+  echo ""
+  echo "=========================================="
+  echo "Step 3: Running Comparison Plotter"
+  echo "=========================================="
+  
+  if [[ ! -f "$PLOTTER_SCRIPT" ]]; then
+    echo "Error: Plotter script not found at $PLOTTER_SCRIPT"
+    return 1
+  fi
+  
+  local logf="${LOG_DIR}/plotter.log"
+  echo "Running algorithm_comparison_plotter.py..."
+  echo "Log: $logf"
+  
+  if "${VENV_PATH}/bin/python" "$PLOTTER_SCRIPT" > "$logf" 2>&1; then
+    echo "✓ Plotting completed successfully"
+    return 0
+  else
+    echo "✗ Plotting failed. Check log: $logf"
+    tail -n 20 "$logf"
+    return 1
+  fi
+}
+
+# Full pipeline execution
+run_pipeline() {
+  ensure_env
+  
+  local start_time=$(date +%s)
+  echo "========================================"
+  echo "Starting Full Pipeline"
+  echo "========================================"
+  echo "Start time: $(date)"
+  echo ""
+  
+  # Step 1: Job initialization
+  if ! run_job_init; then
+    echo ""
+    echo "✗ Pipeline failed at Job Initialization"
+    return 1
+  fi
+  
+  # Step 2: Run all algorithms in parallel
+  if ! run_all_algorithms; then
+    echo ""
+    echo "✗ Pipeline failed at Algorithm Execution"
+    return 1
+  fi
+  
+  # Step 3: Run plotter
+  if ! run_plotter; then
+    echo ""
+    echo "✗ Pipeline failed at Plotting"
+    return 1
+  fi
+  
+  local end_time=$(date +%s)
+  local duration=$((end_time - start_time))
+  local minutes=$((duration / 60))
+  local seconds=$((duration % 60))
+  
+  echo ""
+  echo "========================================"
+  echo "✓ Full Pipeline Completed Successfully"
+  echo "========================================"
+  echo "End time: $(date)"
+  echo "Total duration: ${minutes}m ${seconds}s"
+  echo ""
+  echo "Check logs at: $LOG_DIR/"
 }
 
 # Stop single process
@@ -156,98 +329,6 @@ stop_one() {
   else
     echo "not running"
     return 0
-  fi
-}
-
-# Start all processes - with error resilience
-start_all() {
-  need_tools
-  ensure_env
-
-  echo "Starting all processes..."
-  echo "------------------------"
-  
-  local total=0
-  local succeeded=0
-  local failed=0
-  local already_running=0
-  local failed_list=()
-  
-  for item in "${CMDS[@]}"; do
-    IFS=":" read -r name cmd cpu_list <<< "$item"
-    ((total++))
-    
-    if start_one "$name" "$cmd" "$cpu_list"; then
-      # Check if it was already running or newly started
-      if systemctl is-active "$(unit_name_for "$name")" >/dev/null 2>&1; then
-        local output=$(systemctl show -p ActiveEnterTimestamp --value "$(unit_name_for "$name")")
-        if [[ -n "$output" ]]; then
-          ((succeeded++))
-        fi
-      fi
-    else
-      ((failed++))
-      failed_list+=("$name")
-    fi
-  done
-
-  echo ""
-  echo "Summary:"
-  echo "  Total processes: ${total}"
-  echo "  Successfully started: ${succeeded}"
-  echo "  Failed to start: ${failed}"
-  
-  if [[ ${#failed_list[@]} -gt 0 ]]; then
-    echo "  Failed processes: ${failed_list[*]}"
-    echo ""
-    echo "To debug failures, check:"
-    echo "  1. Executables exist: ls -la ${BIN_DIR}/"
-    echo "  2. Executables are runnable: file ${BIN_DIR}/*"
-    echo "  3. View logs: $0 logs <process_name>"
-  fi
-  
-  echo ""
-  echo "Commands:"
-  echo "  $0 status           - Check status of all processes"
-  echo "  $0 stop-all         - Stop all processes"
-  echo "  $0 stop <names>     - Stop specific processes"
-  echo "  $0 logs <name>      - View logs for specific process"
-}
-
-# Start multiple processes by name
-start_processes() {
-  if [[ $# -eq 0 ]]; then
-    echo "Error: No process names specified"
-    echo "Usage: $0 start <name1> [name2] ..."
-    echo "Available processes: FCFS, SRPT, Dynamic, RR, BAL, SETF, SJF"
-    return 1
-  fi
-  
-  local succeeded=0
-  local failed=0
-  local failed_list=()
-  
-  for proc_name in "$@"; do
-    if cmd_info=$(get_cmd_info "$proc_name"); then
-      IFS=":" read -r name cmd cpu_list <<< "$cmd_info"
-      if start_one "$name" "$cmd" "$cpu_list"; then
-        ((succeeded++))
-      else
-        ((failed++))
-        failed_list+=("$name")
-      fi
-    else
-      echo "Error: Unknown process '${proc_name}'"
-      echo "Available processes: FCFS, SRPT, Dynamic, RR, BAL, SETF, SJF"
-      ((failed++))
-      failed_list+=("${proc_name}")
-    fi
-  done
-  
-  echo ""
-  echo "Summary: Started ${succeeded}, Failed ${failed}"
-  if [[ ${#failed_list[@]} -gt 0 ]]; then
-    echo "Failed: ${failed_list[*]}"
   fi
 }
 
@@ -281,13 +362,13 @@ stop_processes() {
 }
 
 stop_all() {
-  echo "Stopping all processes..."
+  echo "Stopping all algorithms..."
   echo "------------------------"
   
   local total=0
   local stopped=0
   
-  for item in "${CMDS[@]}"; do
+  for item in "${ALGORITHMS[@]}"; do
     IFS=":" read -r name cmd cpu_list <<< "$item"
     ((total++))
     if stop_one "$name"; then
@@ -300,13 +381,13 @@ stop_all() {
 }
 
 status_all() {
-  echo "Process Status Summary:"
+  echo "Algorithm Status Summary:"
   echo "----------------------"
   
   local running=0
   local stopped=0
   
-  for item in "${CMDS[@]}"; do
+  for item in "${ALGORITHMS[@]}"; do
     IFS=":" read -r name cmd cpu_list <<< "$item"
     unit="$(unit_name_for "$name")"
     
@@ -323,7 +404,6 @@ status_all() {
       sub="$(systemctl show -p SubState --value "$unit" 2>/dev/null || echo "unknown")"
       mem="$(systemctl show -p MemoryCurrent --value "$unit" 2>/dev/null || echo "[not set]")"
       
-      # Format memory display
       if [[ "$mem" != "[not set]" ]] && [[ "$mem" =~ ^[0-9]+$ ]]; then
         mem_mb=$((mem / 1024 / 1024))
         mem_str="Mem: ${mem_mb}MB"
@@ -331,14 +411,12 @@ status_all() {
         mem_str=""
       fi
       
-      # Special notation for Dynamic (multiprocessing)
       if [[ "$name" == "Dynamic" ]]; then
         cpu_info="CPUs: ${cpu_list} (multiproc)"
       else
         cpu_info="CPU: ${cpu_list}"
       fi
       
-      # Executable check
       if [[ ! -x "$cmd" ]]; then
         exec_status=" [!exec]"
       else
@@ -349,11 +427,10 @@ status_all() {
         "${act}/${sub}" "$name" "${pid}" "${cpu_info}" "${mem_str}" "${exec_status}"
     else
       ((stopped++))
-      # Check if executable exists
       if [[ ! -f "$cmd" ]]; then
-        exec_status=" [not found: $cmd]"
+        exec_status=" [not found]"
       elif [[ ! -x "$cmd" ]]; then
-        exec_status=" [not executable: $cmd]"
+        exec_status=" [not executable]"
       else
         exec_status=""
       fi
@@ -365,43 +442,32 @@ status_all() {
   echo "Total: ${running} running, ${stopped} stopped"
 }
 
-# Restart specific processes
-restart_processes() {
-  if [[ $# -eq 0 ]]; then
-    # Restart all if no arguments
-    echo "Restarting all processes..."
-    stop_all
-    echo ""
-    start_all
-  else
-    echo "Restarting processes: $*"
-    stop_processes "$@"
-    echo ""
-    start_processes "$@"
-  fi
-}
-
 logs_one() {
   local name="$1"
   local lines="${2:-200}"
-  local logf="${LOG_DIR}/${name}.log"
   
-  # Case-insensitive name lookup
-  for item in "${CMDS[@]}"; do
-    IFS=":" read -r cmd_name cmd cpu_list <<< "$item"
-    if [[ "${cmd_name,,}" == "${name,,}" ]]; then
-      name="$cmd_name"
-      logf="${LOG_DIR}/${cmd_name}.log"
-      break
-    fi
-  done
+  # Special handling for job_init and plotter
+  if [[ "${name,,}" == "job_init" ]]; then
+    local logf="${LOG_DIR}/job_init.log"
+  elif [[ "${name,,}" == "plotter" ]]; then
+    local logf="${LOG_DIR}/plotter.log"
+  else
+    # Find algorithm name (case-insensitive)
+    for item in "${ALGORITHMS[@]}"; do
+      IFS=":" read -r cmd_name cmd cpu_list <<< "$item"
+      if [[ "${cmd_name,,}" == "${name,,}" ]]; then
+        name="$cmd_name"
+        break
+      fi
+    done
+    local logf="${LOG_DIR}/${name}.log"
+  fi
   
   if [[ -f "$logf" ]]; then
     echo "=== Last ${lines} lines of ${name} log ==="
     tail -n "${lines}" "$logf"
   else
     echo "Log file not found: $logf"
-    echo "Note: Logs are created when process starts. If ${name} never started, no log exists."
   fi
 }
 
@@ -411,7 +477,7 @@ monitor_all() {
   
   while true; do
     clear
-    echo "=== Process Monitor - $(date) ==="
+    echo "=== Algorithm Monitor - $(date) ==="
     echo ""
     status_all
     echo ""
@@ -420,117 +486,106 @@ monitor_all() {
   done
 }
 
-# Debug function to check all executables
 check_all_executables() {
   echo "Checking all executables..."
   echo "------------------------"
   
-  for item in "${CMDS[@]}"; do
+  echo "Python Scripts:"
+  for script in "$JOB_INIT_SCRIPT" "$PLOTTER_SCRIPT"; do
+    local name=$(basename "$script")
+    echo -n "  $name: "
+    if [[ ! -f "$script" ]]; then
+      echo "NOT FOUND at $script"
+    else
+      echo "OK"
+    fi
+  done
+  
+  echo ""
+  echo "C++ Algorithms:"
+  for item in "${ALGORITHMS[@]}"; do
     IFS=":" read -r name cmd cpu_list <<< "$item"
-    echo -n "$name: "
+    echo -n "  $name: "
     
     if [[ ! -f "$cmd" ]]; then
       echo "NOT FOUND at $cmd"
     elif [[ ! -x "$cmd" ]]; then
-      echo "EXISTS but NOT EXECUTABLE at $cmd"
-      ls -l "$cmd" | awk '{print "  Permissions: " $1 " Owner: " $3}'
+      echo "EXISTS but NOT EXECUTABLE"
+      ls -l "$cmd" | awk '{print "    Permissions: " $1 " Owner: " $3}'
     else
       echo "OK"
-      file "$cmd" | sed 's/^/  /'
     fi
   done
 }
 
 usage() {
   cat <<EOF
-Dynamic Scheduler Management Script
+Algorithm Pipeline Management Script
 ====================================
 
 Usage:
-  $0 start-all                    # Start all processes
-  $0 start <name1> [name2] ...    # Start specific process(es)
-  $0 stop-all                     # Stop all processes
-  $0 stop <name1> [name2] ...     # Stop specific process(es)
-  $0 restart-all                  # Restart all processes
-  $0 restart <name1> [name2] ...  # Restart specific process(es)
-  $0 status                       # Show status of all processes
-  $0 check                        # Check all executables
-  $0 logs <name> [lines]          # View last N lines of logs (default: 200)
-  $0 monitor                      # Continuously monitor all processes
+  $0 run                          # Run full pipeline (init → algorithms → plot)
+  $0 stop-all                     # Stop all running algorithms
+  $0 stop <name1> [name2] ...     # Stop specific algorithm(s)
+  $0 status                       # Show status of all algorithms
+  $0 check                        # Check all executables and scripts
+  $0 logs <name> [lines]          # View logs (default: 200 lines)
+  $0 monitor                      # Continuously monitor all algorithms
   $0 help                         # Show this help message
 
-Available Processes:
-  FCFS, SRPT, Dynamic, RR, BAL, SETF, SJF
+Pipeline Steps:
+  1. Job Initialization    → Runs Job_init.py in .venv
+  2. Algorithm Execution   → Runs 7 algorithms in parallel
+  3. Results Plotting      → Runs algorithm_comparison_plotter.py in .venv
+
+Available Algorithms:
+  BAL, SRPT, Dynamic, FCFS, RR, SETF, SJF
+
+Log Names:
+  job_init, plotter, BAL, SRPT, Dynamic, FCFS, RR, SETF, SJF
 
 Examples:
-  $0 start-all                    # Start all schedulers
-  $0 start Dynamic SRPT           # Start only Dynamic and SRPT
-  $0 stop FCFS RR                 # Stop FCFS and RR
-  $0 restart Dynamic              # Restart only Dynamic
-  $0 logs Dynamic 500             # View last 500 lines of Dynamic logs
-  $0 check                        # Verify all executables exist
-  $0 monitor                      # Watch real-time status
-
-Process Configuration:
-  - FCFS, SRPT, RR, BAL, SETF, SJF: Single-threaded (1 CPU each)
-  - Dynamic: Multi-threaded with 3 worker processes (4 CPUs total)
+  $0 run                          # Execute full pipeline
+  $0 status                       # Check what's running
+  $0 stop Dynamic SRPT            # Stop specific algorithms
+  $0 logs Dynamic 500             # View last 500 lines
+  $0 logs job_init                # View initialization logs
+  $0 logs plotter                 # View plotting logs
+  $0 check                        # Verify all files exist
+  $0 monitor                      # Real-time monitoring
 
 CPU Allocation:
-  - CPUs 0-1: FCFS, SRPT
-  - CPUs 2-5: Dynamic (multiprocessing)
-  - CPUs 6-9: RR, BAL, SETF, SJF
+  - CPUs 0-1: BAL, SRPT
+  - CPUs 2-5: Dynamic (multiprocessing with 4 CPUs)
+  - CPUs 6-9: FCFS, RR, SETF, SJF
 
 Logs Location: ${LOG_DIR}/
 
 Troubleshooting:
-  If processes fail to start:
-  1. Check executables exist: $0 check
-  2. Make executables runnable: chmod +x ${BIN_DIR}/*
-  3. Check logs: $0 logs <process_name>
-  4. Check systemd status: systemctl status sched-<process_name>
+  1. Check all files: $0 check
+  2. Make executables: chmod +x ${PROJECT_ROOT}/Cpp_Optimization/algorithms/*/build/*
+  3. View logs: $0 logs <name>
+  4. Check systemd: systemctl status sched-<name>
 
 Notes:
-  - Process names are case-insensitive
-  - Dynamic uses Python multiprocessing with Pool(processes=3)
-  - Each process is managed as a systemd transient service
-  - Processes auto-restart on failure (RestartSec=5s)
+  - Virtual environment required at ${VENV_PATH}
+  - All algorithms run in parallel on separate CPUs
+  - Pipeline waits for all algorithms to complete before plotting
+  - Maximum wait time: 2 hours per pipeline
 EOF
 }
 
 # Main command dispatcher
 case "${1:-}" in
-  start-all)
-    start_all
-    ;;
-  start)
-    shift || true
-    if [[ $# -eq 0 ]]; then
-      echo "No processes specified, starting all..."
-      start_all
-    else
-      start_processes "$@"
-    fi
+  run|pipeline)
+    run_pipeline
     ;;
   stop-all)
     stop_all
     ;;
   stop)
     shift || true
-    if [[ $# -eq 0 ]]; then
-      echo "No processes specified, stopping all..."
-      stop_all
-    else
-      stop_processes "$@"
-    fi
-    ;;
-  restart-all)
-    stop_all
-    echo ""
-    start_all
-    ;;
-  restart)
-    shift || true
-    restart_processes "$@"
+    stop_processes "$@"
     ;;
   status)
     status_all
@@ -541,8 +596,8 @@ case "${1:-}" in
   logs)
     shift || true
     if [[ -z "${1:-}" ]]; then
-      echo "Error: Please provide process name"
-      echo "Available: FCFS, SRPT, Dynamic, RR, BAL, SETF, SJF"
+      echo "Error: Please provide log name"
+      echo "Available: job_init, plotter, BAL, SRPT, Dynamic, FCFS, RR, SETF, SJF"
       exit 1
     fi
     logs_one "$1" "${2:-200}"

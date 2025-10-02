@@ -1,0 +1,21 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/Cpp_Optimization",
+                "${workspaceFolder}/Cpp_Optimization/algorithm_executer",
+                "${workspaceFolder}/Cpp_Optimization/algorithms",
+                "${workspaceFolder}/Cpp_Optimization/function_tools",
+                "${workspaceFolder}/Cpp_Optimization/Job_Format"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/clang++-14",
+            "cStandard": "c17",
+            "cppStandard": "c++14",
+            "intelliSenseMode": "linux-clang-x64"
+        }
+    ],
+    "version": 4
+}

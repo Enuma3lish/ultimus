@@ -276,4 +276,4 @@ def Save_file(num_jobs, i):
 
 if __name__ == "__main__":
     for i in range(1, 11):
-        Save_file(20000, i)
+        Save_file(100000, i)

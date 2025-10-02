@@ -95,21 +95,3 @@ def RMLF(jobs: List[Dict[str, Any]]) -> Tuple[float, float]:
     l2_norm = math.sqrt(sum(t * t for t in flow_times)) if flow_times else 0
     
     return avg_flow_time, l2_norm
-
-# def main():
-#     filename = 'data/(22, 7.918).csv'
-#     jobs = read_jobs_from_csv(filename)
-#     if jobs:
-#         avg_flow_time, l2_norm = RMLF(jobs)
-#         print(f"Average Flow Time: {avg_flow_time}")
-#         print(f"L2 Norm of Flow Time: {l2_norm}")
-        
-#         # # Run the checker
-#         # from Checker import Checker
-#         # result = Checker(filename, 'RMLF_time_slot_log.csv')
-#         # print(f"Checker result: {result}")
-#     else:
-#         print("No jobs were loaded. Please check the input file.")
-
-# if __name__ == "__main__":
-#     main()
