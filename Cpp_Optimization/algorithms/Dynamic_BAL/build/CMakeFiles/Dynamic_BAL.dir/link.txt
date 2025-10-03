@@ -1,0 +1,1 @@
+/usr/bin/c++  -Wall -O3 -pthread CMakeFiles/Dynamic_BAL.dir/Dynamic_BAL.cpp.o -o Dynamic_BAL  -lm 
