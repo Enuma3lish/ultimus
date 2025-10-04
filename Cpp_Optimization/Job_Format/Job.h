@@ -1,3 +1,4 @@
+// ==================== Job.h ====================
 #ifndef JOB_H
 #define JOB_H
 
@@ -6,8 +7,8 @@ struct Job {
     int job_size;
     int job_index;
     int remaining_time;
-    long long start_time;        // Changed to long long
-    long long completion_time;   // Changed to long long
+    long long start_time;        // Fixed: Use long long to prevent overflow
+    long long completion_time;   // Fixed: Use long long to prevent overflow
     int starving_time;
     double waiting_time_ratio;
     

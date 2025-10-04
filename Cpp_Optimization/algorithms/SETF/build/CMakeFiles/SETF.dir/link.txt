@@ -1,0 +1,1 @@
+/usr/bin/c++  -Wall -O3 CMakeFiles/SETF.dir/SETF.cpp.o -o SETF  -lm 

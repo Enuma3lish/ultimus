@@ -1,22 +1,5 @@
 logs
-build
 .venv
-dist
-FCFS.spec
-SETF.spec
-RR.spec
-SRPT.spec
-Dynamic.spec
-SJF.spec
-BAL.spec
 __pycache__
-BAL
-SRPT
-SETF
-SJF
-RR
-FCFS
-Dynamic_result
-Dynamic_analysis
-Dynamic
+
 

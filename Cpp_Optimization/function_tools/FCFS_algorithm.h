@@ -14,7 +14,7 @@ struct FCFSResult {
     double max_flow_time;
 };
 
-// FCFS algorithm function - can be called from other algorithms
+// FCFS algorithm function - Fixed version
 inline FCFSResult Fcfs(std::vector<Job> jobs) {
     int total_jobs = jobs.size();
     if (total_jobs == 0) {
@@ -26,7 +26,7 @@ inline FCFSResult Fcfs(std::vector<Job> jobs) {
         return a.arrival_time < b.arrival_time;
     });
     
-    long long t = 0;  // Use long long to prevent overflow
+    long long t = 0;  // Fixed: Use long long to prevent overflow
     int i = 0;
     std::vector<Job*> waiting;
     Job* current = nullptr;
@@ -46,16 +46,16 @@ inline FCFSResult Fcfs(std::vector<Job> jobs) {
         if (current == nullptr && !waiting.empty()) {
             Job* picked = fcfs_select_next_job_optimized(waiting);
             
-            // FIX: Use pointer comparison instead of field comparison
+            // Fixed: Use direct pointer comparison instead of field comparison
             int sel_idx = -1;
             for (size_t k = 0; k < waiting.size(); k++) {
-                if (waiting[k] == picked) {  // Direct pointer comparison
+                if (waiting[k] == picked) {  // Direct pointer match
                     sel_idx = k;
                     break;
                 }
             }
             
-            // FIX: Add fallback if pointer matching fails
+            // Fixed: Add fallback if pointer matching fails
             if (sel_idx == -1) {
                 sel_idx = 0;
                 picked = waiting[0];
@@ -83,12 +83,12 @@ inline FCFSResult Fcfs(std::vector<Job> jobs) {
         if (i < total_jobs) {
             t = std::max(t, (long long)jobs[i].arrival_time);
         } else {
-            // No more arrivals and no current job - should not happen
+            // No more arrivals and no current job
             break;
         }
     }
     
-    // Calculate metrics with double precision
+    // Fixed: Calculate metrics with high precision and correct L2 norm
     long double sum_flow = 0.0;
     long double sum_sq = 0.0;
     long long max_flow = 0;
@@ -101,7 +101,7 @@ inline FCFSResult Fcfs(std::vector<Job> jobs) {
     }
     
     double avg_flow = (double)(sum_flow / total_jobs);
-    double l2 = std::sqrt((double)sum_sq);
+    double l2 = std::sqrt((double)sum_sq);  // Fixed: Pure L2 norm (not RMS)
     
     return {avg_flow, l2, static_cast<double>(max_flow)};
 }

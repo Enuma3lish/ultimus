@@ -1,0 +1,1428 @@
+============================================================
+Starting Dynamic batch processing with multi-threading:
+  Data directory: /home/melowu/Work/ultimus/data
+  Output directory: /home/melowu/Work/ultimus/Dynamic_result
+  nJobsPerRound: 100
+  Hardware threads available: 16
+  Modes to run: 1, 2, 3, 4, 5, 6, 7
+============================================================
+
+Launching parallel processing threads...
+
+========================================
+[Thread 1] Processing avg files...
+========================================
+Processing folder: avg_30_1 (version=1)
+========================================
+[Thread 2] Processing random files...
+========================================
+========================================
+[Thread 3] Processing softrandom files...
+========================================
+Processing folder: freq_32_8
+Processing folder: freq_32_9
+Processing folder: freq_4096_1
+Processing folder: freq_128_1
+  Processing (32, 5.649_4096).csv
+Processing folder: freq_2048_3
+Processing folder: freq_128_8
+Processing folder: freq_128_4
+Processing folder: freq_4096_2
+Processing folder: freq_128_5
+Processing folder: freq_128_6
+Processing folder: freq_1024_9
+Processing softrandom base: softrandom_6
+Processing folder: freq_32768_7
+  Processing (20, 4.073_262144).csv
+Processing folder: freq_32768_8
+  Processing (20, 5.649_4096).csv
+Processing folder: freq_32768_9
+Processing folder: freq_256_8
+Processing folder: freq_32_10
+Processing folder: freq_32_2
+Processing folder: freq_32_3
+Processing folder: freq_32_4
+  Processing (26, 4.639_32768).csv
+  Processing (28, 4.073_262144).csv
+  Processing (28, 4.639_32768).csv
+  Processing (30, 4.073_262144).csv
+  Processing (30, 4.639_32768).csv
+  Processing (32, 16.772_64).csv
+  Processing (32, 4.073_262144).csv
+  Processing (36, 4.073_262144).csv
+  Processing (36, 4.639_32768).csv
+Processing folder: freq_32_7
+Processing softrandom base: softrandom_2
+  Processing (36, 5.649_4096).csv
+Processing folder: freq_1024_3
+Processing folder: freq_1024_4
+Processing folder: freq_1024_5
+Processing folder: freq_1024_6
+Processing folder: freq_1024_7
+Processing folder: freq_2048_6
+Processing folder: freq_16384_4
+Processing folder: freq_16_10
+Processing softrandom base: softrandom_7
+Processing folder: freq_16_2
+Processing folder: freq_16_9
+Processing folder: freq_2048_9
+Processing folder: freq_256_1
+Processing folder: freq_32_5
+Processing softrandom base: softrandom_8
+Processing folder: freq_16384_5
+Processing folder: freq_16_3
+Processing folder: freq_16_4
+Processing folder: freq_2048_1
+Processing folder: freq_256_10
+Processing folder: freq_16384_1
+Processing folder: freq_256_4
+  Processing (20, 7.918_512).csv
+Processing folder: freq_256_3
+Processing folder: freq_2_6
+Processing folder: freq_2_7
+Processing folder: freq_2_8
+Processing softrandom base: softrandom_10
+Processing folder: freq_32_6
+  Processing (32, 7.918_512).csv
+Processing folder: freq_4096_10
+  Processing (34, 16.772_64).csv
+Processing softrandom base: softrandom_9
+  Processing (38, 4.073_262144).csv
+  Processing (38, 4.639_32768).csv
+  Processing (38, 5.649_4096).csv
+Processing folder: freq_16384_10
+Processing folder: freq_16384_6
+Processing folder: freq_16_5
+Processing folder: freq_2048_10
+Processing folder: freq_2048_2
+Processing folder: freq_256_9
+Processing folder: freq_2_1
+Processing folder: freq_2_10
+Processing folder: freq_2_2
+Processing folder: freq_256_5
+  Processing (22, 16.772_64).csv
+  Processing (22, 4.639_32768).csv
+Processing folder: freq_256_6
+Processing folder: freq_32_1
+Processing folder: freq_2_3
+  Processing (24, 16.772_64).csv
+  Processing (32, 4.639_32768).csv
+  Processing (24, 4.639_32768).csv
+  Processing (36, 7.918_512).csv
+  Processing (24, 7.918_512).csv
+  Processing (26, 5.649_4096).csv
+  Processing (26, 7.918_512).csv
+  Processing (28, 5.649_4096).csv
+  Processing (30, 5.649_4096).csv
+  Processing (34, 4.073_262144).csv
+  Processing (34, 4.639_32768).csv
+  Processing (34, 5.649_4096).csv
+  Processing (34, 7.918_512).csv
+  Processing (36, 16.772_64).csv
+  Processing (40, 7.918_512).csv
+Processing folder: freq_1024_1
+Processing folder: freq_1024_10
+Processing folder: freq_1024_2
+Processing folder: freq_2048_5
+Processing folder: freq_32768_10
+Processing folder: freq_32768_2
+Processing folder: freq_32768_3
+Processing folder: freq_32768_4
+Processing folder: freq_32768_5
+Processing folder: freq_2_4
+Processing folder: freq_128_2
+Processing folder: freq_2_5
+Processing folder: freq_128_3
+Processing folder: freq_128_10
+Processing softrandom base: softrandom_5
+  Processing (20, 16.772_64).csv
+  Processing (20, 4.639_32768).csv
+  Processing (22, 4.073_262144).csv
+  Processing (22, 5.649_4096).csv
+  Processing (22, 7.918_512).csv
+  Processing (24, 4.073_262144).csv
+  Processing (24, 5.649_4096).csv
+  Processing (26, 16.772_64).csv
+  Processing (26, 4.073_262144).csv
+  Processing (28, 16.772_64).csv
+  Processing (28, 7.918_512).csv
+  Processing (30, 16.772_64).csv
+  Processing (30, 7.918_512).csv
+  Processing (38, 7.918_512).csv
+  Processing (40, 5.649_4096).csv
+Processing softrandom base: softrandom_1
+Processing folder: freq_1024_8
+Processing folder: freq_32768_6
+  Processing (38, 16.772_64).csv
+Processing folder: freq_16384_2
+Processing folder: freq_16384_7
+Processing folder: freq_16384_8
+Processing folder: freq_16384_9
+Processing folder: freq_16_6
+Processing folder: freq_16_7
+Processing folder: freq_2048_4
+Processing folder: freq_256_7
+Processing folder: freq_2_9
+Processing folder: freq_32768_1
+  Processing (40, 16.772_64).csv
+  Processing (40, 4.073_262144).csv
+  Processing (40, 4.639_32768).csv
+Processing folder: freq_128_7
+Processing folder: freq_128_9
+Processing folder: freq_16384_3
+Processing folder: freq_16_1
+Processing folder: freq_16_8
+Processing folder: freq_2048_7
+Processing folder: freq_2048_8
+Processing softrandom base: softrandom_3
+Processing softrandom base: softrandom_4
+Processing folder: freq_512_4
+Processing folder: freq_512_5
+Processing folder: freq_512_6
+Processing folder: freq_64_5
+Processing folder: freq_64_6
+Processing folder: freq_65536_6
+Processing folder: freq_65536_7
+Processing folder: freq_65536_8
+Processing folder: freq_65536_9
+Processing folder: freq_8192_1
+Processing folder: freq_8192_10
+Processing folder: freq_8192_2
+Processing folder: freq_8192_3
+Processing folder: freq_8_2
+Processing folder: freq_8_3
+Processing folder: freq_4_7
+Processing folder: freq_4_8
+Processing folder: freq_512_2
+Processing folder: freq_512_3
+Processing folder: freq_64_10
+Processing folder: freq_64_4
+Processing folder: freq_65536_10
+Processing folder: freq_4096_4
+Processing folder: freq_65536_2
+Processing folder: freq_64_9
+Processing folder: freq_4096_5
+Processing folder: freq_65536_4
+Processing folder: freq_4096_6
+Processing folder: freq_4096_7
+Processing folder: freq_65536_5
+Processing folder: freq_4096_8
+Processing folder: freq_4096_9
+Processing folder: freq_4_1
+Processing folder: freq_4_9
+Processing folder: freq_4_10
+Processing folder: freq_4_2
+Processing folder: freq_4_3
+Processing folder: freq_512_7
+Processing folder: freq_4_4
+Processing folder: freq_512_8
+Processing folder: freq_64_7
+Processing folder: freq_4_5
+Processing folder: freq_64_8
+Processing folder: freq_4_6
+Processing folder: freq_8192_4
+Processing folder: freq_512_1
+Processing folder: freq_8192_6
+Processing folder: freq_8192_7
+Processing folder: freq_8192_5
+Processing folder: freq_512_10
+Processing folder: freq_512_9
+Processing folder: freq_64_1
+Processing folder: freq_64_2
+Processing folder: freq_65536_1
+Processing folder: freq_8192_9
+Processing folder: freq_65536_3
+    Mode 1: L2 norm = 254334.1716
+Processing folder: freq_8_4
+Processing folder: freq_8_5
+Processing folder: freq_8_6
+Processing folder: freq_8_7
+Processing folder: freq_8_8
+Processing folder: freq_8_9
+Processing folder: freq_256_2
+Processing folder: freq_4096_3
+Processing folder: freq_8192_8
+Processing folder: freq_64_3
+Processing folder: freq_8_1
+Processing folder: freq_8_10
+    Mode 1: L2 norm = 480166.3614
+    Mode 1: L2 norm = 176893.6077
+    Mode 2: L2 norm = 1371029.5047
+    Mode 1: L2 norm = 407221.4741
+    Mode 2: L2 norm = 587300.0393
+    Mode 1: L2 norm = 101144.5084
+    Mode 1: L2 norm = 593007.2944
+    Mode 1: L2 norm = 1933252.4035
+    Mode 2: L2 norm = 1933252.4035
+    Mode 3: L2 norm = 35372.0297
+    Mode 1: L2 norm = 43845.0553
+    Mode 1: L2 norm = 209894.7641
+    Mode 1: L2 norm = 68228.0614
+    Mode 1: L2 norm = 80617.5836
+    Mode 1: L2 norm = 169863.3109
+    Mode 2: L2 norm = 414256.6000
+    Mode 1: L2 norm = 5963772.5361
+    Mode 1: L2 norm = 2179572.1868
+    Mode 1: L2 norm = 55154.8637
+    Mode 2: L2 norm = 54882.6296
+    Mode 1: L2 norm = 80107.3723
+    Mode 2: L2 norm = 68253.1421
+    Mode 1: L2 norm = 1376858.4461
+    Mode 3: L2 norm = 79574.2167
+    Mode 1: L2 norm = 4688530.6221
+    Mode 2: L2 norm = 478447.9104
+    Mode 1: L2 norm = 564363.4058
+    Mode 1: L2 norm = 402600.9956
+    Mode 1: L2 norm = 35705.0114
+    Mode 2: L2 norm = 2179709.4139
+    Mode 1: L2 norm = 1526711.2485
+    Mode 2: L2 norm = 169863.3109
+    Mode 3: L2 norm = 68227.3062
+    Mode 3: L2 norm = 1371029.5047
+    Mode 2: L2 norm = 504536.9398
+    Mode 1: L2 norm = 495766.6264
+    Mode 1: L2 norm = 4629983.7230
+    Mode 2: L2 norm = 5822653.7542
+    Mode 1: L2 norm = 135434.4815
+    Mode 2: L2 norm = 4540792.3997
+    Mode 2: L2 norm = 495563.9960
+    Mode 2: L2 norm = 1518476.5539
+    Mode 1: L2 norm = 587301.3063
+    Mode 2: L2 norm = 254091.9891
+    Mode 4: L2 norm = 80546.2297
+    Mode 2: L2 norm = 135393.0041
+    Mode 2: L2 norm = 562742.9487
+    Mode 4: L2 norm = 254091.9891
+    Mode 1: L2 norm = 12469949.3059
+    Mode 1: L2 norm = 2240198.5415
+    Mode 3: L2 norm = 1518476.5539
+    Mode 3: L2 norm = 1933252.4035
+    Mode 3: L2 norm = 254091.9891
+    Mode 3: L2 norm = 135393.0041
+    Mode 3: L2 norm = 43033.8111
+    Mode 2: L2 norm = 79735.7826
+    Mode 3: L2 norm = 54882.6296
+    Mode 4: L2 norm = 43033.8111
+    Mode 2: L2 norm = 7864564.9969
+    Mode 1: L2 norm = 7735351.9874
+    Mode 1: L2 norm = 191916.3665
+    Mode 4: L2 norm = 54882.6296
+    Mode 3: L2 norm = 504536.9398
+    Mode 2: L2 norm = 35493.2092
+    Mode 1: L2 norm = 174587.1693
+    Mode 2: L2 norm = 398324.6780
+    Mode 3: L2 norm = 562742.9487
+    Mode 1: L2 norm = 505984.7419
+    Mode 2: L2 norm = 43046.9264
+    Mode 2: L2 norm = 176865.9355
+    Mode 2: L2 norm = 80548.9914
+    Mode 3: L2 norm = 80546.2297
+    Mode 2: L2 norm = 12278341.9011
+    Mode 4: L2 norm = 79574.2167
+    Mode 2: L2 norm = 4730767.9761
+    Mode 1: L2 norm = 7864564.9969
+    Mode 3: L2 norm = 478447.9104
+    Mode 3: L2 norm = 427556.4131
+    Mode 1: L2 norm = 6720921.0450
+    Mode 2: L2 norm = 8824674.4361
+    Mode 1: L2 norm = 16135602.1122
+    Mode 3: L2 norm = 398324.6780
+    Mode 4: L2 norm = 5822653.7542
+    Mode 1: L2 norm = 24176409.2399
+    Mode 2: L2 norm = 15908262.2329
+    Mode 3: L2 norm = 174260.0215
+    Mode 4: L2 norm = 68227.3062
+    Mode 4: L2 norm = 1518476.5539
+    Mode 3: L2 norm = 495563.9960
+    Mode 2: L2 norm = 191701.0968
+    Mode 3: L2 norm = 5822653.7542
+    Mode 4: L2 norm = 495563.9960
+    Mode 2: L2 norm = 9107857.7362
+    Mode 1: L2 norm = 19592859.6307
+    Mode 4: L2 norm = 100985.6284
+    Mode 3: L2 norm = 4533444.8604
+    Mode 2: L2 norm = 174260.0215
+    Mode 3: L2 norm = 7864564.9969
+    Mode 1: L2 norm = 16029888.1177
+    Mode 3: L2 norm = 208972.4707
+    Mode 4: L2 norm = 478447.9104
+    Mode 2: L2 norm = 208972.4707
+    Mode 5: L2 norm = 100985.6284
+    Mode 3: L2 norm = 100985.6284
+    Mode 4: L2 norm = 169863.3109
+    Mode 5: L2 norm = 135393.0041
+    Mode 2: L2 norm = 100985.6284
+    Mode 1: L2 norm = 7336819.8376, Max flow = 664227.0000
+    Mode 3: L2 norm = 587301.0893
+    Mode 4: L2 norm = 1371029.5047
+    Mode 5: L2 norm = 169863.3109
+    Mode 5: L2 norm = 80546.2297
+    Mode 2: L2 norm = 593007.2944
+    Mode 3: L2 norm = 28123746.8655
+    Mode 3: L2 norm = 191701.0968
+    Mode 5: L2 norm = 54882.6296
+    Mode 3: L2 norm = 169863.3109
+    Mode 3: L2 norm = 15908262.2329
+    Mode 3: L2 norm = 176865.9355
+    Mode 5: L2 norm = 562742.9487
+    Mode 4: L2 norm = 35372.0297
+    Mode 4: L2 norm = 2227461.2731
+    Mode 4: L2 norm = 4730767.9761
+    Mode 3: L2 norm = 4730767.9761
+    Mode 4: L2 norm = 176865.9355
+    Mode 2: L2 norm = 2227461.2731
+    Mode 4: L2 norm = 427556.4131
+    Mode 4: L2 norm = 135393.0041
+    Mode 2: L2 norm = 24135671.0990
+    Mode 5: L2 norm = 43048.4416
+    Mode 4: L2 norm = 7864564.9969
+    Mode 4: L2 norm = 191701.0968
+    Mode 1: L2 norm = 8928303.4990
+    Mode 2: L2 norm = 6978096.7305, Max flow = 741133.0000
+    Mode 3: L2 norm = 10583347.1154, Max flow = 1396203.0000
+    Mode 2: L2 norm = 16283893.4500
+    Mode 3: L2 norm = 12278341.9011
+    Mode 4: L2 norm = 4533444.8604
+    Mode 2: L2 norm = 19571824.4207
+    Mode 4: L2 norm = 16283893.4500
+    Mode 5: L2 norm = 35372.0297
+    Mode 3: L2 norm = 593007.2944
+    Mode 3: L2 norm = 8824674.4361
+    Mode 5: L2 norm = 68227.3062
+    Mode 4: L2 norm = 174260.0215
+    Mode 5: L2 norm = 79574.2167
+    Mode 4: L2 norm = 562742.9487
+    Mode 3: L2 norm = 6327078.8803, Max flow = 860586.0000
+    Mode 4: L2 norm = 208972.4707
+    Mode 3: L2 norm = 16283893.4500
+    Mode 4: L2 norm = 587301.0893
+    Mode 3: L2 norm = 2227461.2731
+    Mode 3: L2 norm = 2179709.4139
+    Mode 1: L2 norm = 31458016.5328
+    Mode 2: L2 norm = 7699175.9772
+    Mode 4: L2 norm = 2179709.4139
+    Mode 3: L2 norm = 9503146.0083
+    Mode 4: L2 norm = 1933252.4035
+    Mode 2: L2 norm = 28833934.1517
+    Mode 2: L2 norm = 31536104.9845
+    Mode 4: L2 norm = 398324.6780
+    Mode 1: L2 norm = 28024331.6317
+    Mode 3: L2 norm = 28833934.1517
+    Mode 3: L2 norm = 7699175.9772
+    Mode 4: L2 norm = 9503146.0083
+    Mode 4: L2 norm = 504536.9398
+    Mode 2: L2 norm = 39002159.0041
+    Mode 5: L2 norm = 406187.1399
+    Mode 1: L2 norm = 11403854.3748, Max flow = 1159137.0000
+    Mode 3: L2 norm = 24135671.0990
+    Mode 5: L2 norm = 254091.9891
+    Mode 5: L2 norm = 176865.9355
+    Mode 2: L2 norm = 10665032.1546, Max flow = 1325687.0000
+    Mode 2: L2 norm = 28123746.8655
+    Mode 3: L2 norm = 19571824.4207
+    Mode 5: L2 norm = 208972.4707
+    Mode 1: L2 norm = 38786603.0709
+    Mode 4: L2 norm = 15908262.2329
+    Mode 5: L2 norm = 495563.9960
+    Mode 4: L2 norm = 7699175.9772
+    Mode 4: L2 norm = 12278341.9011
+    Mode 4: L2 norm = 8824674.4361
+    Mode 4: L2 norm = 24135671.0990
+    Mode 3: L2 norm = 31536104.9845
+    Mode 4: L2 norm = 593007.2944
+    Mode 5: L2 norm = 174284.3831
+    Mode 5: L2 norm = 1518476.5539
+    Mode 5: L2 norm = 191701.0968
+    Mode 1: L2 norm = 28655954.1737
+    Mode 4: L2 norm = 28833934.1517
+    Mode 5: L2 norm = 593007.2944
+    Mode 5: L2 norm = 478447.9104
+    Mode 3: L2 norm = 44357277.4823
+    Mode 4: L2 norm = 5944714.7767, Max flow = 1195072.0000
+    Mode 5: L2 norm = 1933252.4035
+    Mode 5: L2 norm = 504536.9398
+    Mode 5: L2 norm = 5822653.7542
+    Mode 3: L2 norm = 39602235.7775
+    Mode 4: L2 norm = 31536104.9845
+    Mode 5: L2 norm = 8435204.4697
+    Mode 5: L2 norm = 7699175.9772
+    Mode 5: L2 norm = 2179709.4139
+    Mode 4: L2 norm = 8173624.7392, Max flow = 1856608.0000
+    Mode 5: L2 norm = 7864564.9969
+    Mode 2: L2 norm = 10846357.8350
+    Mode 4: L2 norm = 19571824.4207
+    Mode 5: L2 norm = 5317479.6729, Max flow = 2525890.0000
+    Mode 1: L2 norm = 58176503.5079
+    Mode 5: L2 norm = 398324.6780
+    Mode 1: L2 norm = 44446268.6573
+    Mode 5: L2 norm = 1371029.5047
+    Mode 5: L2 norm = 587301.0893
+    Mode 5: L2 norm = 16283893.4500
+    Mode 5: L2 norm = 8824674.4361
+    Mode 4: L2 norm = 28123746.8655
+    Mode 4: L2 norm = 39340894.7120
+    Mode 5: L2 norm = 4533444.8604
+    Mode 3: L2 norm = 10847222.0807
+    Mode 5: L2 norm = 4730767.9761
+    Mode 5: L2 norm = 2227461.2731
+    Mode 2: L2 norm = 44357277.4823
+    Mode 1: L2 norm = 10846295.4057
+    Mode 2: L2 norm = 58397642.7969
+    Mode 3: L2 norm = 58548034.8065
+    Mode 4: L2 norm = 44357277.4823
+    Mode 4: L2 norm = 10847222.0807
+    Mode 5: L2 norm = 31536104.9845
+    Mode 3: L2 norm = 54875170.7773
+    Mode 5: L2 norm = 15908262.2329
+    Mode 5: L2 norm = 12278341.9011
+    Mode 5: L2 norm = 10847222.0807
+    Mode 5: L2 norm = 28833934.1517
+    Mode 5: L2 norm = 6205340.7884, Max flow = 2191999.0000
+    Mode 5: L2 norm = 37486464.7046
+    Mode 5: L2 norm = 24135671.0990
+    Mode 4: L2 norm = 58593572.4947
+    Mode 2: L2 norm = 54875070.7155
+    Mode 1: L2 norm = 54987534.5998
+    Mode 5: L2 norm = 19571824.4207
+    Mode 1: L2 norm = 76115465.5286
+    Mode 2: L2 norm = 76236652.6449
+    Mode 3: L2 norm = 76727500.6769
+    Mode 5: L2 norm = 58593572.4947
+    Mode 4: L2 norm = 54870837.9268
+    Mode 4: L2 norm = 76877491.4614
+    Mode 7: L2 norm = 43033.8111
+    Mode 5: L2 norm = 44357277.4823
+    Mode 2: L2 norm = 44645534.8709
+    Mode 5: L2 norm = 28123746.8655
+    Mode 7: L2 norm = 35357.4858
+    Mode 3: L2 norm = 44645534.8709
+    Mode 7: L2 norm = 68227.3062
+    Mode 7: L2 norm = 54882.6296
+    Mode 7: L2 norm = 80546.2297
+    Mode 7: L2 norm = 79574.2167
+    Mode 5: L2 norm = 54870837.9268
+    Mode 7: L2 norm = 100985.6284
+    Mode 4: L2 norm = 44645534.8709
+    Mode 2: L2 norm = 95531051.1627
+    Mode 1: L2 norm = 44645534.8709
+    Mode 5: L2 norm = 44645534.8709
+    Mode 4: L2 norm = 95510315.0975
+    Mode 1: L2 norm = 80752704.9953
+    Mode 2: L2 norm = 80779638.1174
+    Mode 1: L2 norm = 95355833.6073
+    Mode 7: L2 norm = 176865.9355
+    Mode 3: L2 norm = 95363724.4195
+    Mode 3: L2 norm = 80779638.1174
+    Mode 7: L2 norm = 135393.0041
+    Mode 5: L2 norm = 76877491.4614
+    Mode 2: L2 norm = 111863849.1503
+    Mode 7: L2 norm = 428965.8901
+    Mode 3: L2 norm = 111863849.1503
+    Mode 4: L2 norm = 80779638.1174
+    Mode 7: L2 norm = 174260.0215
+    Mode 1: L2 norm = 111967937.4222
+    Mode 7: L2 norm = 208972.4707
+    Mode 7: L2 norm = 169863.3109
+    Mode 6: L2 norm = 54882.6296
+    Mode 2: L2 norm = 188300211.4441, Max flow = 5531727.0000
+    Mode 2: L2 norm = 190772279.7465, Max flow = 5385849.0000
+    Mode 2: L2 norm = 188419841.1153, Max flow = 5593760.0000
+    Mode 4: L2 norm = 111863849.1503
+    Mode 1: L2 norm = 191233544.0085, Max flow = 5442429.0000
+    Mode 3: L2 norm = 189422035.3519, Max flow = 5294862.0000
+    Mode 2: L2 norm = 188539132.6057, Max flow = 5463456.0000
+    Mode 2: L2 norm = 190202824.5168, Max flow = 5773265.0000
+    Mode 5: L2 norm = 80779638.1174
+    Mode 5: L2 norm = 95510315.0975
+    Mode 2: L2 norm = 193104693.9344, Max flow = 5576730.0000
+    Mode 7: L2 norm = 191701.0968
+    Mode 1: L2 norm = 190134765.0567, Max flow = 5773265.0000
+    Mode 3: L2 norm = 187985506.7803, Max flow = 5274877.0000
+    Mode 3: L2 norm = 191423047.7104, Max flow = 5442429.0000
+    Mode 6: L2 norm = 68227.3062
+    Mode 1: L2 norm = 188381987.3212, Max flow = 5531727.0000
+    Mode 1: L2 norm = 190685712.9185, Max flow = 5479120.0000
+    Mode 3: L2 norm = 189339630.5243, Max flow = 5467801.0000
+    Mode 2: L2 norm = 186492247.4346, Max flow = 5373868.0000
+    Mode 2: L2 norm = 190873294.8306, Max flow = 5509989.0000
+    Mode 3: L2 norm = 189610026.0730, Max flow = 5773265.0000
+    Mode 1: L2 norm = 190015893.0095, Max flow = 5896267.0000
+    Mode 3: L2 norm = 192126837.8018, Max flow = 5252066.0000
+    Mode 1: L2 norm = 186854458.3611, Max flow = 5373868.0000
+    Mode 1: L2 norm = 192607097.8800, Max flow = 5187542.0000
+    Mode 4: L2 norm = 192281624.3583, Max flow = 5866057.0000
+    Mode 6: L2 norm = 43031.1355
+    Mode 3: L2 norm = 192281624.3583, Max flow = 5866057.0000
+    Mode 2: L2 norm = 194586236.1630, Max flow = 5723552.0000
+    Mode 2: L2 norm = 189339630.5243, Max flow = 5467801.0000
+    Mode 2: L2 norm = 192463185.7093, Max flow = 5670785.0000
+    Mode 2: L2 norm = 189463154.4231, Max flow = 5294862.0000
+    Mode 2: L2 norm = 192251001.0925, Max flow = 5866057.0000
+    Mode 1: L2 norm = 190882690.1832, Max flow = 5406727.0000
+    Mode 2: L2 norm = 188552270.7876, Max flow = 5338663.0000
+    Mode 3: L2 norm = 190873294.8306, Max flow = 5509989.0000
+    Mode 1: L2 norm = 188419455.6147, Max flow = 5338663.0000
+    Mode 4: L2 norm = 190873294.8306, Max flow = 5509989.0000
+    Mode 3: L2 norm = 192463185.7093, Max flow = 5670785.0000
+    Mode 4: L2 norm = 187985506.7803, Max flow = 5274877.0000
+    Mode 1: L2 norm = 191059549.6658, Max flow = 5226649.0000
+    Mode 3: L2 norm = 190612213.0003, Max flow = 5479120.0000
+    Mode 3: L2 norm = 189826873.9405, Max flow = 5406727.0000
+    Mode 1: L2 norm = 199449062.4860, Max flow = 5702590.0000
+    Mode 1: L2 norm = 191880434.9210, Max flow = 5572894.0000
+    Mode 2: L2 norm = 192153363.3092, Max flow = 5576250.0000
+    Mode 1: L2 norm = 192593262.5672, Max flow = 5409386.0000
+    Mode 3: L2 norm = 190391573.3435, Max flow = 5411177.0000
+    Mode 1: L2 norm = 189748793.2606, Max flow = 5570057.0000
+    Mode 3: L2 norm = 188151551.4102, Max flow = 5531727.0000
+    Mode 1: L2 norm = 188221101.3754, Max flow = 5274877.0000
+    Mode 1: L2 norm = 192700136.8092, Max flow = 5569169.0000
+    Mode 1: L2 norm = 117181941.0920
+    Mode 1: L2 norm = 196349185.1099, Max flow = 5494333.0000
+    Mode 3: L2 norm = 192493903.2975, Max flow = 5409386.0000
+    Mode 2: L2 norm = 193084117.0578, Max flow = 5646164.0000
+    Mode 2: L2 norm = 190675970.1204, Max flow = 5405335.0000
+    Mode 1: L2 norm = 189400101.8083, Max flow = 5467801.0000
+    Mode 2: L2 norm = 190102194.4356, Max flow = 5467358.0000
+    Mode 2: L2 norm = 191386733.7312, Max flow = 5442429.0000
+    Mode 4: L2 norm = 190706002.6982, Max flow = 5226649.0000
+    Mode 3: L2 norm = 190487993.5783, Max flow = 5205567.0000
+    Mode 1: L2 norm = 197001271.4206, Max flow = 5379596.0000
+    Mode 4: L2 norm = 117214331.8752
+    Mode 2: L2 norm = 189271660.6781, Max flow = 5416947.0000
+    Mode 1: L2 norm = 190922932.2162, Max flow = 5205567.0000
+    Mode 1: L2 norm = 189755777.0714, Max flow = 5414183.0000
+    Mode 3: L2 norm = 193104693.9344, Max flow = 5576730.0000
+    Mode 1: L2 norm = 193000583.7283, Max flow = 5576250.0000
+    Mode 1: L2 norm = 191768755.5182, Max flow = 5419774.0000
+    Mode 2: L2 norm = 193329398.7805, Max flow = 5584359.0000
+    Mode 3: L2 norm = 189718684.3815, Max flow = 5467358.0000
+    Mode 4: L2 norm = 190772279.7465, Max flow = 5385849.0000
+    Mode 3: L2 norm = 192925195.2749, Max flow = 5427757.0000
+    Mode 2: L2 norm = 156255593.7191, Max flow = 4776304.0000
+    Mode 3: L2 norm = 196119998.0229, Max flow = 5379596.0000
+    Mode 2: L2 norm = 189834624.7597, Max flow = 5463911.0000
+    Mode 1: L2 norm = 193225530.7421, Max flow = 5427757.0000
+    Mode 4: L2 norm = 189826873.9405, Max flow = 5406727.0000
+    Mode 3: L2 norm = 188034297.6164, Max flow = 5593760.0000
+    Mode 3: L2 norm = 196356954.4561, Max flow = 5291649.0000
+    Mode 2: L2 norm = 192126837.8018, Max flow = 5252066.0000
+    Mode 4: L2 norm = 189718684.3815, Max flow = 5467358.0000
+    Mode 2: L2 norm = 195923721.5361, Max flow = 5617685.0000
+    Mode 2: L2 norm = 195684050.0211, Max flow = 5494333.0000
+    Mode 2: L2 norm = 192591987.9284, Max flow = 5392327.0000
+    Mode 4: L2 norm = 190391573.3435, Max flow = 5411177.0000
+    Mode 4: L2 norm = 189610026.0730, Max flow = 5773265.0000
+    Mode 2: L2 norm = 194759000.0599, Max flow = 5447549.0000
+    Mode 3: L2 norm = 197504087.0931, Max flow = 5397406.0000
+    Mode 1: L2 norm = 196319986.0388, Max flow = 5723552.0000
+    Mode 1: L2 norm = 198128217.1861, Max flow = 5212432.0000
+    Mode 2: L2 norm = 189525793.1566, Max flow = 5419144.0000
+    Mode 4: L2 norm = 189422035.3519, Max flow = 5294862.0000
+    Mode 2: L2 norm = 191926468.5920, Max flow = 5187542.0000
+    Mode 3: L2 norm = 190011565.5517, Max flow = 5896267.0000
+    Mode 1: L2 norm = 194396118.4102, Max flow = 5378784.0000
+    Mode 3: L2 norm = 194106783.1951, Max flow = 5723552.0000
+    Mode 3: L2 norm = 187617214.5205, Max flow = 5392576.0000
+    Mode 2: L2 norm = 191885133.9606, Max flow = 5427837.0000
+    Mode 3: L2 norm = 188539132.6057, Max flow = 5463456.0000
+    Mode 2: L2 norm = 194087991.8742, Max flow = 5607009.0000
+    Mode 3: L2 norm = 190675970.1204, Max flow = 5405335.0000
+    Mode 6: L2 norm = 80546.2297
+    Mode 3: L2 norm = 191519267.7754, Max flow = 5451281.0000
+    Mode 1: L2 norm = 188436647.1214, Max flow = 5392576.0000
+    Mode 3: L2 norm = 189937847.4481, Max flow = 5463911.0000
+    Mode 4: L2 norm = 191423047.7104, Max flow = 5442429.0000
+    Mode 1: L2 norm = 192751696.0031, Max flow = 5670785.0000
+    Mode 1: L2 norm = 190437606.4128, Max flow = 5463911.0000
+    Mode 2: L2 norm = 202401011.8389, Max flow = 5386357.0000
+    Mode 4: L2 norm = 192463185.7093, Max flow = 5670785.0000
+    Mode 2: L2 norm = 193583029.4959, Max flow = 6178454.0000
+    Mode 2: L2 norm = 117214331.8752
+    Mode 3: L2 norm = 186628905.7131, Max flow = 5373868.0000
+    Mode 2: L2 norm = 271335668.7319, Max flow = 3319683.0000
+    Mode 2: L2 norm = 195322836.9779, Max flow = 5350375.0000
+    Mode 1: L2 norm = 193211159.3151, Max flow = 5451281.0000
+    Mode 3: L2 norm = 190772279.7465, Max flow = 5385849.0000
+    Mode 2: L2 norm = 194239990.1484, Max flow = 5378784.0000
+    Mode 1: L2 norm = 197820260.0373, Max flow = 5617685.0000
+    Mode 1: L2 norm = 192354537.7120, Max flow = 5866057.0000
+    Mode 2: L2 norm = 192644902.3084, Max flow = 5409386.0000
+    Mode 1: L2 norm = 193604024.8582, Max flow = 5646164.0000
+    Mode 1: L2 norm = 190115238.5728, Max flow = 5419144.0000
+    Mode 4: L2 norm = 191827138.9988, Max flow = 5187542.0000
+    Mode 3: L2 norm = 191083050.9226, Max flow = 5569169.0000
+    Mode 2: L2 norm = 196356954.4561, Max flow = 5291649.0000
+    Mode 1: L2 norm = 195237888.3735, Max flow = 5607009.0000
+    Mode 3: L2 norm = 190647127.4411, Max flow = 5419774.0000
+    Mode 3: L2 norm = 189525793.1566, Max flow = 5419144.0000
+    Mode 3: L2 norm = 195450207.6979, Max flow = 5423964.0000
+    Mode 1: L2 norm = 192830773.9598, Max flow = 5338789.0000
+    Mode 1: L2 norm = 196482949.0065, Max flow = 5350375.0000
+    Mode 3: L2 norm = 190706002.6982, Max flow = 5226649.0000
+    Mode 2: L2 norm = 192954286.6158, Max flow = 5260004.0000
+    Mode 1: L2 norm = 195004084.2685, Max flow = 5481164.0000
+    Mode 4: L2 norm = 192493903.2975, Max flow = 5409386.0000
+    Mode 3: L2 norm = 198473846.3555, Max flow = 5702590.0000
+    Mode 4: L2 norm = 188539132.6057, Max flow = 5463456.0000
+    Mode 3: L2 norm = 155399057.2883, Max flow = 4776304.0000
+    Mode 2: L2 norm = 194531970.7637, Max flow = 5481164.0000
+    Mode 3: L2 norm = 192591987.9284, Max flow = 5392327.0000
+    Mode 1: L2 norm = 198492925.2440, Max flow = 5637199.0000
+    Mode 4: L2 norm = 192126837.8018, Max flow = 5252066.0000
+    Mode 2: L2 norm = 190647127.4411, Max flow = 5419774.0000
+    Mode 2: L2 norm = 191196062.3102, Max flow = 5569169.0000
+    Mode 6: L2 norm = 35357.4858
+    Mode 1: L2 norm = 191134725.0875, Max flow = 5385849.0000
+    Mode 1: L2 norm = 193071471.2853, Max flow = 5315141.0000
+    Mode 1: L2 norm = 193620576.1615, Max flow = 5252066.0000
+    Mode 3: L2 norm = 187264224.4976, Max flow = 5323285.0000
+    Mode 2: L2 norm = 195497249.6459, Max flow = 5244958.0000
+    Mode 2: L2 norm = 188109498.1218, Max flow = 5274877.0000
+    Mode 4: L2 norm = 192062719.0416, Max flow = 5576250.0000
+    Mode 3: L2 norm = 199068706.3808, Max flow = 5552179.0000
+    Mode 2: L2 norm = 196541352.4170, Max flow = 5379596.0000
+    Mode 1: L2 norm = 194675429.7597, Max flow = 6178454.0000
+    Mode 4: L2 norm = 175380011.1524, Max flow = 5091821.0000
+    Mode 4: L2 norm = 195157058.8406, Max flow = 5244958.0000
+    Mode 2: L2 norm = 195678087.0748, Max flow = 5423964.0000
+    Mode 2: L2 norm = 190478637.4408, Max flow = 5205567.0000
+    Mode 4: L2 norm = 190647127.4411, Max flow = 5419774.0000
+    Mode 1: L2 norm = 191208629.9453, Max flow = 5411177.0000
+    Mode 3: L2 norm = 195684050.0211, Max flow = 5494333.0000
+    Mode 1: L2 norm = 190318034.1977, Max flow = 5294862.0000
+    Mode 4: L2 norm = 186628905.7131, Max flow = 5373868.0000
+    Mode 1: L2 norm = 198071591.8039, Max flow = 5397406.0000
+    Mode 3: L2 norm = 201197898.3019, Max flow = 5326983.0000
+    Mode 3: L2 norm = 193084117.0578, Max flow = 5646164.0000
+    Mode 1: L2 norm = 194614930.0389, Max flow = 5260004.0000
+    Mode 4: L2 norm = 195322836.9779, Max flow = 5350375.0000
+    Mode 4: L2 norm = 197504087.0931, Max flow = 5397406.0000
+    Mode 3: L2 norm = 192062719.0416, Max flow = 5576250.0000
+    Mode 3: L2 norm = 197325248.1142, Max flow = 5212432.0000
+    Mode 2: L2 norm = 200232671.9239, Max flow = 5686426.0000
+    Mode 2: L2 norm = 198306979.4426, Max flow = 5492974.0000
+    Mode 3: L2 norm = 193583029.4959, Max flow = 6178454.0000
+    Mode 2: L2 norm = 190741566.8224, Max flow = 5226649.0000
+    Mode 3: L2 norm = 194537831.5366, Max flow = 5034515.0000
+    Mode 2: L2 norm = 192925195.2749, Max flow = 5427757.0000
+    Mode 2: L2 norm = 197500828.5347, Max flow = 5397406.0000
+    Mode 4: L2 norm = 190011565.5517, Max flow = 5896267.0000
+    Mode 4: L2 norm = 178849827.7307, Max flow = 5342671.0000
+    Mode 1: L2 norm = 200853403.6202, Max flow = 5225825.0000
+    Mode 2: L2 norm = 190444421.6150, Max flow = 5572894.0000
+    Mode 4: L2 norm = 197271992.6728, Max flow = 5458313.0000
+    Mode 1: L2 norm = 190679024.4983, Max flow = 5405335.0000
+    Mode 2: L2 norm = 199363924.2036, Max flow = 5568984.0000
+    Mode 4: L2 norm = 197743851.2338, Max flow = 5410122.0000
+    Mode 6: L2 norm = 79574.2167
+    Mode 4: L2 norm = 195684050.0211, Max flow = 5494333.0000
+    Mode 1: L2 norm = 194368139.6151, Max flow = 5369126.0000
+    Mode 4: L2 norm = 187617214.5205, Max flow = 5392576.0000
+    Mode 4: L2 norm = 188151551.4102, Max flow = 5531727.0000
+    Mode 2: L2 norm = 192682083.0822, Max flow = 5251921.0000
+    Mode 3: L2 norm = 194474067.1907, Max flow = 5252041.0000
+    Mode 2: L2 norm = 190666782.1795, Max flow = 5479120.0000
+    Mode 4: L2 norm = 178635889.6383, Max flow = 5053305.0000
+    Mode 1: L2 norm = 202289928.1288, Max flow = 5326983.0000
+    Mode 3: L2 norm = 200371493.4792, Max flow = 5982812.0000
+    Mode 1: L2 norm = 202147707.3100, Max flow = 5931415.0000
+    Mode 3: L2 norm = 200527971.9857, Max flow = 5225825.0000
+    Mode 4: L2 norm = 190612213.0003, Max flow = 5479120.0000
+    Mode 3: L2 norm = 197271992.6728, Max flow = 5458313.0000
+    Mode 1: L2 norm = 195383227.9541, Max flow = 5244958.0000
+    Mode 2: L2 norm = 198486668.1240, Max flow = 5702590.0000
+    Mode 2: L2 norm = 190336615.0958, Max flow = 5406727.0000
+    Mode 4: L2 norm = 198630044.5911, Max flow = 5492974.0000
+    Mode 3: L2 norm = 188192053.1949, Max flow = 5338663.0000
+    Mode 1: L2 norm = 205559545.4456, Max flow = 5474369.0000
+    Mode 2: L2 norm = 190846936.1607, Max flow = 5411177.0000
+    Mode 4: L2 norm = 189937847.4481, Max flow = 5463911.0000
+    Mode 2: L2 norm = 200527971.9857, Max flow = 5225825.0000
+    Mode 4: L2 norm = 190487993.5783, Max flow = 5205567.0000
+    Mode 4: L2 norm = 195050451.1587, Max flow = 5579029.0000
+    Mode 3: L2 norm = 195923721.5361, Max flow = 5617685.0000
+    Mode 4: L2 norm = 193490328.8490, Max flow = 5576730.0000
+    Mode 3: L2 norm = 195322836.9779, Max flow = 5350375.0000
+    Mode 4: L2 norm = 196018573.7742, Max flow = 5549873.0000
+    Mode 3: L2 norm = 195657566.8361, Max flow = 5110099.0000
+    Mode 3: L2 norm = 194083413.4925, Max flow = 5607009.0000
+    Mode 3: L2 norm = 190444421.6150, Max flow = 5572894.0000
+    Mode 4: L2 norm = 176377380.7348, Max flow = 5097134.0000
+    Mode 1: L2 norm = 198630127.4532, Max flow = 5458313.0000
+    Mode 4: L2 norm = 189525793.1566, Max flow = 5419144.0000
+    Mode 4: L2 norm = 188034297.6164, Max flow = 5593760.0000
+    Mode 2: L2 norm = 194293654.0303, Max flow = 5369126.0000
+    Mode 3: L2 norm = 178691334.4828, Max flow = 5026875.0000
+    Mode 1: L2 norm = 195245353.4920, Max flow = 5579029.0000
+    Mode 4: L2 norm = 191519267.7754, Max flow = 5451281.0000
+    Mode 1: L2 norm = 194071707.3608, Max flow = 5576730.0000
+    Mode 3: L2 norm = 195050451.1587, Max flow = 5579029.0000
+    Mode 1: L2 norm = 200317265.7597, Max flow = 5568984.0000
+    Mode 3: L2 norm = 186920749.0230, Max flow = 5342671.0000
+    Mode 3: L2 norm = 195781129.8404, Max flow = 4950662.0000
+    Mode 1: L2 norm = 199759005.7168, Max flow = 5429722.0000
+    Mode 3: L2 norm = 191827138.9988, Max flow = 5187542.0000
+    Mode 1: L2 norm = 201452034.4947, Max flow = 5686745.0000
+    Mode 4: L2 norm = 192163572.4713, Max flow = 5323097.0000
+    Mode 4: L2 norm = 192591987.9284, Max flow = 5392327.0000
+    Mode 2: L2 norm = 201579744.1339, Max flow = 5326983.0000
+    Mode 4: L2 norm = 192856468.6959, Max flow = 5260004.0000
+    Mode 1: L2 norm = 195001582.6529, Max flow = 5447549.0000
+    Mode 4: L2 norm = 194781141.6173, Max flow = 5447549.0000
+    Mode 1: L2 norm = 199365484.6204, Max flow = 5492974.0000
+    Mode 3: L2 norm = 200111037.6550, Max flow = 5686426.0000
+    Mode 3: L2 norm = 198692806.3904, Max flow = 6000542.0000
+    Mode 3: L2 norm = 192856468.6959, Max flow = 5260004.0000
+    Mode 2: L2 norm = 198834174.2569, Max flow = 5562982.0000
+    Mode 2: L2 norm = 206110115.9755, Max flow = 5489432.0000
+    Mode 4: L2 norm = 194202456.2272, Max flow = 5529562.0000
+    Mode 4: L2 norm = 190826497.4470, Max flow = 5251921.0000
+    Mode 2: L2 norm = 189574040.0916, Max flow = 5342671.0000
+    Mode 2: L2 norm = 200167467.2007, Max flow = 5508243.0000
+    Mode 3: L2 norm = 197584541.5494, Max flow = 5686745.0000
+    Mode 1: L2 norm = 192770320.2927, Max flow = 5284715.0000
+    Mode 4: L2 norm = 194474067.1907, Max flow = 5252041.0000
+    Mode 3: L2 norm = 189067416.9749, Max flow = 5416947.0000
+    Mode 4: L2 norm = 200371493.4792, Max flow = 5982812.0000
+    Mode 2: L2 norm = 192086683.9269, Max flow = 5323097.0000
+    Mode 1: L2 norm = 193822668.6026, Max flow = 5584359.0000
+    Mode 3: L2 norm = 194293654.0303, Max flow = 5369126.0000
+    Mode 4: L2 norm = 203549032.4787, Max flow = 5277060.0000
+    Mode 1: L2 norm = 198420602.0869, Max flow = 5378859.0000
+    Mode 2: L2 norm = 187741821.2831, Max flow = 4995790.0000
+    Mode 4: L2 norm = 193084117.0578, Max flow = 5646164.0000
+    Mode 1: L2 norm = 200877015.3973, Max flow = 5283112.0000
+    Mode 2: L2 norm = 198451055.6160, Max flow = 5637199.0000
+    Mode 2: L2 norm = 199068706.3808, Max flow = 5552179.0000
+    Mode 4: L2 norm = 193276278.4504, Max flow = 5584359.0000
+    Mode 1: L2 norm = 197310182.6110, Max flow = 5236787.0000
+    Mode 2: L2 norm = 202690800.6403, Max flow = 5480840.0000
+    Mode 3: L2 norm = 193276278.4504, Max flow = 5584359.0000
+    Mode 1: L2 norm = 201205381.1919, Max flow = 5562982.0000
+    Mode 1: L2 norm = 199813439.1255, Max flow = 5488594.0000
+    Mode 4: L2 norm = 194527682.8389, Max flow = 5481164.0000
+    Mode 4: L2 norm = 201558285.1877, Max flow = 5972657.0000
+    Mode 3: L2 norm = 205610773.3510, Max flow = 5590872.0000
+    Mode 3: L2 norm = 198997747.2350, Max flow = 5707809.0000
+    Mode 1: L2 norm = 202557054.5548, Max flow = 5408826.0000
+    Mode 2: L2 norm = 192765704.3295, Max flow = 5284715.0000
+    Mode 2: L2 norm = 203749465.2008, Max flow = 5474369.0000
+    Mode 5: L2 norm = 188151551.4102, Max flow = 5531727.0000
+    Mode 4: L2 norm = 189339630.5243, Max flow = 5467801.0000
+    Mode 4: L2 norm = 152201486.9884, Max flow = 4776304.0000
+    Mode 2: L2 norm = 198068555.9702, Max flow = 5429722.0000
+    Mode 2: L2 norm = 200445278.3362, Max flow = 5982812.0000
+    Mode 1: L2 norm = 190556782.2679, Max flow = 5467358.0000
+    Mode 3: L2 norm = 191885133.9606, Max flow = 5427837.0000
+    Mode 1: L2 norm = 197143374.8048, Max flow = 4925468.0000
+    Mode 3: L2 norm = 203810285.5142, Max flow = 5425842.0000
+    Mode 1: L2 norm = 189436397.2402, Max flow = 5416947.0000
+    Mode 1: L2 norm = 207528291.0942, Max flow = 5489432.0000
+    Mode 3: L2 norm = 198306979.4426, Max flow = 5492974.0000
+    Mode 2: L2 norm = 197955288.5606, Max flow = 5686745.0000
+    Mode 2: L2 norm = 200318232.3549, Max flow = 5464276.0000
+    Mode 4: L2 norm = 194106783.1951, Max flow = 5723552.0000
+    Mode 2: L2 norm = 205588240.2886, Max flow = 5425842.0000
+    Mode 3: L2 norm = 192163572.4713, Max flow = 5323097.0000
+    Mode 3: L2 norm = 189841748.0086, Max flow = 5283542.0000
+    Mode 5: L2 norm = 186628905.7131, Max flow = 5373868.0000
+    Mode 4: L2 norm = 188192053.1949, Max flow = 5338663.0000
+    Mode 4: L2 norm = 190444421.6150, Max flow = 5572894.0000
+    Mode 4: L2 norm = 192925195.2749, Max flow = 5427757.0000
+    Mode 4: L2 norm = 192566439.5574, Max flow = 5284715.0000
+    Mode 1: L2 norm = 202783843.7958, Max flow = 5386357.0000
+    Mode 3: L2 norm = 202401011.8389, Max flow = 5386357.0000
+    Mode 1: L2 norm = 204092177.6535, Max flow = 5336886.0000
+    Mode 4: L2 norm = 198151218.0771, Max flow = 5562982.0000
+    Mode 4: L2 norm = 199337531.8131, Max flow = 5568984.0000
+    Mode 4: L2 norm = 200111037.6550, Max flow = 5686426.0000
+    Mode 4: L2 norm = 198525423.6168, Max flow = 5637199.0000
+    Mode 2: L2 norm = 195050451.1587, Max flow = 5579029.0000
+    Mode 5: L2 norm = 190675970.1204, Max flow = 5405335.0000
+    Mode 3: L2 norm = 117214331.8752
+    Mode 1: L2 norm = 201925055.2407, Max flow = 5044811.0000
+    Mode 4: L2 norm = 190675970.1204, Max flow = 5405335.0000
+    Mode 3: L2 norm = 203549032.4787, Max flow = 5277060.0000
+    Mode 5: L2 norm = 187985506.7803, Max flow = 5274877.0000
+    Mode 4: L2 norm = 200239725.4979, Max flow = 5464276.0000
+    Mode 4: L2 norm = 196119998.0229, Max flow = 5379596.0000
+    Mode 2: L2 norm = 202745746.9977, Max flow = 5848956.0000
+    Mode 2: L2 norm = 198124907.8371, Max flow = 5034515.0000
+    Mode 1: L2 norm = 200047910.5770, Max flow = 5552179.0000
+    Mode 3: L2 norm = 199838537.0147, Max flow = 5581207.0000
+    Mode 2: L2 norm = 207635299.5559, Max flow = 5604871.0000
+    Mode 3: L2 norm = 207146128.5227, Max flow = 5604871.0000
+    Mode 3: L2 norm = 195153929.3764, Max flow = 5236787.0000
+    Mode 2: L2 norm = 206152217.8357, Max flow = 5392177.0000
+    Mode 4: L2 norm = 198903427.1010, Max flow = 6000542.0000
+    Mode 2: L2 norm = 196144461.7406, Max flow = 5549873.0000
+    Mode 1: L2 norm = 200559671.1424, Max flow = 5686426.0000
+    Mode 4: L2 norm = 202401011.8389, Max flow = 5386357.0000
+    Mode 3: L2 norm = 198525423.6168, Max flow = 5637199.0000
+    Mode 3: L2 norm = 185075678.0648, Max flow = 4795158.0000
+    Mode 3: L2 norm = 190826497.4470, Max flow = 5251921.0000
+    Mode 3: L2 norm = 198877060.2247, Max flow = 5507948.0000
+    Mode 4: L2 norm = 194083413.4925, Max flow = 5607009.0000
+    Mode 4: L2 norm = 197584541.5494, Max flow = 5686745.0000
+    Mode 4: L2 norm = 198997747.2350, Max flow = 5707809.0000
+    Mode 3: L2 norm = 198068555.9702, Max flow = 5429722.0000
+    Mode 4: L2 norm = 193583029.4959, Max flow = 6178454.0000
+    Mode 2: L2 norm = 201492625.4631, Max flow = 5256313.0000
+    Mode 3: L2 norm = 205717639.9220, Max flow = 5392177.0000
+    Mode 3: L2 norm = 203166865.7050, Max flow = 5717750.0000
+    Mode 2: L2 norm = 196046873.7920, Max flow = 4950662.0000
+    Mode 3: L2 norm = 203695742.8611, Max flow = 5474369.0000
+    Mode 2: L2 norm = 197344542.8973, Max flow = 5212432.0000
+    Mode 3: L2 norm = 186042098.9369, Max flow = 4927861.0000
+    Mode 2: L2 norm = 191519267.7754, Max flow = 5451281.0000
+    Mode 3: L2 norm = 202269440.1666, Max flow = 5540330.0000
+    Mode 4: L2 norm = 206110115.9755, Max flow = 5489432.0000
+    Mode 5: L2 norm = 192493903.2975, Max flow = 5409386.0000
+    Mode 4: L2 norm = 195923721.5361, Max flow = 5617685.0000
+    Mode 2: L2 norm = 203469548.5504, Max flow = 5277060.0000
+    Mode 3: L2 norm = 199206512.4180, Max flow = 5229974.0000
+    Mode 3: L2 norm = 188522206.0921, Max flow = 5291811.0000
+    Mode 3: L2 norm = 202745746.9977, Max flow = 5848956.0000
+    Mode 1: L2 norm = 198954448.8027, Max flow = 5549873.0000
+    Mode 2: L2 norm = 199954808.8673, Max flow = 5581207.0000
+    Mode 4: L2 norm = 202924594.0242, Max flow = 5769648.0000
+    Mode 3: L2 norm = 194781141.6173, Max flow = 5447549.0000
+    Mode 1: L2 norm = 196077896.4568, Max flow = 5247120.0000
+    Mode 4: L2 norm = 180010513.4732, Max flow = 5483548.0000
+    Mode 3: L2 norm = 200060762.3685, Max flow = 5508243.0000
+    Mode 2: L2 norm = 194474067.1907, Max flow = 5252041.0000
+    Mode 1: L2 norm = 211062003.6789, Max flow = 5515125.0000
+    Mode 4: L2 norm = 191885133.9606, Max flow = 5427837.0000
+    Mode 3: L2 norm = 206110115.9755, Max flow = 5489432.0000
+    Mode 2: L2 norm = 199268193.9418, Max flow = 5229974.0000
+    Mode 5: L2 norm = 188539132.6057, Max flow = 5463456.0000
+    Mode 5: L2 norm = 192463185.7093, Max flow = 5670785.0000
+    Mode 6: L2 norm = 100985.6284
+    Mode 3: L2 norm = 195157058.8406, Max flow = 5244958.0000
+    Mode 4: L2 norm = 195752149.2084, Max flow = 5423964.0000
+    Mode 5: L2 norm = 190612213.0003, Max flow = 5479120.0000
+    Mode 2: L2 norm = 195500774.1079, Max flow = 5236787.0000
+    Mode 4: L2 norm = 203695742.8611, Max flow = 5474369.0000
+    Mode 3: L2 norm = 197743851.2338, Max flow = 5410122.0000
+    Mode 3: L2 norm = 194527682.8389, Max flow = 5481164.0000
+    Mode 4: L2 norm = 199068706.3808, Max flow = 5552179.0000
+    Mode 3: L2 norm = 204673335.6391, Max flow = 5699108.0000
+    Mode 3: L2 norm = 195646209.3251, Max flow = 5529562.0000
+    Mode 1: L2 norm = 200037386.8165, Max flow = 5707809.0000
+    Mode 4: L2 norm = 194423736.0015, Max flow = 5378784.0000
+    Mode 4: L2 norm = 194293654.0303, Max flow = 5369126.0000
+    Mode 4: L2 norm = 202269440.1666, Max flow = 5540330.0000
+    Mode 2: L2 norm = 205516360.7376, Max flow = 5603869.0000
+    Mode 4: L2 norm = 184282435.6105, Max flow = 5394407.0000
+    Mode 4: L2 norm = 200060762.3685, Max flow = 5508243.0000
+    Mode 4: L2 norm = 207146128.5227, Max flow = 5604871.0000
+    Mode 4: L2 norm = 198473846.3555, Max flow = 5702590.0000
+    Mode 1: L2 norm = 212195847.6879, Max flow = 5176305.0000
+    Mode 5: L2 norm = 191519267.7754, Max flow = 5451281.0000
+    Mode 1: L2 norm = 205131169.6061, Max flow = 5277060.0000
+    Mode 5: L2 norm = 176299662.6346, Max flow = 5097134.0000
+    Mode 5: L2 norm = 192126837.8018, Max flow = 5252066.0000
+    Mode 1: L2 norm = 205741640.5376, Max flow = 5717750.0000
+    Mode 1: L2 norm = 193085156.6623, Max flow = 5392327.0000
+    Mode 4: L2 norm = 196356954.4561, Max flow = 5291649.0000
+    Mode 1: L2 norm = 267027260.1453, Max flow = 2960140.0000
+    Mode 5: L2 norm = 190011565.5517, Max flow = 5896267.0000
+    Mode 4: L2 norm = 199305342.8912, Max flow = 5399408.0000
+    Mode 5: L2 norm = 193490328.8490, Max flow = 5576730.0000
+    Mode 5: L2 norm = 146675855.5794, Max flow = 4837259.0000
+    Mode 3: L2 norm = 206399102.0704, Max flow = 5355679.0000
+    Mode 3: L2 norm = 217578690.3453, Max flow = 5668782.0000
+    Mode 4: L2 norm = 191397842.0315, Max flow = 5698272.0000
+    Mode 5: L2 norm = 190873294.8306, Max flow = 5509989.0000
+    Mode 5: L2 norm = 187973683.5493, Max flow = 5392576.0000
+    Mode 5: L2 norm = 195322836.9779, Max flow = 5350375.0000
+    Mode 4: L2 norm = 189067416.9749, Max flow = 5416947.0000
+    Mode 5: L2 norm = 192566439.5574, Max flow = 5284715.0000
+    Mode 4: L2 norm = 198068555.9702, Max flow = 5429722.0000
+    Mode 5: L2 norm = 117214331.8752
+    Mode 4: L2 norm = 199838537.0147, Max flow = 5581207.0000
+    Mode 4: L2 norm = 199206512.4180, Max flow = 5229974.0000
+    Mode 2: L2 norm = 203977860.0843, Max flow = 5506467.0000
+    Mode 3: L2 norm = 201558285.1877, Max flow = 5972657.0000
+    Mode 2: L2 norm = 196774156.1883, Max flow = 5110099.0000
+    Mode 1: L2 norm = 202280360.9480, Max flow = 5972657.0000
+    Mode 2: L2 norm = 190011565.5517, Max flow = 5896267.0000
+    Mode 7: L2 norm = 254091.9891
+    Mode 5: L2 norm = 189610026.0730, Max flow = 5773265.0000
+    Mode 5: L2 norm = 189422035.3519, Max flow = 5294862.0000
+    Mode 6: L2 norm = 135393.0041
+    Mode 5: L2 norm = 195157058.8406, Max flow = 5244958.0000
+    Mode 5: L2 norm = 193276278.4504, Max flow = 5584359.0000
+    Mode 4: L2 norm = 203196195.0521, Max flow = 5603869.0000
+    Mode 2: L2 norm = 211252970.6440, Max flow = 5375866.0000
+    Mode 5: L2 norm = 189067416.9749, Max flow = 5416947.0000
+    Mode 4: L2 norm = 200527971.9857, Max flow = 5225825.0000
+    Mode 4: L2 norm = 198105956.3844, Max flow = 5686196.0000
+    Mode 3: L2 norm = 205756989.7653, Max flow = 5375866.0000
+    Mode 2: L2 norm = 187686459.5558, Max flow = 5392576.0000
+    Mode 4: L2 norm = 197325248.1142, Max flow = 5212432.0000
+    Mode 5: L2 norm = 189339630.5243, Max flow = 5467801.0000
+    Mode 4: L2 norm = 204465591.8583, Max flow = 5699108.0000
+    Mode 5: L2 norm = 192281624.3583, Max flow = 5866057.0000
+    Mode 5: L2 norm = 194766449.1746, Max flow = 5252041.0000
+    Mode 2: L2 norm = 260407262.6106, Max flow = 2973541.0000
+    Mode 3: L2 norm = 196018573.7742, Max flow = 5549873.0000
+    Mode 1: L2 norm = 195933883.6196, Max flow = 5251921.0000
+    Mode 1: L2 norm = 192373278.6219, Max flow = 5509989.0000
+    Mode 1: L2 norm = 204518111.4997, Max flow = 5390454.0000
+    Mode 3: L2 norm = 199337531.8131, Max flow = 5568984.0000
+    Mode 5: L2 norm = 194293654.0303, Max flow = 5369126.0000
+    Mode 2: L2 norm = 203802281.8476, Max flow = 6000542.0000
+    Mode 1: L2 norm = 204779423.9090, Max flow = 5848956.0000
+    Mode 5: L2 norm = 192591987.9284, Max flow = 5392327.0000
+    Mode 3: L2 norm = 210067688.8286, Max flow = 5711009.0000
+    Mode 4: L2 norm = 195153929.3764, Max flow = 5236787.0000
+    Mode 2: L2 norm = 203456829.2227, Max flow = 5390454.0000
+    Mode 3: L2 norm = 192566439.5574, Max flow = 5284715.0000
+    Mode 4: L2 norm = 197373042.9307, Max flow = 5627192.0000
+    Mode 3: L2 norm = 194423736.0015, Max flow = 5378784.0000
+    Mode 3: L2 norm = 208576532.6672, Max flow = 5844971.0000
+    Mode 2: L2 norm = 199802088.2533, Max flow = 5399408.0000
+    Mode 4: L2 norm = 193749995.7666, Max flow = 5034515.0000
+    Mode 5: L2 norm = 189472683.4459, Max flow = 5265015.0000
+    Mode 1: L2 norm = 211434080.4784, Max flow = 5392177.0000
+    Mode 4: L2 norm = 208576532.6672, Max flow = 5844971.0000
+    Mode 3: L2 norm = 198151218.0771, Max flow = 5562982.0000
+    Mode 5: L2 norm = 194106783.1951, Max flow = 5723552.0000
+    Mode 4: L2 norm = 196750544.5429, Max flow = 5507948.0000
+    Mode 5: L2 norm = 191423047.7104, Max flow = 5442429.0000
+    Mode 3: L2 norm = 205632960.6685, Max flow = 5518369.0000
+    Mode 4: L2 norm = 216960083.9638, Max flow = 5668782.0000
+    Mode 4: L2 norm = 206442032.4481, Max flow = 5392177.0000
+    Mode 2: L2 norm = 205163822.7824, Max flow = 5389184.0000
+    Mode 5: L2 norm = 197504087.0931, Max flow = 5397406.0000
+    Mode 2: L2 norm = 212248173.6125, Max flow = 5844971.0000
+    Mode 5: L2 norm = 193583029.4959, Max flow = 6178454.0000
+    Mode 5: L2 norm = 195923721.5361, Max flow = 5617685.0000
+    Mode 5: L2 norm = 189937847.4481, Max flow = 5463911.0000
+    Mode 5: L2 norm = 177873801.6397, Max flow = 5483548.0000
+    Mode 5: L2 norm = 192925195.2749, Max flow = 5427757.0000
+    Mode 5: L2 norm = 165510934.8185, Max flow = 5321272.0000
+    Mode 2: L2 norm = 197373042.9307, Max flow = 5627192.0000
+    Mode 4: L2 norm = 191083050.9226, Max flow = 5569169.0000
+    Mode 5: L2 norm = 194083413.4925, Max flow = 5607009.0000
+    Mode 3: L2 norm = 210208956.0054, Max flow = 5171311.0000
+    Mode 5: L2 norm = 174425356.0240, Max flow = 5091821.0000
+    Mode 2: L2 norm = 198997747.2350, Max flow = 5707809.0000
+    Mode 1: L2 norm = 215387222.5815, Max flow = 5083498.0000
+    Mode 1: L2 norm = 201854970.5750, Max flow = 5399408.0000
+    Mode 4: L2 norm = 203503687.5113, Max flow = 5390454.0000
+    Mode 4: L2 norm = 195962517.4620, Max flow = 5110099.0000
+    Mode 2: L2 norm = 197657034.2447, Max flow = 5122500.0000
+    Mode 4: L2 norm = 203633620.6487, Max flow = 5355679.0000
+    Mode 5: L2 norm = 195684050.0211, Max flow = 5494333.0000
+    Mode 5: L2 norm = 190706002.6982, Max flow = 5226649.0000
+    Mode 5: L2 norm = 202745746.9977, Max flow = 5848956.0000
+    Mode 1: L2 norm = 200631181.3446, Max flow = 5283542.0000
+    Mode 5: L2 norm = 195050451.1587, Max flow = 5579029.0000
+    Mode 5: L2 norm = 194781141.6173, Max flow = 5447549.0000
+    Mode 1: L2 norm = 202925431.7720, Max flow = 5581207.0000
+    Mode 5: L2 norm = 189718684.3815, Max flow = 5467358.0000
+    Mode 5: L2 norm = 194270361.0213, Max flow = 5034515.0000
+    Mode 5: L2 norm = 194527682.8389, Max flow = 5481164.0000
+    Mode 2: L2 norm = 210471019.0051, Max flow = 5590872.0000
+    Mode 5: L2 norm = 197743851.2338, Max flow = 5410122.0000
+    Mode 2: L2 norm = 195826367.1836, Max flow = 5323285.0000
+    Mode 5: L2 norm = 198997747.2350, Max flow = 5707809.0000
+    Mode 1: L2 norm = 200630642.1225, Max flow = 5323285.0000
+    Mode 5: L2 norm = 184282435.6105, Max flow = 5394407.0000
+    Mode 4: L2 norm = 201197898.3019, Max flow = 5326983.0000
+    Mode 6: L2 norm = 176865.9355
+    Mode 5: L2 norm = 195153929.3764, Max flow = 5236787.0000
+    Mode 5: L2 norm = 201558285.1877, Max flow = 5972657.0000
+    Mode 5: L2 norm = 198151218.0771, Max flow = 5562982.0000
+    Mode 5: L2 norm = 194423736.0015, Max flow = 5378784.0000
+    Mode 5: L2 norm = 206716229.8048, Max flow = 5428872.0000
+    Mode 5: L2 norm = 192062719.0416, Max flow = 5576250.0000
+    Mode 3: L2 norm = 210931457.6849, Max flow = 5083498.0000
+    Mode 3: L2 norm = 195046196.8097, Max flow = 5698272.0000
+    Mode 4: L2 norm = 202745746.9977, Max flow = 5848956.0000
+    Mode 1: L2 norm = 168269377.1857, Max flow = 4469172.0000
+    Mode 5: L2 norm = 202401011.8389, Max flow = 5386357.0000
+    Mode 5: L2 norm = 196356954.4561, Max flow = 5291649.0000
+    Mode 4: L2 norm = 197870266.5499, Max flow = 5256313.0000
+    Mode 4: L2 norm = 202730437.3051, Max flow = 5622419.0000
+    Mode 2: L2 norm = 214441979.5815, Max flow = 5171311.0000
+    Mode 5: L2 norm = 190465596.1339, Max flow = 5283542.0000
+    Mode 5: L2 norm = 190391573.3435, Max flow = 5411177.0000
+    Mode 5: L2 norm = 197509159.8958, Max flow = 5507948.0000
+    Mode 2: L2 norm = 213321563.7566, Max flow = 5083498.0000
+    Mode 5: L2 norm = 193269725.6362, Max flow = 5260004.0000
+    Mode 5: L2 norm = 195752149.2084, Max flow = 5423964.0000
+    Mode 4: L2 norm = 200982707.1566, Max flow = 5590872.0000
+    Mode 3: L2 norm = 207740765.9024, Max flow = 5403443.0000
+    Mode 5: L2 norm = 190444421.6150, Max flow = 5572894.0000
+    Mode 4: L2 norm = 205727294.4078, Max flow = 5509970.0000
+    Mode 5: L2 norm = 198525423.6168, Max flow = 5637199.0000
+    Mode 5: L2 norm = 189525793.1566, Max flow = 5419144.0000
+    Mode 5: L2 norm = 111863849.1503
+    Mode 3: L2 norm = 202309437.5105, Max flow = 5491453.0000
+    Mode 2: L2 norm = 207603834.4116, Max flow = 5657209.0000
+    Mode 5: L2 norm = 191205568.0182, Max flow = 5251921.0000
+    Mode 5: L2 norm = 188192053.1949, Max flow = 5338663.0000
+    Mode 3: L2 norm = 219847018.0233, Max flow = 5554082.0000
+    Mode 5: L2 norm = 188034297.6164, Max flow = 5593760.0000
+    Mode 2: L2 norm = 221047960.4473, Max flow = 5668782.0000
+    Mode 5: L2 norm = 196018573.7742, Max flow = 5549873.0000
+    Mode 2: L2 norm = 197618162.1801, Max flow = 5458313.0000
+    Mode 2: L2 norm = 204436462.5949, Max flow = 5115694.0000
+    Mode 3: L2 norm = 213838059.1066, Max flow = 5124862.0000
+    Mode 4: L2 norm = 194422745.2429, Max flow = 5202000.0000
+    Mode 4: L2 norm = 212383408.4027, Max flow = 5577070.0000
+    Mode 3: L2 norm = 180891742.5695, Max flow = 4690349.0000
+    Mode 4: L2 norm = 190465596.1339, Max flow = 5283542.0000
+    Mode 2: L2 norm = 167885861.2923, Max flow = 4469172.0000
+    Mode 5: L2 norm = 203695742.8611, Max flow = 5474369.0000
+    Mode 1: L2 norm = 303024995.4600, Max flow = 3013604.0000
+    Mode 1: L2 norm = 206735272.5620, Max flow = 5115694.0000
+    Mode 1: L2 norm = 218891817.0381, Max flow = 5244431.0000
+    Mode 5: L2 norm = 198473846.3555, Max flow = 5702590.0000
+    Mode 5: L2 norm = 203810285.5142, Max flow = 5425842.0000
+    Mode 1: L2 norm = 196528904.9827, Max flow = 5291649.0000
+    Mode 5: L2 norm = 189826873.9405, Max flow = 5406727.0000
+    Mode 1: L2 norm = 207033859.4294, Max flow = 5034515.0000
+    Mode 1: L2 norm = 191426270.0694, Max flow = 4878422.0000
+    Mode 2: L2 norm = 197743851.2338, Max flow = 5410122.0000
+    Mode 2: L2 norm = 204056781.9765, Max flow = 5717750.0000
+    Mode 1: L2 norm = 157082430.6528, Max flow = 4776304.0000
+    Mode 6: L2 norm = 169863.3109
+    Mode 5: L2 norm = 199337531.8131, Max flow = 5568984.0000
+    Mode 2: L2 norm = 197302166.5346, Max flow = 5198464.0000
+    Mode 1: L2 norm = 213090438.3897, Max flow = 5403443.0000
+    Mode 3: L2 norm = 201662125.6273, Max flow = 5115694.0000
+    Mode 4: L2 norm = 203810285.5142, Max flow = 5425842.0000
+    Mode 7: L2 norm = 593007.2944
+    Mode 4: L2 norm = 194734995.7706, Max flow = 5265015.0000
+    Mode 2: L2 norm = 192458821.9008, Max flow = 5283542.0000
+    Mode 3: L2 norm = 167652876.0976, Max flow = 4469172.0000
+    Mode 5: L2 norm = 197271992.6728, Max flow = 5458313.0000
+    Mode 5: L2 norm = 202269440.1666, Max flow = 5540330.0000
+    Mode 3: L2 norm = 198478283.1365, Max flow = 5256313.0000
+    Mode 1: L2 norm = 186595445.8060, Max flow = 4570658.0000
+    Mode 4: L2 norm = 208006051.1129, Max flow = 5094804.0000
+    Mode 3: L2 norm = 203503687.5113, Max flow = 5390454.0000
+    Mode 3: L2 norm = 197031625.5736, Max flow = 5198464.0000
+    Mode 5: L2 norm = 193084117.0578, Max flow = 5646164.0000
+    Mode 1: L2 norm = 214403874.9657, Max flow = 5491453.0000
+    Mode 5: L2 norm = 206442032.4481, Max flow = 5392177.0000
+    Mode 7: L2 norm = 398324.6780
+    Mode 4: L2 norm = 195819365.7056, Max flow = 4950662.0000
+    Mode 1: L2 norm = 220692089.9958, Max flow = 5262681.0000
+    Mode 5: L2 norm = 191885133.9606, Max flow = 5427837.0000
+    Mode 2: L2 norm = 225606136.4576, Max flow = 5464867.0000
+    Mode 5: L2 norm = 196119998.0229, Max flow = 5379596.0000
+    Mode 4: L2 norm = 176716428.2563, Max flow = 4721577.0000
+    Mode 5: L2 norm = 203592975.7510, Max flow = 5717750.0000
+    Mode 1: L2 norm = 186870669.5419, Max flow = 4786005.0000
+    Mode 5: L2 norm = 199584772.5036, Max flow = 5399408.0000
+    Mode 5: L2 norm = 198002078.9519, Max flow = 5256313.0000
+    Mode 5: L2 norm = 201197898.3019, Max flow = 5326983.0000
+    Mode 4: L2 norm = 205344256.6576, Max flow = 5375866.0000
+    Mode 3: L2 norm = 199563610.8284, Max flow = 5399408.0000
+    Mode 2: L2 norm = 207580089.8772, Max flow = 5491453.0000
+    Mode 5: L2 norm = 197373042.9307, Max flow = 5627192.0000
+    Mode 5: L2 norm = 199370919.5962, Max flow = 6000542.0000
+    Mode 6: L2 norm = 208972.4707
+    Mode 5: L2 norm = 198068555.9702, Max flow = 5429722.0000
+    Mode 5: L2 norm = 200060762.3685, Max flow = 5508243.0000
+    Mode 5: L2 norm = 199068706.3808, Max flow = 5552179.0000
+    Mode 3: L2 norm = 197373042.9307, Max flow = 5627192.0000
+    Mode 1: L2 norm = 211370869.1330, Max flow = 5194504.0000
+    Mode 2: L2 norm = 186679429.7689, Max flow = 4786005.0000
+    Mode 5: L2 norm = 197879723.6795, Max flow = 5686745.0000
+    Mode 1: L2 norm = 154958746.9102
+    Mode 5: L2 norm = 217204005.9911, Max flow = 5668782.0000
+    Mode 1: L2 norm = 192435383.4262, Max flow = 5342671.0000
+    Mode 5: L2 norm = 190960736.7111, Max flow = 5698272.0000
+    Mode 5: L2 norm = 203549032.4787, Max flow = 5277060.0000
+    Mode 4: L2 norm = 219326834.9487, Max flow = 5554082.0000
+    Mode 3: L2 norm = 207527633.0445, Max flow = 5509970.0000
+    Mode 1: L2 norm = 219780574.9699, Max flow = 5356830.0000
+    Mode 2: L2 norm = 216297099.2082, Max flow = 5124862.0000
+    Mode 4: L2 norm = 292157773.9406, Max flow = 3013604.0000
+    Mode 3: L2 norm = 186626171.2136, Max flow = 4786005.0000
+    Mode 2: L2 norm = 214693815.7451, Max flow = 5264535.0000
+    Mode 4: L2 norm = 216929168.2229, Max flow = 5446493.0000
+    Mode 5: L2 norm = 200371493.4792, Max flow = 5982812.0000
+    Mode 1: L2 norm = 226120013.2106, Max flow = 5798424.0000
+    Mode 5: L2 norm = 197325248.1142, Max flow = 5212432.0000
+    Mode 5: L2 norm = 199838537.0147, Max flow = 5581207.0000
+    Mode 2: L2 norm = 214922008.0075, Max flow = 5507706.0000
+    Mode 2: L2 norm = 191627788.2266, Max flow = 4698483.0000
+    Mode 1: L2 norm = 232249732.5750, Max flow = 5585367.0000
+    Mode 5: L2 norm = 194120856.0730, Max flow = 5529562.0000
+    Mode 5: L2 norm = 200740561.0950, Max flow = 5369230.0000
+    Mode 1: L2 norm = 217885034.8666, Max flow = 5171311.0000
+    Mode 5: L2 norm = 200239725.4979, Max flow = 5464276.0000
+    Mode 5: L2 norm = 175490578.4884, Max flow = 5342671.0000
+    Mode 4: L2 norm = 210437944.0560, Max flow = 5124862.0000
+    Mode 2: L2 norm = 208689334.5369, Max flow = 5403443.0000
+    Mode 3: L2 norm = 220289899.0517, Max flow = 5341720.0000
+    Mode 5: L2 norm = 195192179.2229, Max flow = 4950662.0000
+    Mode 5: L2 norm = 207388767.1982, Max flow = 5164838.0000
+    Mode 5: L2 norm = 191827138.9988, Max flow = 5187542.0000
+    Mode 1: L2 norm = 212987218.6558, Max flow = 5603869.0000
+    Mode 5: L2 norm = 203254584.9844, Max flow = 5590872.0000
+    Mode 3: L2 norm = 200239725.4979, Max flow = 5464276.0000
+    Mode 5: L2 norm = 198943921.1687, Max flow = 5492974.0000
+    Mode 3: L2 norm = 213474476.8624, Max flow = 5622419.0000
+    Mode 2: L2 norm = 302158948.0866, Max flow = 3013604.0000
+    Mode 2: L2 norm = 208189908.3036, Max flow = 5391907.0000
+    Mode 2: L2 norm = 222049227.9438, Max flow = 5038063.0000
+    Mode 4: L2 norm = 166794525.7687, Max flow = 4469172.0000
+    Mode 3: L2 norm = 220864423.6861, Max flow = 5038063.0000
+    Mode 5: L2 norm = 206222734.1608, Max flow = 5375866.0000
+    Mode 5: L2 norm = 203196195.0521, Max flow = 5603869.0000
+    Mode 5: L2 norm = 207146128.5227, Max flow = 5604871.0000
+    Mode 2: L2 norm = 185074467.2043, Max flow = 4570658.0000
+    Mode 1: L2 norm = 214675037.9645, Max flow = 5657209.0000
+    Mode 4: L2 norm = 186561176.9501, Max flow = 4786005.0000
+    Mode 5: L2 norm = 200111037.6550, Max flow = 5686426.0000
+    Mode 5: L2 norm = 200527971.9857, Max flow = 5225825.0000
+    Mode 5: L2 norm = 191123761.1745, Max flow = 5338784.0000
+    Mode 1: L2 norm = 197697583.1083, Max flow = 5174634.0000
+    Mode 5: L2 norm = 201671319.2866, Max flow = 5769648.0000
+    Mode 6: L2 norm = 174260.0215
+    Mode 6: L2 norm = 427556.4131
+    Mode 1: L2 norm = 215901038.3802, Max flow = 5391907.0000
+    Mode 4: L2 norm = 218745592.7385, Max flow = 5714574.0000
+    Mode 2: L2 norm = 212929549.3824, Max flow = 5039752.0000
+    Mode 3: L2 norm = 298363338.7307, Max flow = 3013604.0000
+    Mode 5: L2 norm = 206422135.2238, Max flow = 5509970.0000
+    Mode 1: L2 norm = 194391234.8869, Max flow = 4698483.0000
+    Mode 1: L2 norm = 216266805.6611, Max flow = 5124862.0000
+    Mode 5: L2 norm = 203297503.8020, Max flow = 5355679.0000
+    Mode 1: L2 norm = 300970585.8872, Max flow = 3345200.0000
+    Mode 5: L2 norm = 202756383.0468, Max flow = 5457788.0000
+    Mode 3: L2 norm = 223000487.6241, Max flow = 5275633.0000
+    Mode 1: L2 norm = 223399718.1648, Max flow = 5038063.0000
+    Mode 5: L2 norm = 204465591.8583, Max flow = 5699108.0000
+    Mode 4: L2 norm = 201963538.0091, Max flow = 5491453.0000
+    Mode 2: L2 norm = 215311573.8683, Max flow = 5306638.0000
+    Mode 5: L2 norm = 199598914.0587, Max flow = 5229974.0000
+    Mode 5: L2 norm = 206110115.9755, Max flow = 5489432.0000
+    Mode 1: L2 norm = 212894741.6192, Max flow = 5039752.0000
+    Mode 5: L2 norm = 164800411.4100, Max flow = 4469172.0000
+    Mode 1: L2 norm = 200964290.9903, Max flow = 5138472.0000
+    Mode 2: L2 norm = 220303249.3883, Max flow = 5290903.0000
+    Mode 5: L2 norm = 210985287.1490, Max flow = 5577070.0000
+    Mode 2: L2 norm = 222770542.0439, Max flow = 5141940.0000
+    Mode 4: L2 norm = 203592975.7510, Max flow = 5717750.0000
+    Mode 3: L2 norm = 216234764.8196, Max flow = 5361139.0000
+    Mode 5: L2 norm = 219326834.9487, Max flow = 5554082.0000
+    Mode 3: L2 norm = 212960532.3210, Max flow = 5039752.0000
+    Mode 1: L2 norm = 207168553.0699, Max flow = 5508243.0000
+    Mode 4: L2 norm = 226649943.8828, Max flow = 5716173.0000
+    Mode 5: L2 norm = 202626079.5902, Max flow = 5491453.0000
+    Mode 3: L2 norm = 225170302.6489, Max flow = 5353840.0000
+    Mode 5: L2 norm = 217231490.7862, Max flow = 5446493.0000
+    Mode 1: L2 norm = 218699244.6936, Max flow = 5375866.0000
+    Mode 3: L2 norm = 204105212.2604, Max flow = 5013870.0000
+    Mode 5: L2 norm = 213902547.3303, Max flow = 5716173.0000
+    Mode 6: L2 norm = 191701.0968
+    Mode 1: L2 norm = 226844522.3788, Max flow = 5141940.0000
+    Mode 5: L2 norm = 195962517.4620, Max flow = 5110099.0000
+    Mode 4: L2 norm = 214839892.5984, Max flow = 5491024.0000
+    Mode 5: L2 norm = 199063531.4727, Max flow = 5622419.0000
+    Mode 5: L2 norm = 190772279.7465, Max flow = 5385849.0000
+    Mode 3: L2 norm = 203401321.5195, Max flow = 5603869.0000
+    Mode 5: L2 norm = 190487993.5783, Max flow = 5205567.0000
+    Mode 5: L2 norm = 190787098.6024, Max flow = 5419774.0000
+    Mode 1: L2 norm = 232499744.0509, Max flow = 5311393.0000
+    Mode 1: L2 norm = 222163375.4087, Max flow = 5290903.0000
+    Mode 5: L2 norm = 214197981.6580, Max flow = 5039188.0000
+    Mode 5: L2 norm = 210428079.0277, Max flow = 5491024.0000
+    Mode 4: L2 norm = 222811926.8831, Max flow = 5783461.0000
+    Mode 5: L2 norm = 213928613.4610, Max flow = 5952462.0000
+    Mode 2: L2 norm = 225266158.1670, Max flow = 5568894.0000
+    Mode 4: L2 norm = 212551373.0659, Max flow = 5039752.0000
+    Mode 4: L2 norm = 216204114.4817, Max flow = 5038063.0000
+    Mode 5: L2 norm = 177670310.8540, Max flow = 5053305.0000
+    Mode 5: L2 norm = 191083050.9226, Max flow = 5569169.0000
+    Mode 1: L2 norm = 208538963.0803, Max flow = 4821910.0000
+    Mode 1: L2 norm = 222248191.5517, Max flow = 5150719.0000
+    Mode 4: L2 norm = 207733304.6444, Max flow = 5403443.0000
+    Mode 5: L2 norm = 192163572.4713, Max flow = 5323097.0000
+    Mode 3: L2 norm = 217514544.3954, Max flow = 5491024.0000
+    Mode 1: L2 norm = 200608711.0816, Max flow = 5043439.0000
+    Mode 4: L2 norm = 206891286.6935, Max flow = 5428872.0000
+    Mode 3: L2 norm = 316964253.2884, Max flow = 3177688.0000
+    Mode 2: L2 norm = 224084884.2093, Max flow = 5275633.0000
+    Mode 5: L2 norm = 208576532.6672, Max flow = 5844971.0000
+    Mode 1: L2 norm = 222367574.7874, Max flow = 4994267.0000
+    Mode 4: L2 norm = 221950954.6116, Max flow = 5275633.0000
+    Mode 5: L2 norm = 203503687.5113, Max flow = 5390454.0000
+    Mode 4: L2 norm = 220060925.1961, Max flow = 5926627.0000
+    Mode 5: L2 norm = 201702274.3211, Max flow = 5296153.0000
+    Mode 6: L2 norm = 254091.9891
+    Mode 5: L2 norm = 209915517.0102, Max flow = 5028646.0000
+    Mode 5: L2 norm = 220045072.6427, Max flow = 5783461.0000
+    Mode 5: L2 norm = 214955837.7067, Max flow = 5714574.0000
+    Mode 1: L2 norm = 301503220.2626, Max flow = 3155459.0000
+    Mode 2: L2 norm = 225856260.9686, Max flow = 5341720.0000
+    Mode 1: L2 norm = 210801837.3121, Max flow = 5102559.0000
+    Mode 5: L2 norm = 185184948.0961, Max flow = 4805779.0000
+    Mode 5: L2 norm = 210049366.2320, Max flow = 5039752.0000
+    Mode 2: L2 norm = 228272515.3791, Max flow = 5873274.0000
+    Mode 1: L2 norm = 229530134.3637, Max flow = 5873274.0000
+    Mode 2: L2 norm = 245669014.7004, Max flow = 5710041.0000
+    Mode 4: L2 norm = 242275848.2003, Max flow = 5780461.0000
+    Mode 5: L2 norm = 207733304.6444, Max flow = 5403443.0000
+    Mode 3: L2 norm = 224990917.3078, Max flow = 5890128.0000
+    Mode 3: L2 norm = 244129133.2462, Max flow = 5780461.0000
+    Mode 7: L2 norm = 495563.9960
+    Mode 4: L2 norm = 233246425.3021, Max flow = 5493987.0000
+    Mode 5: L2 norm = 221545633.5217, Max flow = 5646733.0000
+    Mode 7: L2 norm = 504536.9398
+    Mode 2: L2 norm = 329767985.0896, Max flow = 3175703.0000
+    Mode 2: L2 norm = 233012694.0703, Max flow = 5214382.0000
+    Mode 4: L2 norm = 196324053.4284, Max flow = 5198464.0000
+    Mode 3: L2 norm = 192427965.6928
+    Mode 1: L2 norm = 235471901.2431, Max flow = 5434775.0000
+    Mode 5: L2 norm = 186281906.0800, Max flow = 5260068.0000
+    Mode 2: L2 norm = 192419361.3820
+    Mode 1: L2 norm = 245733491.5871, Max flow = 5767791.0000
+    Mode 5: L2 norm = 219705805.7172, Max flow = 5377391.0000
+    Mode 1: L2 norm = 336060863.7138, Max flow = 3175479.0000
+    Mode 4: L2 norm = 232514061.7099, Max flow = 5601344.0000
+    Mode 5: L2 norm = 241642140.6913, Max flow = 5490687.0000
+    Mode 1: L2 norm = 210187058.9367, Max flow = 5389184.0000
+    Mode 3: L2 norm = 235629553.2616, Max flow = 5716173.0000
+    Mode 2: L2 norm = 155095424.7801
+    Mode 3: L2 norm = 227202019.2518, Max flow = 5651170.0000
+    Mode 1: L2 norm = 233673631.4715, Max flow = 5464867.0000
+    Mode 1: L2 norm = 192134590.9881
+    Mode 3: L2 norm = 155095424.7801
+    Mode 7: L2 norm = 587300.0393
+    Mode 5: L2 norm = 202157586.2647, Max flow = 5811405.0000
+    Mode 1: L2 norm = 247386306.8086, Max flow = 5674402.0000
+    Mode 2: L2 norm = 242680806.7942, Max flow = 5601344.0000
+    Mode 5: L2 norm = 197032850.1082, Max flow = 5686196.0000
+    Mode 1: L2 norm = 231017297.8433, Max flow = 5341720.0000
+    Mode 2: L2 norm = 207078551.4712, Max flow = 4821910.0000
+    Mode 3: L2 norm = 234306306.5670, Max flow = 5493987.0000
+    Mode 4: L2 norm = 230314366.3739, Max flow = 5471684.0000
+    Mode 2: L2 norm = 234520974.4136, Max flow = 5493987.0000
+    Mode 1: L2 norm = 243147445.7454, Max flow = 5336979.0000
+    Mode 4: L2 norm = 248348017.4928, Max flow = 5254222.0000
+    Mode 4: L2 norm = 155095424.7801
+    Mode 4: L2 norm = 211419742.2267, Max flow = 5361139.0000
+    Mode 5: L2 norm = 225939974.4844, Max flow = 5601344.0000
+    Mode 4: L2 norm = 224589135.6777, Max flow = 4888105.0000
+    Mode 2: L2 norm = 242131818.1871, Max flow = 5404285.0000
+    Mode 3: L2 norm = 245186592.9879, Max flow = 5779463.0000
+    Mode 2: L2 norm = 241954438.4951, Max flow = 5716173.0000
+    Mode 4: L2 norm = 242545931.8098, Max flow = 5779463.0000
+    Mode 3: L2 norm = 237416637.4376, Max flow = 5406594.0000
+    Mode 3: L2 norm = 238838480.0040, Max flow = 5601344.0000
+    Mode 7: L2 norm = 478447.9104
+    Mode 5: L2 norm = 237274419.4097, Max flow = 5809217.0000
+    Mode 3: L2 norm = 240747250.9928, Max flow = 5404285.0000
+    Mode 2: L2 norm = 242518868.7278, Max flow = 5336979.0000
+    Mode 2: L2 norm = 232535865.4311, Max flow = 5651170.0000
+    Mode 5: L2 norm = 235654685.1697, Max flow = 5624809.0000
+    Mode 3: L2 norm = 248121541.0532, Max flow = 5872419.0000
+    Mode 5: L2 norm = 242022310.3397, Max flow = 5779463.0000
+    Mode 4: L2 norm = 221096164.4617, Max flow = 5431083.0000
+    Mode 1: L2 norm = 218603865.7110, Max flow = 5507706.0000
+    Mode 4: L2 norm = 255246492.7623, Max flow = 5750078.0000
+    Mode 2: L2 norm = 238971275.3394, Max flow = 4802108.0000
+    Mode 3: L2 norm = 254848819.9863, Max flow = 4989259.0000
+    Mode 1: L2 norm = 265512013.9821, Max flow = 5322474.0000
+    Mode 1: L2 norm = 240434358.3064, Max flow = 4802108.0000
+    Mode 3: L2 norm = 233166852.2055, Max flow = 4802108.0000
+    Mode 6: L2 norm = 593007.2944
+    Mode 4: L2 norm = 238168811.3029, Max flow = 5602033.0000
+    Mode 5: L2 norm = 155095424.7801
+    Mode 2: L2 norm = 263535327.6251, Max flow = 5750078.0000
+    Mode 2: L2 norm = 245474017.8889, Max flow = 5890279.0000
+    Mode 5: L2 norm = 258399552.5303, Max flow = 5867996.0000
+    Mode 1: L2 norm = 235819952.2022, Max flow = 5651170.0000
+    Mode 2: L2 norm = 252447472.4098, Max flow = 5779463.0000
+    Mode 1: L2 norm = 257453850.9213, Max flow = 4989259.0000
+    Mode 4: L2 norm = 192427965.6928
+    Mode 4: L2 norm = 251449075.3454, Max flow = 5260952.0000
+    Mode 6: L2 norm = 398324.6780
+    Mode 3: L2 norm = 261998112.8919, Max flow = 5393465.0000
+    Mode 2: L2 norm = 219999924.5028, Max flow = 5300121.0000
+    Mode 2: L2 norm = 270358463.2261, Max flow = 5159775.0000
+    Mode 3: L2 norm = 257204021.8532, Max flow = 5750078.0000
+    Mode 1: L2 norm = 254019115.3192, Max flow = 5260952.0000
+    Mode 1: L2 norm = 272893077.4060, Max flow = 5541156.0000
+    Mode 5: L2 norm = 255246492.7623, Max flow = 5750078.0000
+    Mode 1: L2 norm = 243815908.1379, Max flow = 5459208.0000
+    Mode 7: L2 norm = 5780121.8888
+    Mode 4: L2 norm = 257808193.8569, Max flow = 5891103.0000
+    Mode 6: L2 norm = 478447.9104
+    Mode 5: L2 norm = 248255953.2684, Max flow = 5872419.0000
+    Mode 5: L2 norm = 192427962.8457
+    Mode 3: L2 norm = 252328745.0952, Max flow = 5260952.0000
+    Mode 3: L2 norm = 223990340.3977, Max flow = 5431083.0000
+    Mode 1: L2 norm = 243018771.4800, Max flow = 5404285.0000
+    Mode 1: L2 norm = 264092513.3405, Max flow = 5726393.0000
+    Mode 2: L2 norm = 227085703.5159, Max flow = 5431083.0000
+    Mode 4: L2 norm = 247686077.3770, Max flow = 5872419.0000
+    Mode 5: L2 norm = 233129518.7551, Max flow = 5493987.0000
+    Mode 3: L2 norm = 242833602.7974, Max flow = 5890279.0000
+    Mode 5: L2 norm = 246189361.7033, Max flow = 5490679.0000
+    Mode 1: L2 norm = 271272780.8812, Max flow = 5159775.0000
+    Mode 4: L2 norm = 257833065.9551, Max flow = 5594035.0000
+    Mode 4: L2 norm = 267278635.1566, Max flow = 5159775.0000
+    Mode 4: L2 norm = 262254512.5897, Max flow = 5792031.0000
+    Mode 3: L2 norm = 268699187.9058, Max flow = 5159775.0000
+    Mode 2: L2 norm = 259607548.6272, Max flow = 5686421.0000
+    Mode 2: L2 norm = 263739533.9260, Max flow = 5322474.0000
+    Mode 6: L2 norm = 587300.0393
+    Mode 3: L2 norm = 261378818.1098, Max flow = 5867996.0000
+    Mode 2: L2 norm = 257160785.7192, Max flow = 4989259.0000
+    Mode 2: L2 norm = 260579687.4067, Max flow = 5048960.0000
+    Mode 2: L2 norm = 269560013.8671, Max flow = 5632585.0000
+    Mode 5: L2 norm = 264083993.3683, Max flow = 5159775.0000
+    Mode 1: L2 norm = 279023416.5481, Max flow = 5483212.0000
+    Mode 2: L2 norm = 253414921.5684, Max flow = 5260952.0000
+    Mode 3: L2 norm = 259250815.4126, Max flow = 5048960.0000
+    Mode 1: L2 norm = 285958914.0850, Max flow = 5536348.0000
+    Mode 1: L2 norm = 257184339.5960, Max flow = 5710253.0000
+    Mode 7: L2 norm = 562742.9487
+    Mode 3: L2 norm = 268362216.0231, Max flow = 5539174.0000
+    Mode 4: L2 norm = 241002940.8054, Max flow = 5890279.0000
+    Mode 5: L2 norm = 253368699.5005, Max flow = 5594035.0000
+    Mode 1: L2 norm = 260860151.7263, Max flow = 5048960.0000
+    Mode 5: L2 norm = 250091464.2194, Max flow = 5260952.0000
+    Mode 6: L2 norm = 495563.9960
+    Mode 7: L2 norm = 7864564.9969
+    Mode 6: L2 norm = 504536.9398
+    Mode 2: L2 norm = 274879638.3329, Max flow = 5539174.0000
+    Mode 7: L2 norm = 10847222.0807
+    Mode 5: L2 norm = 241245181.5337, Max flow = 5890279.0000
+    Mode 6: L2 norm = 562742.9487
+    Mode 4: L2 norm = 255788814.7699, Max flow = 5345042.0000
+    Mode 1: L2 norm = 268198170.3834, Max flow = 5582688.0000
+    Mode 1: L2 norm = 457744229.4029, Max flow = 8791986.0000
+    Mode 3: L2 norm = 457687025.0039, Max flow = 8791986.0000
+    Mode 4: L2 norm = 440177739.6942, Max flow = 8655713.0000
+    Mode 1: L2 norm = 228692411.8637, Max flow = 5431083.0000
+    Mode 5: L2 norm = 457687025.0039, Max flow = 8791986.0000
+    Mode 1: L2 norm = 440177739.6942, Max flow = 8655713.0000
+    Mode 5: L2 norm = 261808340.9377, Max flow = 5792031.0000
+    Mode 2: L2 norm = 440177739.6942, Max flow = 8655713.0000
+    Mode 3: L2 norm = 440177739.6942, Max flow = 8655713.0000
+    Mode 2: L2 norm = 457687025.0039, Max flow = 8791986.0000
+    Mode 5: L2 norm = 440177739.6942, Max flow = 8655713.0000
+    Mode 4: L2 norm = 457687025.0039, Max flow = 8791986.0000
+    Mode 7: L2 norm = 1933252.4035
+    Mode 6: L2 norm = 5720818.3332
+    Mode 7: L2 norm = 5822653.7542
+    Mode 7: L2 norm = 1371029.5047
+    Mode 7: L2 norm = 5168733.8868, Max flow = 2610789.0000
+    Mode 7: L2 norm = 4533444.8604
+    Mode 7: L2 norm = 5887163.5472, Max flow = 2890137.0000
+    Mode 7: L2 norm = 2179709.4139
+    Mode 7: L2 norm = 1518476.5539
+    Mode 7: L2 norm = 16283893.4500

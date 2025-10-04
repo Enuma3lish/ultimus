@@ -22,7 +22,7 @@ inline int extract_version_from_path(const std::string& folder_path) {
     return -1;
 }
 
-// ============ parse_avg30_filename ============
+// ============ parse_avg_filename ============
 struct AvgParams {
     double arrival_rate;
     double bp_L;
@@ -30,8 +30,6 @@ struct AvgParams {
 };
 
 inline AvgParams parse_avg_filename(const std::string& filename) {
-    // Pattern: (arrival_rate, bp_L_bp_H)
-    // Example: avg_30_(0.7, 1.5_300).csv
     std::regex pattern("\\((\\d+(?:\\.\\d+)?),\\s*(\\d+(?:\\.\\d+)?)_(\\d+)\\)");
     std::smatch match;
     if (std::regex_search(filename, match, pattern)) {

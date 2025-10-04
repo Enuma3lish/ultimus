@@ -1,0 +1,1 @@
+/usr/bin/c++  -Wall -O3 CMakeFiles/RR.dir/RR.cpp.o -o RR  -lm 
