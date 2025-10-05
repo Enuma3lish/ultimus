@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <sstream>
 #include <set>
+#include <unordered_set>
 #include <cassert>
 #include <thread>
 #include <mutex>
@@ -121,9 +122,9 @@ DynamicResult DYNAMIC_BAL(std::vector<Job>& jobs, int nJobsPerRound, int mode,
     });
     
     long long current_time = 0;
-    std::vector<Job*> active_jobs;
+    // FIX: Use unordered_set for O(1) removal operations
+    std::unordered_set<Job*> active_jobs_set;
     std::vector<Job*> completed_jobs;
-    active_jobs.reserve(total_jobs / 10);  // Optimization: pre-allocate
     completed_jobs.reserve(total_jobs);
     
     int n_arrival_jobs = 0;
@@ -131,13 +132,13 @@ DynamicResult DYNAMIC_BAL(std::vector<Job>& jobs, int nJobsPerRound, int mode,
     bool is_bal_better = true;
     int jobs_pointer = 0;
     std::vector<Job> jobs_in_current_round;
-    jobs_in_current_round.reserve(nJobsPerRound * 2);  // Optimization
+    jobs_in_current_round.reserve(nJobsPerRound * 2);
     
     std::vector<std::vector<Job>> round_jobs_history;
-    round_jobs_history.reserve(total_jobs / nJobsPerRound + 10);  // Optimization
+    round_jobs_history.reserve(total_jobs / nJobsPerRound + 10);
     int current_round = 1;
     std::vector<std::string> algorithm_history;
-    algorithm_history.reserve(total_jobs / nJobsPerRound + 10);  // Optimization
+    algorithm_history.reserve(total_jobs / nJobsPerRound + 10);
     
     // Initialize all jobs
     for (auto& job : jobs) {
@@ -155,7 +156,7 @@ DynamicResult DYNAMIC_BAL(std::vector<Job>& jobs, int nJobsPerRound, int mode,
         // Admit arrivals
         while (jobs_pointer < total_jobs && jobs[jobs_pointer].arrival_time <= current_time) {
             Job* job = &jobs[jobs_pointer];
-            active_jobs.push_back(job);
+            active_jobs_set.insert(job);
             
             Job history_job;
             history_job.arrival_time = job->arrival_time;
@@ -175,7 +176,7 @@ DynamicResult DYNAMIC_BAL(std::vector<Job>& jobs, int nJobsPerRound, int mode,
             );
             
             if (!jobs_for_this_round.empty()) {
-                round_jobs_history.push_back(std::move(jobs_for_this_round));  // Use move
+                round_jobs_history.push_back(std::move(jobs_for_this_round));
                 
                 if (current_round == 1) {
                     is_bal_better = true;
@@ -189,26 +190,51 @@ DynamicResult DYNAMIC_BAL(std::vector<Job>& jobs, int nJobsPerRound, int mode,
                     else if (mode == 5 && current_round < 17) effective_mode = 1;
                     
                     // Collect jobs from previous rounds
-                    std::vector<Job> jobs_to_simulate;
-                    jobs_to_simulate.reserve(nJobsPerRound * 16);  // Optimization
-                    
-                    // Determine start index based on mode
+                    // FIX: Pre-calculate total size for better performance
                     size_t start_idx = 0;
+                    size_t estimated_size = 0;
+                    
                     switch (effective_mode) {
-                        case 1: start_idx = (round_jobs_history.size() >= 1) ? round_jobs_history.size() - 1 : 0; break;
-                        case 2: start_idx = (round_jobs_history.size() >= 2) ? round_jobs_history.size() - 2 : 0; break;
-                        case 3: start_idx = (round_jobs_history.size() >= 4) ? round_jobs_history.size() - 4 : 0; break;
-                        case 4: start_idx = (round_jobs_history.size() >= 8) ? round_jobs_history.size() - 8 : 0; break;
-                        case 5: start_idx = (round_jobs_history.size() >= 16) ? round_jobs_history.size() - 16 : 0; break;
-                        case 6: start_idx = 0; break;
+                        case 1: 
+                            start_idx = (round_jobs_history.size() >= 1) ? round_jobs_history.size() - 1 : 0;
+                            estimated_size = nJobsPerRound;
+                            break;
+                        case 2: 
+                            start_idx = (round_jobs_history.size() >= 2) ? round_jobs_history.size() - 2 : 0;
+                            estimated_size = nJobsPerRound * 2;
+                            break;
+                        case 3: 
+                            start_idx = (round_jobs_history.size() >= 4) ? round_jobs_history.size() - 4 : 0;
+                            estimated_size = nJobsPerRound * 4;
+                            break;
+                        case 4: 
+                            start_idx = (round_jobs_history.size() >= 8) ? round_jobs_history.size() - 8 : 0;
+                            estimated_size = nJobsPerRound * 8;
+                            break;
+                        case 5: 
+                            start_idx = (round_jobs_history.size() >= 16) ? round_jobs_history.size() - 16 : 0;
+                            estimated_size = nJobsPerRound * 16;
+                            break;
+                        case 6: 
+                            start_idx = 0;
+                            estimated_size = nJobsPerRound * round_jobs_history.size();
+                            break;
                         case 7: {
                             int rounds_to_use = std::ceil(current_round * 0.5);
                             start_idx = (round_jobs_history.size() >= (size_t)rounds_to_use) ? 
                                        round_jobs_history.size() - rounds_to_use : 0;
+                            estimated_size = nJobsPerRound * rounds_to_use;
                             break;
                         }
-                        default: start_idx = 0; break;
+                        default: 
+                            start_idx = 0;
+                            estimated_size = nJobsPerRound * round_jobs_history.size();
+                            break;
                     }
+                    
+                    // FIX: Reserve space to avoid reallocations
+                    std::vector<Job> jobs_to_simulate;
+                    jobs_to_simulate.reserve(estimated_size);
                     
                     for (size_t i = start_idx; i < round_jobs_history.size(); i++) {
                         jobs_to_simulate.insert(jobs_to_simulate.end(),
@@ -243,54 +269,59 @@ DynamicResult DYNAMIC_BAL(std::vector<Job>& jobs, int nJobsPerRound, int mode,
             n_arrival_jobs -= nJobsPerRound;
         }
         
-        // Select next job
-        const double starvation_threshold = std::pow(total_jobs, 2.0/3.0);
-        Job* selected_job = nullptr;
-        if (!active_jobs.empty()) {
-            if (is_bal_better) {
-                selected_job = bal_select_next_job_optimized(active_jobs, current_time, starvation_threshold);
+        // FIX: Filter valid jobs before selection (jobs with remaining_time > 0)
+        std::vector<Job*> valid_jobs;
+        valid_jobs.reserve(active_jobs_set.size());
+        for (Job* job : active_jobs_set) {
+            if (job->remaining_time > 0) {
+                valid_jobs.push_back(job);
             } else {
-                selected_job = fcfs_select_next_job_optimized(active_jobs);
+                // This shouldn't happen, but if it does, clean up
+                std::cerr << "WARNING: Found job " << job->job_index 
+                          << " with remaining_time=" << job->remaining_time 
+                          << " in active_jobs_set at time=" << current_time << "\n";
             }
-            
-            // BUG FIX: Defensive check for invalid job selection
-            if (selected_job && selected_job->remaining_time <= 0) {
-                std::cerr << "ERROR: Selected job " << selected_job->job_index 
-                          << " has remaining_time=" << selected_job->remaining_time 
-                          << " at time=" << current_time << "\n";
-                auto it = std::find(active_jobs.begin(), active_jobs.end(), selected_job);
-                if (it != active_jobs.end()) {
-                    active_jobs.erase(it);
-                }
-                selected_job = nullptr;
+        }
+        
+        // Select next job from valid jobs only
+        Job* selected_job = nullptr;
+        if (!valid_jobs.empty()) {
+            const double starvation_threshold = std::pow(total_jobs, 2.0/3.0);
+            if (is_bal_better) {
+                selected_job = bal_select_next_job_optimized(valid_jobs, current_time, starvation_threshold);
+            } else {
+                selected_job = fcfs_select_next_job_optimized(valid_jobs);
             }
         }
         
         if (selected_job) {
-            // Remove job from active_jobs BEFORE execution
-            auto it = std::find(active_jobs.begin(), active_jobs.end(), selected_job);
-            assert(it != active_jobs.end() && "Selected job must be in active_jobs");
-            active_jobs.erase(it);
+            // Verify selected job is valid
+            assert(selected_job->remaining_time > 0 && "Selected job must have remaining_time > 0");
+            assert(active_jobs_set.find(selected_job) != active_jobs_set.end() && 
+                   "Selected job must be in active_jobs_set");
             
-            // BUG FIX: Verify start_time is set correctly
+            // Remove job from active_jobs_set BEFORE execution
+            active_jobs_set.erase(selected_job);
+            
+            // Set start_time if not already set
             if (selected_job->start_time == -1) {
                 selected_job->start_time = current_time;
-                // ASSERTION: Start time must be >= arrival time
                 assert(selected_job->start_time >= selected_job->arrival_time && 
                        "Job start time must be after or equal to arrival time");
             }
             
-            // Calculate delta - FIXED: Use long long instead of int
+            // Calculate delta - FIXED: Ensure delta > 0
             const long long next_arrival_t = (jobs_pointer < total_jobs) ? 
                 static_cast<long long>(jobs[jobs_pointer].arrival_time) : LLONG_MAX;
             
-            long long delta;  // BUG FIX: Changed from int to long long
+            long long delta;
             if (is_bal_better) {
                 // SRPT: preemptive
                 if (next_arrival_t == LLONG_MAX || next_arrival_t > current_time + selected_job->remaining_time) {
                     delta = selected_job->remaining_time;
                 } else {
-                    delta = next_arrival_t - current_time;
+                    // FIX: Ensure delta is at least 1 to avoid delta=0 bug
+                    delta = std::max(1LL, next_arrival_t - current_time);
                 }
             } else {
                 // FCFS: non-preemptive - run to completion
@@ -299,7 +330,7 @@ DynamicResult DYNAMIC_BAL(std::vector<Job>& jobs, int nJobsPerRound, int mode,
             
             // Validate delta
             if (delta <= 0 || delta > selected_job->remaining_time) {
-                std::cerr << "FATAL ERROR: delta=" << delta << "\n"
+                std::cerr << "FATAL ERROR: Invalid delta=" << delta << "\n"
                           << "  job_index=" << selected_job->job_index << "\n"
                           << "  remaining_time=" << selected_job->remaining_time << "\n"
                           << "  current_time=" << current_time << "\n"
@@ -317,34 +348,46 @@ DynamicResult DYNAMIC_BAL(std::vector<Job>& jobs, int nJobsPerRound, int mode,
             if (selected_job->remaining_time == 0) {
                 // Job completed
                 selected_job->completion_time = current_time;
-                // ASSERTION: Completion time must be >= start time
                 assert(selected_job->completion_time >= selected_job->start_time &&
                        "Completion time must be after start time");
-                // ASSERTION: Completion time must be >= arrival time
                 assert(selected_job->completion_time >= selected_job->arrival_time &&
                        "Completion time must be after arrival time");
                 completed_jobs.push_back(selected_job);
                 n_completed_jobs++;
             } else {
                 // Job not finished - re-queue
-                active_jobs.push_back(selected_job);
+                active_jobs_set.insert(selected_job);
             }
             
         } else {
             // No job to run, jump to next arrival
             if (jobs_pointer < total_jobs) {
-                current_time = jobs[jobs_pointer].arrival_time;
+                long long next_arrival = jobs[jobs_pointer].arrival_time;
+                // FIX: Ensure we're making progress by jumping forward
+                if (next_arrival <= current_time) {
+                    std::cerr << "WARNING: Next arrival time (" << next_arrival 
+                              << ") <= current_time (" << current_time << "). Forcing progress.\n";
+                    current_time++;
+                } else {
+                    current_time = next_arrival;
+                }
             } else {
-                assert(active_jobs.empty() && "If no job selected and no arrivals, active_jobs must be empty");
+                assert(active_jobs_set.empty() && "If no job selected and no arrivals, active_jobs must be empty");
                 break;
             }
         }
         
         // Assert progress is being made
-        assert((current_time > prev_time || 
-                n_completed_jobs > prev_completed || 
-                jobs_pointer > prev_jobs_pointer) && 
-               "Scheduler must make progress each iteration");
+        if (!(current_time > prev_time || 
+              n_completed_jobs > prev_completed || 
+              jobs_pointer > prev_jobs_pointer)) {
+            std::cerr << "FATAL: No progress made!\n"
+                      << "  current_time=" << current_time << " (prev=" << prev_time << ")\n"
+                      << "  n_completed=" << n_completed_jobs << " (prev=" << prev_completed << ")\n"
+                      << "  jobs_pointer=" << jobs_pointer << " (prev=" << prev_jobs_pointer << ")\n"
+                      << "  active_jobs size=" << active_jobs_set.size() << "\n";
+            std::abort();
+        }
     }
     
     // Process remaining jobs in last round
@@ -355,7 +398,7 @@ DynamicResult DYNAMIC_BAL(std::vector<Job>& jobs, int nJobsPerRound, int mode,
     
     // Validate completion
     assert(completed_jobs.size() == (size_t)total_jobs && "All jobs must complete");
-    assert(active_jobs.empty() && "Active jobs queue must be empty");
+    assert(active_jobs_set.empty() && "Active jobs queue must be empty");
     
     // Calculate metrics
     long double sum_flow = 0.0;
@@ -454,6 +497,7 @@ run_all_modes_for_file_frequency(std::vector<Job> jobs, int nJobsPerRound,
     
     return std::make_pair(std::move(mode_results), std::move(max_flow_results));
 }
+
 void process_avg_folders(const std::string& data_dir, const std::string& output_dir, 
                         int nJobsPerRound, const std::vector<int>& modes_to_run) {
     std::vector<std::string> patterns = {"avg_30_"};
@@ -869,7 +913,7 @@ int main(int argc, char* argv[]) {
         safe_cout("[Thread 1] Processing avg files...\n");
         safe_cout("========================================\n");
         process_avg_folders(data_dir, output_dir, nJobsPerRound, modes_to_run);
-        safe_cout("\n[Thread 1] ✓ Avg files completed!\n\n");
+        safe_cout("\n[Thread 1] Avg files completed!\n\n");
     });
     
     main_threads.emplace_back([&]() {
@@ -877,7 +921,7 @@ int main(int argc, char* argv[]) {
         safe_cout("[Thread 2] Processing random files...\n");
         safe_cout("========================================\n");
         process_random_folders(data_dir, output_dir, nJobsPerRound, modes_to_run);
-        safe_cout("\n[Thread 2] ✓ Random files completed!\n\n");
+        safe_cout("\n[Thread 2] Random files completed!\n\n");
     });
     
     main_threads.emplace_back([&]() {
@@ -885,7 +929,7 @@ int main(int argc, char* argv[]) {
         safe_cout("[Thread 3] Processing softrandom files...\n");
         safe_cout("========================================\n");
         process_softrandom_folders(data_dir, output_dir, nJobsPerRound, modes_to_run);
-        safe_cout("\n[Thread 3] ✓ Softrandom files completed!\n\n");
+        safe_cout("\n[Thread 3] Softrandom files completed!\n\n");
     });
     
     // Wait for all three main threads to complete
