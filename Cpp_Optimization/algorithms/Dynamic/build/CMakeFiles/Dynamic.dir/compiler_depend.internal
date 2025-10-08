@@ -4,10 +4,9 @@
 CMakeFiles/Dynamic.dir/Dynamic.cpp.o
  /home/melowu/Work/ultimus/Cpp_Optimization/algorithms/Dynamic/Dynamic.cpp
  /home/melowu/Work/ultimus/Cpp_Optimization/Job_Format/Job.h
- /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/FCFS_Selector.h
- /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/FCFS_algorithm.h
- /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/SRPT_Selector.h
- /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/SRPT_algorithm.h
+ /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/Optimized_FCFS_algorithm.h
+ /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/Optimized_SRPT_algorithm.h
+ /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/Optimized_Selector.h
  /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/utils.h
  /usr/include/alloca.h
  /usr/include/asm-generic/bitsperlong.h

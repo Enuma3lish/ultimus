@@ -219,16 +219,12 @@ CMakeFiles/Dynamic_BAL.dir/Dynamic_BAL.cpp.o: \
  /usr/include/c++/13/bits/shared_ptr_atomic.h \
  /usr/include/c++/13/backward/auto_ptr.h \
  /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/BAL_algorithm.h \
- /usr/include/c++/13/queue /usr/include/c++/13/deque \
- /usr/include/c++/13/bits/stl_deque.h /usr/include/c++/13/bits/deque.tcc \
- /usr/include/c++/13/bits/stl_queue.h \
  /home/melowu/Work/ultimus/Cpp_Optimization/Job_Format/Job.h \
- /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/BAL_Selector.h \
- /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/SRPT_Selector.h \
- /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/FCFS_algorithm.h \
- /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/FCFS_Selector.h \
- /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/BAL_Selector.h \
- /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/FCFS_Selector.h \
+ /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/Optimized_Selector.h \
+ /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/Optimized_FCFS_algorithm.h \
+ /usr/include/c++/13/deque /usr/include/c++/13/bits/stl_deque.h \
+ /usr/include/c++/13/bits/deque.tcc \
+ /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/Optimized_Selector.h \
  /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/utils.h \
  /usr/include/c++/13/regex /usr/include/c++/13/bitset \
  /usr/include/c++/13/stack /usr/include/c++/13/bits/stl_stack.h \

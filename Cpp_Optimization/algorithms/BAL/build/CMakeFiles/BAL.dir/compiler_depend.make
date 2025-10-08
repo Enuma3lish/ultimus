@@ -5,9 +5,8 @@ CMakeFiles/BAL.dir/BAL.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algorit
   /home/melowu/Work/ultimus/Cpp_Optimization/Job_Format/Job.h \
   /home/melowu/Work/ultimus/Cpp_Optimization/algorithm_executer/_run.h \
   /home/melowu/Work/ultimus/Cpp_Optimization/algorithm_executer/_run_random.h \
-  /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/BAL_Selector.h \
   /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/BAL_algorithm.h \
-  /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/SRPT_Selector.h \
+  /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/Optimized_Selector.h \
   /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/process_avg_folders.h \
   /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/process_random_folders.h \
   /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/process_softrandom_folders.h \
@@ -19,6 +18,7 @@ CMakeFiles/BAL.dir/BAL.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algorit
   /usr/include/asm-generic/int-ll64.h \
   /usr/include/asm-generic/posix_types.h \
   /usr/include/asm-generic/types.h \
+  /usr/include/assert.h \
   /usr/include/c++/13/algorithm \
   /usr/include/c++/13/backward/binders.h \
   /usr/include/c++/13/bit \
@@ -99,7 +99,6 @@ CMakeFiles/BAL.dir/BAL.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algorit
   /usr/include/c++/13/bits/stl_map.h \
   /usr/include/c++/13/bits/stl_multimap.h \
   /usr/include/c++/13/bits/stl_pair.h \
-  /usr/include/c++/13/bits/stl_queue.h \
   /usr/include/c++/13/bits/stl_relops.h \
   /usr/include/c++/13/bits/stl_stack.h \
   /usr/include/c++/13/bits/stl_tempbuf.h \
@@ -115,6 +114,7 @@ CMakeFiles/BAL.dir/BAL.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algorit
   /usr/include/c++/13/bits/utility.h \
   /usr/include/c++/13/bits/vector.tcc \
   /usr/include/c++/13/bitset \
+  /usr/include/c++/13/cassert \
   /usr/include/c++/13/cctype \
   /usr/include/c++/13/cerrno \
   /usr/include/c++/13/clocale \
@@ -146,7 +146,6 @@ CMakeFiles/BAL.dir/BAL.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algorit
   /usr/include/c++/13/map \
   /usr/include/c++/13/new \
   /usr/include/c++/13/ostream \
-  /usr/include/c++/13/queue \
   /usr/include/c++/13/regex \
   /usr/include/c++/13/sstream \
   /usr/include/c++/13/stack \
@@ -358,13 +357,13 @@ CMakeFiles/BAL.dir/BAL.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algorit
 
 /usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h:
 
-/usr/include/x86_64-linux-gnu/bits/types/struct_statx_timestamp.h:
-
 /usr/include/c++/13/debug/assertions.h:
 
 /usr/include/x86_64-linux-gnu/bits/select-decl.h:
 
 /usr/include/c++/13/fstream:
+
+/usr/include/c++/13/clocale:
 
 /usr/include/c++/13/cerrno:
 
@@ -401,8 +400,6 @@ CMakeFiles/BAL.dir/BAL.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algorit
 /usr/include/c++/13/bits/stl_map.h:
 
 /usr/include/c++/13/locale:
-
-/usr/include/c++/13/bits/stl_queue.h:
 
 /usr/include/c++/13/bits/functexcept.h:
 
@@ -488,8 +485,6 @@ CMakeFiles/BAL.dir/BAL.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algorit
 
 /usr/include/c++/13/backward/binders.h:
 
-/usr/include/c++/13/clocale:
-
 /usr/include/c++/13/bits/alloc_traits.h:
 
 /usr/include/c++/13/bits/concept_check.h:
@@ -501,86 +496,6 @@ CMakeFiles/BAL.dir/BAL.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algorit
 /usr/include/x86_64-linux-gnu/bits/wchar2.h:
 
 /usr/include/x86_64-linux-gnu/bits/fp-logb.h:
-
-/home/melowu/Work/ultimus/Cpp_Optimization/function_tools/process_softrandom_folders.h:
-
-/usr/include/x86_64-linux-gnu/bits/statx.h:
-
-/usr/include/c++/13/bits/stl_iterator_base_funcs.h:
-
-/usr/include/asm-generic/errno-base.h:
-
-/usr/include/c++/13/bits/stl_construct.h:
-
-/usr/include/asm-generic/posix_types.h:
-
-/usr/include/stdc-predef.h:
-
-/home/melowu/Work/ultimus/Cpp_Optimization/function_tools/SRPT_Selector.h:
-
-/usr/include/asm-generic/int-ll64.h:
-
-/usr/include/c++/13/bits/deque.tcc:
-
-/usr/include/x86_64-linux-gnu/bits/endian.h:
-
-/usr/include/c++/13/bits/istream.tcc:
-
-/usr/include/c++/13/bits/locale_conv.h:
-
-/usr/include/c++/13/bits/refwrap.h:
-
-/usr/include/x86_64-linux-gnu/bits/types/__fpos_t.h:
-
-/usr/include/c++/13/bits/fstream.tcc:
-
-/usr/include/c++/13/algorithm:
-
-/usr/include/c++/13/bits/locale_facets_nonio.h:
-
-/usr/include/c++/13/cstdio:
-
-/home/melowu/Work/ultimus/Cpp_Optimization/function_tools/utils.h:
-
-/usr/include/c++/13/bits/basic_ios.tcc:
-
-/usr/include/linux/stddef.h:
-
-/usr/include/c++/13/bits/regex_executor.h:
-
-/usr/include/c++/13/tuple:
-
-/usr/include/c++/13/bits/nested_exception.h:
-
-/usr/include/c++/13/bits/stl_deque.h:
-
-/home/melowu/Work/ultimus/Cpp_Optimization/function_tools/process_random_folders.h:
-
-/usr/include/x86_64-linux-gnu/bits/floatn-common.h:
-
-/usr/include/c++/13/bits/requires_hosted.h:
-
-/usr/include/c++/13/bits/regex_automaton.tcc:
-
-/home/melowu/Work/ultimus/Cpp_Optimization/algorithm_executer/_run_random.h:
-
-/usr/include/x86_64-linux-gnu/sys/select.h:
-
-/usr/include/c++/13/cwchar:
-
-/usr/include/c++/13/bits/hash_bytes.h:
-
-/usr/include/x86_64-linux-gnu/bits/math-vector.h:
-
-/usr/include/c++/13/bits/stl_multimap.h:
-
-/usr/include/x86_64-linux-gnu/bits/types/__locale_t.h:
-
-/usr/include/c++/13/debug/debug.h:
-
-/usr/include/linux/errno.h:
-
-/usr/include/x86_64-linux-gnu/bits/pthread_stack_min-dynamic.h:
 
 /usr/include/c++/13/bits/basic_string.tcc:
 
@@ -596,29 +511,73 @@ CMakeFiles/BAL.dir/BAL.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algorit
 
 /usr/include/c++/13/bits/codecvt.h:
 
+/home/melowu/Work/ultimus/Cpp_Optimization/function_tools/process_softrandom_folders.h:
+
+/usr/include/x86_64-linux-gnu/bits/statx.h:
+
+/usr/include/c++/13/bits/stl_iterator_base_funcs.h:
+
+/usr/include/asm-generic/errno-base.h:
+
+/usr/include/c++/13/bits/stl_construct.h:
+
+/usr/include/asm-generic/posix_types.h:
+
+/usr/include/stdc-predef.h:
+
+/usr/include/asm-generic/int-ll64.h:
+
+/usr/include/c++/13/bits/deque.tcc:
+
+/usr/include/x86_64-linux-gnu/bits/endian.h:
+
+/usr/include/c++/13/bits/istream.tcc:
+
+/usr/include/c++/13/bits/locale_conv.h:
+
 /home/melowu/Work/ultimus/Cpp_Optimization/algorithm_executer/_run.h:
 
-/usr/include/c++/13/bits/regex_error.h:
+/usr/include/c++/13/bits/refwrap.h:
 
-/usr/include/c++/13/bits/basic_ios.h:
+/usr/include/x86_64-linux-gnu/bits/types/__fpos_t.h:
 
-/usr/include/x86_64-linux-gnu/bits/time64.h:
+/usr/include/c++/13/bits/fstream.tcc:
 
-/usr/include/alloca.h:
+/usr/include/c++/13/algorithm:
 
-/usr/include/c++/13/bits/locale_facets.h:
+/usr/include/c++/13/bits/locale_facets_nonio.h:
 
-/usr/include/x86_64-linux-gnu/bits/waitstatus.h:
+/usr/include/c++/13/cstdio:
 
-/usr/include/c++/13/bits/exception_defines.h:
+/home/melowu/Work/ultimus/Cpp_Optimization/function_tools/utils.h:
 
-/usr/include/c++/13/bits/localefwd.h:
+/usr/include/c++/13/bits/stl_multimap.h:
 
-/usr/include/x86_64-linux-gnu/bits/flt-eval-method.h:
+/usr/include/x86_64-linux-gnu/bits/types/__locale_t.h:
 
-/usr/include/c++/13/bits/streambuf_iterator.h:
+/usr/include/c++/13/bits/basic_ios.tcc:
+
+/usr/include/linux/stddef.h:
+
+/usr/include/c++/13/bits/stl_deque.h:
+
+/home/melowu/Work/ultimus/Cpp_Optimization/function_tools/process_random_folders.h:
+
+/usr/include/c++/13/bits/regex_automaton.tcc:
+
+/usr/include/assert.h:
+
+/home/melowu/Work/ultimus/Cpp_Optimization/algorithm_executer/_run_random.h:
+
+/home/melowu/Work/ultimus/Cpp_Optimization/function_tools/Optimized_Selector.h:
+
+/usr/include/c++/13/map:
+
+/usr/include/x86_64-linux-gnu/bits/iscanonical.h:
 
 /usr/include/c++/13/ostream:
+
+/usr/include/c++/13/cassert:
 
 /usr/include/c++/13/bits/cpp_type_traits.h:
 
@@ -628,11 +587,41 @@ CMakeFiles/BAL.dir/BAL.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algorit
 
 /usr/include/c++/13/bits/move.h:
 
+/usr/include/c++/13/bits/regex_error.h:
+
+/usr/include/c++/13/bits/basic_ios.h:
+
+/usr/include/x86_64-linux-gnu/bits/time64.h:
+
+/usr/include/x86_64-linux-gnu/sys/select.h:
+
+/usr/include/c++/13/cwchar:
+
+/usr/include/c++/13/bits/hash_bytes.h:
+
+/usr/include/x86_64-linux-gnu/bits/math-vector.h:
+
+/usr/include/alloca.h:
+
+/usr/include/c++/13/bits/locale_facets.h:
+
 /usr/include/c++/13/bits/cxxabi_forced.h:
 
 /usr/include/x86_64-linux-gnu/bits/wchar2-decl.h:
 
 /usr/include/c++/13/bits/erase_if.h:
+
+/usr/include/c++/13/bits/localefwd.h:
+
+/usr/include/c++/13/bits/streambuf_iterator.h:
+
+/usr/include/x86_64-linux-gnu/bits/flt-eval-method.h:
+
+/usr/include/x86_64-linux-gnu/bits/types/struct_statx_timestamp.h:
+
+/usr/include/x86_64-linux-gnu/bits/waitstatus.h:
+
+/usr/include/c++/13/bits/exception_defines.h:
 
 /usr/include/c++/13/bits/cxxabi_init_exception.h:
 
@@ -732,10 +721,6 @@ CMakeFiles/BAL.dir/BAL.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algorit
 
 /usr/include/c++/13/limits:
 
-/usr/include/c++/13/queue:
-
-/usr/include/linux/limits.h:
-
 /usr/include/c++/13/bits/stl_algobase.h:
 
 /usr/include/c++/13/regex:
@@ -745,6 +730,12 @@ CMakeFiles/BAL.dir/BAL.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algorit
 /usr/include/x86_64-linux-gnu/bits/stdint-intn.h:
 
 /usr/include/c++/13/string:
+
+/usr/include/c++/13/bits/regex_executor.h:
+
+/usr/include/c++/13/bits/nested_exception.h:
+
+/usr/include/c++/13/tuple:
 
 /usr/include/c++/13/vector:
 
@@ -757,6 +748,14 @@ CMakeFiles/BAL.dir/BAL.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algorit
 /usr/include/features-time64.h:
 
 /usr/include/features.h:
+
+/usr/include/c++/13/debug/debug.h:
+
+/usr/include/linux/errno.h:
+
+/usr/include/x86_64-linux-gnu/bits/pthread_stack_min-dynamic.h:
+
+/usr/include/linux/limits.h:
 
 /usr/include/c++/13/bits/locale_facets.tcc:
 
@@ -774,9 +773,9 @@ CMakeFiles/BAL.dir/BAL.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algorit
 
 /usr/include/sched.h:
 
-/usr/include/c++/13/bits/stl_iterator_base_types.h:
-
 /usr/include/c++/13/bits/regex_compiler.h:
+
+/usr/include/c++/13/bits/stl_iterator_base_types.h:
 
 /usr/include/stdio.h:
 
@@ -785,8 +784,6 @@ CMakeFiles/BAL.dir/BAL.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algorit
 /usr/include/c++/13/bits/shared_ptr_base.h:
 
 /usr/include/wchar.h:
-
-/home/melowu/Work/ultimus/Cpp_Optimization/function_tools/BAL_Selector.h:
 
 /usr/include/x86_64-linux-gnu/asm/errno.h:
 
@@ -812,15 +809,15 @@ CMakeFiles/BAL.dir/BAL.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algorit
 
 /usr/include/x86_64-linux-gnu/bits/cpu-set.h:
 
+/usr/include/c++/13/bits/requires_hosted.h:
+
+/usr/include/x86_64-linux-gnu/bits/floatn-common.h:
+
 /usr/include/x86_64-linux-gnu/bits/floatn.h:
 
 /usr/include/x86_64-linux-gnu/bits/types/struct_itimerspec.h:
 
 /usr/include/x86_64-linux-gnu/bits/fp-fast.h:
-
-/usr/include/c++/13/map:
-
-/usr/include/x86_64-linux-gnu/bits/iscanonical.h:
 
 /usr/include/x86_64-linux-gnu/bits/dirent_ext.h:
 

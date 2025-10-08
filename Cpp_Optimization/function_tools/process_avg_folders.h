@@ -13,7 +13,7 @@
 template<typename AlgoFunc>
 void process_avg_folders(AlgoFunc algo, const std::string& algo_name, 
                         const std::string& data_dir, const std::string& output_dir) {
-    std::vector<std::string> patterns = {"avg_30_"};
+    std::vector<std::string> patterns = {"avg_30_", "avg_60_", "avg_90_"};
     
     for (const auto& pattern : patterns) {
         auto folders = list_directory(data_dir);

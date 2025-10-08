@@ -1,5 +1,5 @@
 logs
 .venv
 __pycache__
-
+nohup.out
 

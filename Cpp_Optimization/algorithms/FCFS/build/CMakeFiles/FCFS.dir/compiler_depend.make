@@ -5,7 +5,8 @@ CMakeFiles/FCFS.dir/FCFS.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algor
   /home/melowu/Work/ultimus/Cpp_Optimization/Job_Format/Job.h \
   /home/melowu/Work/ultimus/Cpp_Optimization/algorithm_executer/_run.h \
   /home/melowu/Work/ultimus/Cpp_Optimization/algorithm_executer/_run_random.h \
-  /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/FCFS_Selector.h \
+  /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/Optimized_FCFS_algorithm.h \
+  /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/Optimized_Selector.h \
   /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/process_avg_folders.h \
   /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/process_random_folders.h \
   /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/process_softrandom_folders.h \
@@ -17,6 +18,7 @@ CMakeFiles/FCFS.dir/FCFS.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algor
   /usr/include/asm-generic/int-ll64.h \
   /usr/include/asm-generic/posix_types.h \
   /usr/include/asm-generic/types.h \
+  /usr/include/assert.h \
   /usr/include/c++/13/algorithm \
   /usr/include/c++/13/backward/binders.h \
   /usr/include/c++/13/bit \
@@ -97,7 +99,6 @@ CMakeFiles/FCFS.dir/FCFS.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algor
   /usr/include/c++/13/bits/stl_map.h \
   /usr/include/c++/13/bits/stl_multimap.h \
   /usr/include/c++/13/bits/stl_pair.h \
-  /usr/include/c++/13/bits/stl_queue.h \
   /usr/include/c++/13/bits/stl_relops.h \
   /usr/include/c++/13/bits/stl_stack.h \
   /usr/include/c++/13/bits/stl_tempbuf.h \
@@ -113,6 +114,7 @@ CMakeFiles/FCFS.dir/FCFS.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algor
   /usr/include/c++/13/bits/utility.h \
   /usr/include/c++/13/bits/vector.tcc \
   /usr/include/c++/13/bitset \
+  /usr/include/c++/13/cassert \
   /usr/include/c++/13/cctype \
   /usr/include/c++/13/cerrno \
   /usr/include/c++/13/clocale \
@@ -139,11 +141,11 @@ CMakeFiles/FCFS.dir/FCFS.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algor
   /usr/include/c++/13/iosfwd \
   /usr/include/c++/13/iostream \
   /usr/include/c++/13/istream \
+  /usr/include/c++/13/limits \
   /usr/include/c++/13/locale \
   /usr/include/c++/13/map \
   /usr/include/c++/13/new \
   /usr/include/c++/13/ostream \
-  /usr/include/c++/13/queue \
   /usr/include/c++/13/regex \
   /usr/include/c++/13/sstream \
   /usr/include/c++/13/stack \
@@ -325,8 +327,6 @@ CMakeFiles/FCFS.dir/FCFS.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algor
 
 /usr/include/x86_64-linux-gnu/c++/13/bits/ctype_base.h:
 
-/usr/include/x86_64-linux-gnu/c++/13/bits/cpu_defines.h:
-
 /usr/include/x86_64-linux-gnu/c++/13/bits/c++locale.h:
 
 /usr/include/x86_64-linux-gnu/c++/13/bits/c++config.h:
@@ -350,6 +350,10 @@ CMakeFiles/FCFS.dir/FCFS.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algor
 /usr/include/x86_64-linux-gnu/bits/typesizes.h:
 
 /usr/include/x86_64-linux-gnu/bits/types/time_t.h:
+
+/usr/include/x86_64-linux-gnu/c++/13/bits/gthr-default.h:
+
+/usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h:
 
 /usr/include/c++/13/debug/assertions.h:
 
@@ -393,17 +397,15 @@ CMakeFiles/FCFS.dir/FCFS.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algor
 
 /usr/include/c++/13/locale:
 
-/usr/include/c++/13/bits/stl_queue.h:
-
 /usr/include/c++/13/bits/functexcept.h:
 
 /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:
 
+/usr/include/c++/13/bits/stl_bvector.h:
+
+/usr/include/c++/13/bits/allocator.h:
+
 /usr/include/c++/13/bits/stl_algo.h:
-
-/usr/include/x86_64-linux-gnu/c++/13/bits/gthr-default.h:
-
-/usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h:
 
 /usr/include/c++/13/exception:
 
@@ -471,27 +473,9 @@ CMakeFiles/FCFS.dir/FCFS.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algor
 
 /usr/include/c++/13/bits/ostream_insert.h:
 
+/usr/include/c++/13/bits/ostream.tcc:
+
 /usr/include/c++/13/bits/invoke.h:
-
-/usr/include/c++/13/bits/regex.h:
-
-/usr/include/c++/13/backward/binders.h:
-
-/usr/include/c++/13/bits/locale_facets.h:
-
-/usr/include/c++/13/ext/aligned_buffer.h:
-
-/usr/include/locale.h:
-
-/usr/include/x86_64-linux-gnu/asm/bitsperlong.h:
-
-/usr/include/c++/13/bits/utility.h:
-
-/usr/include/x86_64-linux-gnu/bits/pthreadtypes-arch.h:
-
-/usr/include/c++/13/ext/alloc_traits.h:
-
-/usr/include/c++/13/new:
 
 /usr/include/c++/13/bits/alloc_traits.h:
 
@@ -505,11 +489,17 @@ CMakeFiles/FCFS.dir/FCFS.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algor
 
 /usr/include/x86_64-linux-gnu/bits/fp-logb.h:
 
-/usr/include/c++/13/bits/allocated_ptr.h:
+/usr/include/c++/13/bits/regex.h:
 
-/usr/include/c++/13/bit:
+/usr/include/c++/13/backward/binders.h:
 
-/usr/include/c++/13/bits/basic_string.tcc:
+/usr/include/c++/13/bits/stl_vector.h:
+
+/usr/include/c++/13/bits/stl_tempbuf.h:
+
+/usr/include/c++/13/bits/stl_tree.h:
+
+/usr/include/c++/13/bits/codecvt.h:
 
 /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/process_softrandom_folders.h:
 
@@ -535,7 +525,23 @@ CMakeFiles/FCFS.dir/FCFS.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algor
 
 /usr/include/c++/13/bits/locale_conv.h:
 
+/home/melowu/Work/ultimus/Cpp_Optimization/function_tools/Optimized_Selector.h:
+
+/usr/include/c++/13/ostream:
+
+/usr/include/c++/13/cassert:
+
+/usr/include/c++/13/bits/cpp_type_traits.h:
+
+/usr/include/x86_64-linux-gnu/bits/types.h:
+
+/usr/include/c++/13/bits/move.h:
+
 /usr/include/c++/13/bits/refwrap.h:
+
+/usr/include/x86_64-linux-gnu/bits/iscanonical.h:
+
+/usr/include/c++/13/map:
 
 /usr/include/x86_64-linux-gnu/bits/types/__fpos_t.h:
 
@@ -543,21 +549,11 @@ CMakeFiles/FCFS.dir/FCFS.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algor
 
 /usr/include/c++/13/algorithm:
 
+/usr/include/x86_64-linux-gnu/c++/13/bits/cpu_defines.h:
+
+/home/melowu/Work/ultimus/Cpp_Optimization/function_tools/Optimized_FCFS_algorithm.h:
+
 /usr/include/c++/13/bits/locale_facets_nonio.h:
-
-/home/melowu/Work/ultimus/Cpp_Optimization/algorithm_executer/_run.h:
-
-/usr/include/c++/13/bits/stl_deque.h:
-
-/home/melowu/Work/ultimus/Cpp_Optimization/function_tools/process_random_folders.h:
-
-/usr/include/x86_64-linux-gnu/bits/types/wint_t.h:
-
-/home/melowu/Work/ultimus/Cpp_Optimization/function_tools/process_avg_folders.h:
-
-/usr/include/c++/13/bits/regex_automaton.tcc:
-
-/home/melowu/Work/ultimus/Cpp_Optimization/algorithm_executer/_run_random.h:
 
 /usr/include/c++/13/cstdio:
 
@@ -571,11 +567,21 @@ CMakeFiles/FCFS.dir/FCFS.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algor
 
 /usr/include/linux/stddef.h:
 
-/usr/include/c++/13/bits/stl_bvector.h:
+/home/melowu/Work/ultimus/Cpp_Optimization/algorithm_executer/_run.h:
 
-/usr/include/c++/13/bits/allocator.h:
+/usr/include/c++/13/bits/stl_deque.h:
 
-/home/melowu/Work/ultimus/Cpp_Optimization/function_tools/FCFS_Selector.h:
+/home/melowu/Work/ultimus/Cpp_Optimization/function_tools/process_random_folders.h:
+
+/usr/include/linux/stat.h:
+
+/usr/include/c++/13/bits/locale_facets.tcc:
+
+/usr/include/c++/13/bits/regex_automaton.tcc:
+
+/usr/include/assert.h:
+
+/home/melowu/Work/ultimus/Cpp_Optimization/algorithm_executer/_run_random.h:
 
 /usr/include/c++/13/bits/regex_error.h:
 
@@ -583,13 +589,9 @@ CMakeFiles/FCFS.dir/FCFS.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algor
 
 /usr/include/x86_64-linux-gnu/bits/time64.h:
 
-/usr/include/alloca.h:
+/usr/include/x86_64-linux-gnu/sys/select.h:
 
-/usr/include/x86_64-linux-gnu/bits/floatn-common.h:
-
-/usr/include/c++/13/bits/requires_hosted.h:
-
-/home/melowu/Work/ultimus/Cpp_Optimization/algorithms/FCFS/FCFS.cpp:
+/usr/include/c++/13/cwchar:
 
 /usr/include/linux/types.h:
 
@@ -601,25 +603,15 @@ CMakeFiles/FCFS.dir/FCFS.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algor
 
 /usr/include/x86_64-linux-gnu/bits/math-vector.h:
 
-/usr/include/x86_64-linux-gnu/sys/select.h:
+/usr/include/c++/13/bits/basic_string.tcc:
 
-/usr/include/c++/13/cwchar:
+/usr/include/c++/13/bits/allocated_ptr.h:
 
-/usr/include/c++/13/bits/stl_vector.h:
+/usr/include/c++/13/bit:
 
-/usr/include/c++/13/bits/stl_tempbuf.h:
+/usr/include/alloca.h:
 
-/usr/include/c++/13/bits/stl_tree.h:
-
-/usr/include/c++/13/bits/codecvt.h:
-
-/usr/include/c++/13/ostream:
-
-/usr/include/c++/13/bits/cpp_type_traits.h:
-
-/usr/include/x86_64-linux-gnu/bits/types.h:
-
-/usr/include/c++/13/bits/move.h:
+/usr/include/c++/13/bits/locale_facets.h:
 
 /usr/include/c++/13/bits/cxxabi_forced.h:
 
@@ -657,8 +649,6 @@ CMakeFiles/FCFS.dir/FCFS.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algor
 
 /usr/include/c++/13/bits/ios_base.h:
 
-/usr/include/c++/13/bits/ostream.tcc:
-
 /usr/include/x86_64-linux-gnu/c++/13/bits/ctype_inline.h:
 
 /usr/include/c++/13/bits/std_function.h:
@@ -687,7 +677,27 @@ CMakeFiles/FCFS.dir/FCFS.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algor
 
 /usr/include/c++/13/bits/memoryfwd.h:
 
+/usr/include/c++/13/ext/aligned_buffer.h:
+
+/usr/include/locale.h:
+
+/usr/include/x86_64-linux-gnu/asm/bitsperlong.h:
+
+/usr/include/c++/13/bits/utility.h:
+
+/usr/include/x86_64-linux-gnu/bits/pthreadtypes-arch.h:
+
+/usr/include/c++/13/ext/alloc_traits.h:
+
+/usr/include/c++/13/new:
+
 /usr/include/c++/13/ext/concurrence.h:
+
+/usr/include/x86_64-linux-gnu/bits/types/struct_timeval.h:
+
+/usr/include/c++/13/bits/stl_iterator.h:
+
+/usr/include/c++/13/ext/numeric_traits.h:
 
 /usr/include/asm-generic/bitsperlong.h:
 
@@ -713,9 +723,11 @@ CMakeFiles/FCFS.dir/FCFS.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algor
 
 /usr/include/x86_64-linux-gnu/bits/libm-simd-decl-stubs.h:
 
-/usr/include/c++/13/queue:
+/usr/include/x86_64-linux-gnu/bits/types/wint_t.h:
 
-/usr/include/linux/limits.h:
+/home/melowu/Work/ultimus/Cpp_Optimization/function_tools/process_avg_folders.h:
+
+/usr/include/c++/13/limits:
 
 /usr/include/c++/13/bits/stl_algobase.h:
 
@@ -751,9 +763,7 @@ CMakeFiles/FCFS.dir/FCFS.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algor
 
 /usr/include/x86_64-linux-gnu/bits/pthread_stack_min-dynamic.h:
 
-/usr/include/c++/13/bits/locale_facets.tcc:
-
-/usr/include/linux/stat.h:
+/usr/include/linux/limits.h:
 
 /usr/include/pthread.h:
 
@@ -761,9 +771,9 @@ CMakeFiles/FCFS.dir/FCFS.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algor
 
 /usr/include/sched.h:
 
-/usr/include/c++/13/bits/stl_iterator_base_types.h:
-
 /usr/include/c++/13/bits/regex_compiler.h:
+
+/usr/include/c++/13/bits/stl_iterator_base_types.h:
 
 /usr/include/stdio.h:
 
@@ -776,12 +786,6 @@ CMakeFiles/FCFS.dir/FCFS.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algor
 /usr/include/x86_64-linux-gnu/asm/errno.h:
 
 /usr/include/x86_64-linux-gnu/bits/stdlib.h:
-
-/usr/include/c++/13/bits/stl_iterator.h:
-
-/usr/include/c++/13/ext/numeric_traits.h:
-
-/usr/include/x86_64-linux-gnu/bits/types/struct_timeval.h:
 
 /usr/include/c++/13/cwctype:
 
@@ -803,15 +807,17 @@ CMakeFiles/FCFS.dir/FCFS.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algor
 
 /usr/include/x86_64-linux-gnu/bits/cpu-set.h:
 
+/usr/include/c++/13/bits/requires_hosted.h:
+
+/home/melowu/Work/ultimus/Cpp_Optimization/algorithms/FCFS/FCFS.cpp:
+
+/usr/include/x86_64-linux-gnu/bits/floatn-common.h:
+
 /usr/include/x86_64-linux-gnu/bits/floatn.h:
 
 /usr/include/x86_64-linux-gnu/bits/types/struct_itimerspec.h:
 
 /usr/include/x86_64-linux-gnu/bits/fp-fast.h:
-
-/usr/include/c++/13/map:
-
-/usr/include/x86_64-linux-gnu/bits/iscanonical.h:
 
 /usr/include/x86_64-linux-gnu/bits/dirent_ext.h:
 

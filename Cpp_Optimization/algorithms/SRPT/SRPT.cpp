@@ -86,11 +86,25 @@ SRPTResult SRPT(std::vector<Job>& jobs) {
                     current = nullptr;
                     continue;
                 } else {
+                    // CRITICAL FIX: Check if new arrival is at current time
+                    if (next_arrival_t == t) {
+                        // New arrival right now - don't execute, reconsider scheduling
+                        continue;
+                    }
+                    
                     // Run until either next arrival or completion
-                    int delta = std::min(current->remaining_time, 
-                                        std::max(1, next_arrival_t - t));
+                    // FIXED: Removed std::max(1, ...) that was forcing execution
+                    int delta = std::min(current->remaining_time, next_arrival_t - t);
+                    
+                    // Safety check: delta should be positive
+                    if (delta <= 0) {
+                        // This should not happen with the fix above, but safety check
+                        continue;
+                    }
+                    
                     t += delta;
                     current->remaining_time -= delta;
+                    
                     if (current->remaining_time == 0) {
                         current->completion_time = t;
                         completed.push_back(current);
@@ -142,9 +156,10 @@ int main() {
     std::string output_dir = "/home/melowu/Work/ultimus/SRPT_result";
     
     std::cout << "============================================================\n";
-    std::cout << "Starting SRPT batch processing:\n";
+    std::cout << "Starting SRPT batch processing (FIXED VERSION):\n";
     std::cout << "  Data directory: " << data_dir << "\n";
     std::cout << "  Output directory: " << output_dir << "\n";
+    std::cout << "  Fix: Proper immediate preemption on arrival\n";
     std::cout << "============================================================\n";
     
     create_directory(output_dir);

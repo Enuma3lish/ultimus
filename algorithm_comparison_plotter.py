@@ -9,6 +9,7 @@ Key Features:
 5. Mode comparison plots (all modes 1-7)
 6. Maximum flow time comparison (ALL algorithms)
 7. BAL/FCFS/SRPT percentage plots (auto-detect)
+8. Heavy tail analysis for random and softrandom cases
 
 Paths:
 - Normal results: /home/melowu/Work/ultimus/algorithm_result/
@@ -133,91 +134,304 @@ def find_best_dynamic_setting_v2(df, algorithm_type="Dynamic"):
         return mode7_col
 
 # ============================================================================
+# HEAVY TAIL ANALYSIS
+# ============================================================================
+def draw_heavy_tail(output_dir="heavy_tail_analysis"):
+    """
+    Analyze heavy-tail distribution in job sizes for random and softrandom cases.
+    Shows what percentage of total work is done by the bottom X% of jobs (by size).
+    """
+    
+    os.makedirs(output_dir, exist_ok=True)
+    
+    data_base_path = "/home/melowu/Work/ultimus/data"
+    
+    # Frequency values (2^1 to 2^16)
+    frequencies = [2**i for i in range(1, 17)]
+    
+    # Colors and markers for the three percentile lines
+    percentile_config = {
+        'heavy_0.01': {'label': 'Bottom 99% (Top 1%)', 'color': '#e74c3c', 'marker': 'o', 'percentile': 0.01},
+        'heavy_0.015': {'label': 'Bottom 98.5% (Top 1.5%)', 'color': '#f39c12', 'marker': 's', 'percentile': 0.015},
+        'heavy_0.1': {'label': 'Bottom 90% (Top 10%)', 'color': '#27ae60', 'marker': '^', 'percentile': 0.1}
+    }
+    
+    # Process Random case
+    logger.info("Analyzing heavy tail for Random case...")
+    random_results = {key: {'frequencies': [], 'ratios': []} for key in percentile_config.keys()}
+    
+    for freq in frequencies:
+        freq_ratios = {key: [] for key in percentile_config.keys()}
+        
+        # Random has 10 iterations (1-10)
+        for iteration in range(1, 11):
+            csv_path = os.path.join(data_base_path, f"freq_{freq}_{iteration}", f"random_freq_{freq}.csv")
+            
+            if not os.path.exists(csv_path):
+                logger.warning(f"File not found: {csv_path}")
+                continue
+            
+            try:
+                df = pd.read_csv(csv_path)
+                
+                if 'job_size' not in df.columns:
+                    logger.warning(f"'job_size' column not found in {csv_path}")
+                    continue
+                
+                job_sizes = df['job_size'].values
+                total_jobs = len(job_sizes)
+                total_size = np.sum(job_sizes)
+                
+                if total_size == 0:
+                    continue
+                
+                # Sort job sizes in ascending order
+                sorted_sizes = np.sort(job_sizes)
+                
+                # Calculate ratios for each percentile
+                for key, config in percentile_config.items():
+                    percentile = config['percentile']
+                    # Number of top jobs to exclude
+                    n_exclude = int(total_jobs * percentile)
+                    
+                    if n_exclude > 0:
+                        # Sum of bottom (100-percentile)% jobs
+                        bottom_sum = np.sum(sorted_sizes[:-n_exclude])
+                    else:
+                        bottom_sum = total_size
+                    
+                    ratio = bottom_sum / total_size
+                    freq_ratios[key].append(ratio)
+                
+            except Exception as e:
+                logger.error(f"Error reading {csv_path}: {e}")
+                continue
+        
+        # Average across all iterations for this frequency
+        for key in percentile_config.keys():
+            if freq_ratios[key]:
+                avg_ratio = np.mean(freq_ratios[key])
+                random_results[key]['frequencies'].append(freq)
+                random_results[key]['ratios'].append(avg_ratio)
+    
+    # Plot Random case
+    if any(random_results[key]['frequencies'] for key in percentile_config.keys()):
+        plt.figure(figsize=(12, 8))
+        
+        for key, config in percentile_config.items():
+            if random_results[key]['frequencies']:
+                plt.plot(random_results[key]['frequencies'], 
+                        random_results[key]['ratios'],
+                        color=config['color'],
+                        marker=config['marker'],
+                        linewidth=2.5,
+                        markersize=10,
+                        label=config['label'],
+                        alpha=0.9)
+        
+        plt.xscale('log', base=2)
+        plt.xlabel('Coherence Time (Frequency)', fontsize=14)
+        plt.ylabel('Fraction of Total Work', fontsize=14)
+        plt.title('Heavy Tail Analysis - Random Case\n(Lower values indicate heavier tail)', 
+                 fontsize=16, fontweight='bold')
+        plt.legend(loc='best', frameon=True, fancybox=True, shadow=True)
+        plt.grid(True, alpha=0.3, linestyle='--')
+        plt.ylim(0, 1.05)
+        
+        plt.tight_layout()
+        output_path = os.path.join(output_dir, "heavy_tail_random.pdf")
+        plt.savefig(output_path, format='pdf', dpi=300, bbox_inches='tight')
+        plt.close()
+        
+        logger.info(f"Saved heavy tail plot for Random case to {output_path}")
+    
+    # Process Softrandom case
+    logger.info("Analyzing heavy tail for Softrandom case...")
+    softrandom_results = {key: {'frequencies': [], 'ratios': []} for key in percentile_config.keys()}
+    
+    for freq in frequencies:
+        freq_ratios = {key: [] for key in percentile_config.keys()}
+        
+        # Softrandom has 10 directories (softrandom_1 to softrandom_10)
+        for iteration in range(1, 11):
+            softrandom_dir = os.path.join(data_base_path, f"softrandom_{iteration}")
+            csv_path = os.path.join(softrandom_dir, f"freq_{freq}_{iteration}", f"softrandom_freq_{freq}.csv")
+            
+            if not os.path.exists(csv_path):
+                logger.warning(f"File not found: {csv_path}")
+                continue
+            
+            try:
+                df = pd.read_csv(csv_path)
+                
+                if 'job_size' not in df.columns:
+                    logger.warning(f"'job_size' column not found in {csv_path}")
+                    continue
+                
+                job_sizes = df['job_size'].values
+                total_jobs = len(job_sizes)
+                total_size = np.sum(job_sizes)
+                
+                if total_size == 0:
+                    continue
+                
+                # Sort job sizes in ascending order
+                sorted_sizes = np.sort(job_sizes)
+                
+                # Calculate ratios for each percentile
+                for key, config in percentile_config.items():
+                    percentile = config['percentile']
+                    # Number of top jobs to exclude
+                    n_exclude = int(total_jobs * percentile)
+                    
+                    if n_exclude > 0:
+                        # Sum of bottom (100-percentile)% jobs
+                        bottom_sum = np.sum(sorted_sizes[:-n_exclude])
+                    else:
+                        bottom_sum = total_size
+                    
+                    ratio = bottom_sum / total_size
+                    freq_ratios[key].append(ratio)
+                
+            except Exception as e:
+                logger.error(f"Error reading {csv_path}: {e}")
+                continue
+        
+        # Average across all iterations for this frequency
+        for key in percentile_config.keys():
+            if freq_ratios[key]:
+                avg_ratio = np.mean(freq_ratios[key])
+                softrandom_results[key]['frequencies'].append(freq)
+                softrandom_results[key]['ratios'].append(avg_ratio)
+    
+    # Plot Softrandom case
+    if any(softrandom_results[key]['frequencies'] for key in percentile_config.keys()):
+        plt.figure(figsize=(12, 8))
+        
+        for key, config in percentile_config.items():
+            if softrandom_results[key]['frequencies']:
+                plt.plot(softrandom_results[key]['frequencies'], 
+                        softrandom_results[key]['ratios'],
+                        color=config['color'],
+                        marker=config['marker'],
+                        linewidth=2.5,
+                        markersize=10,
+                        label=config['label'],
+                        alpha=0.9)
+        
+        plt.xscale('log', base=2)
+        plt.xlabel('Coherence Time (Frequency)', fontsize=14)
+        plt.ylabel('Fraction of Total Work', fontsize=14)
+        plt.title('Heavy Tail Analysis - Softrandom Case\n(Lower values indicate heavier tail)', 
+                 fontsize=16, fontweight='bold')
+        plt.legend(loc='best', frameon=True, fancybox=True, shadow=True)
+        plt.grid(True, alpha=0.3, linestyle='--')
+        plt.ylim(0, 1.05)
+        
+        plt.tight_layout()
+        output_path = os.path.join(output_dir, "heavy_tail_softrandom.pdf")
+        plt.savefig(output_path, format='pdf', dpi=300, bbox_inches='tight')
+        plt.close()
+        
+        logger.info(f"Saved heavy tail plot for Softrandom case to {output_path}")
+    
+    logger.info("Heavy tail analysis completed")
+
+# ============================================================================
 # DATA PROCESSING FUNCTIONS
 # ============================================================================
-def process_avg30_results():
-    """Process avg30 results from algorithm_result directory"""
+def process_avg_results(avg_types=['avg30', 'avg60', 'avg90']):
+    """Process avg results from algorithm_result directory for different avg types"""
     
-    for algorithm in ALGORITHMS:
-        logger.info(f"Processing avg30 results for {algorithm}")
+    for avg_type in avg_types:
+        logger.info(f"Processing {avg_type} results...")
         
-        result_dir = os.path.join(ALGORITHM_RESULT_PATH, f"{algorithm}_result", "avg30_result")
-        
-        if not os.path.exists(result_dir):
-            logger.warning(f"Directory {result_dir} not found")
-            continue
+        for algorithm in ALGORITHMS:
+            logger.info(f"  Processing {avg_type} results for {algorithm}")
             
-        pattern = f"{result_dir}/*_{algorithm}_*_result*.csv"
-        files = glob.glob(pattern)
-        
-        if not files:
-            logger.warning(f"No result files found for {algorithm}")
-            continue
+            result_dir = os.path.join(ALGORITHM_RESULT_PATH, f"{algorithm}_result", f"{avg_type}_result")
             
-        arrival_rate_groups = {}
-        for file in files:
-            filename = os.path.basename(file)
-            arrival_rate = filename.split('_')[0]
+            if not os.path.exists(result_dir):
+                logger.warning(f"  Directory {result_dir} not found")
+                continue
             
-            if arrival_rate not in arrival_rate_groups:
-                arrival_rate_groups[arrival_rate] = []
-            arrival_rate_groups[arrival_rate].append(file)
-        
-        all_results = []
-        
-        for arrival_rate, file_list in arrival_rate_groups.items():
-            dfs = []
-            for file in file_list:
-                try:
-                    df = pd.read_csv(file)
-                    dfs.append(df)
-                except Exception as e:
-                    logger.error(f"Error reading {file}: {e}")
-                    continue
+            # Fix: Different pattern for Dynamic/Dynamic_BAL to match actual file naming
+            if algorithm in ['Dynamic', 'Dynamic_BAL']:
+                # Pattern matches: 20_Dynamic_result_1.csv or 20_Dynamic_BAL_result_1.csv
+                pattern = f"{result_dir}/*_{algorithm}_result*.csv"
+            else:
+                # Original pattern for other algorithms
+                pattern = f"{result_dir}/*_{algorithm}_*_result*.csv"
             
-            if not dfs:
+            files = glob.glob(pattern)
+            
+            if not files:
+                logger.warning(f"  No result files found for {algorithm} in {avg_type}")
                 continue
                 
-            combined_df = pd.concat(dfs, ignore_index=True)
+            arrival_rate_groups = {}
+            for file in files:
+                filename = os.path.basename(file)
+                arrival_rate = filename.split('_')[0]
+                
+                if arrival_rate not in arrival_rate_groups:
+                    arrival_rate_groups[arrival_rate] = []
+                arrival_rate_groups[arrival_rate].append(file)
             
-            if algorithm in ['Dynamic', 'Dynamic_BAL']:
-                l2_cols = [col for col in combined_df.columns if 'L2_norm_flow_time' in col]
-                grouped = combined_df.groupby(['arrival_rate', 'bp_parameter_L', 'bp_parameter_H'])
+            all_results = []
+            
+            for arrival_rate, file_list in arrival_rate_groups.items():
+                dfs = []
+                for file in file_list:
+                    try:
+                        df = pd.read_csv(file)
+                        dfs.append(df)
+                    except Exception as e:
+                        logger.error(f"  Error reading {file}: {e}")
+                        continue
                 
-                for (arr_rate, bp_L, bp_H), group in grouped:
-                    row_data = {
-                        'arrival_rate': arr_rate,
-                        'bp_parameter_L': bp_L,
-                        'bp_parameter_H': bp_H
-                    }
-                    for col in l2_cols:
-                        if col in group.columns:
-                            row_data[col] = group[col].mean()
-                    all_results.append(row_data)
-            else:
-                l2_col_name = f'{algorithm.upper()}_L2_norm_flow_time'
-                grouped = combined_df.groupby(['arrival_rate', 'bp_parameter_L', 'bp_parameter_H'])
+                if not dfs:
+                    continue
+                    
+                combined_df = pd.concat(dfs, ignore_index=True)
                 
-                for (arr_rate, bp_L, bp_H), group in grouped:
-                    if l2_col_name in group.columns:
+                if algorithm in ['Dynamic', 'Dynamic_BAL']:
+                    l2_cols = [col for col in combined_df.columns if 'L2_norm_flow_time' in col]
+                    grouped = combined_df.groupby(['arrival_rate', 'bp_parameter_L', 'bp_parameter_H'])
+                    
+                    for (arr_rate, bp_L, bp_H), group in grouped:
                         row_data = {
                             'arrival_rate': arr_rate,
                             'bp_parameter_L': bp_L,
-                            'bp_parameter_H': bp_H,
-                            l2_col_name: group[l2_col_name].mean()
+                            'bp_parameter_H': bp_H
                         }
+                        for col in l2_cols:
+                            if col in group.columns:
+                                row_data[col] = group[col].mean()
                         all_results.append(row_data)
-                    else:
-                        logger.warning(f"Column {l2_col_name} not found in {algorithm} data")
-        
-        if all_results:
-            final_df = pd.DataFrame(all_results)
-            final_df = final_df.sort_values(['arrival_rate', 'bp_parameter_L'])
+                else:
+                    l2_col_name = f'{algorithm.upper()}_L2_norm_flow_time'
+                    grouped = combined_df.groupby(['arrival_rate', 'bp_parameter_L', 'bp_parameter_H'])
+                    
+                    for (arr_rate, bp_L, bp_H), group in grouped:
+                        if l2_col_name in group.columns:
+                            row_data = {
+                                'arrival_rate': arr_rate,
+                                'bp_parameter_L': bp_L,
+                                'bp_parameter_H': bp_H,
+                                l2_col_name: group[l2_col_name].mean()
+                            }
+                            all_results.append(row_data)
+                        else:
+                            logger.warning(f"  Column {l2_col_name} not found in {algorithm} data")
             
-            output_file = f"{algorithm}_result_avg30.csv"
-            final_df.to_csv(output_file, index=False)
-            logger.info(f"Created final file: {output_file}")
-
+            if all_results:
+                final_df = pd.DataFrame(all_results)
+                final_df = final_df.sort_values(['arrival_rate', 'bp_parameter_L'])
+                
+                output_file = f"{algorithm}_result_{avg_type}.csv"
+                final_df.to_csv(output_file, index=False)
+                logger.info(f"  Created final file: {output_file}")
 def process_random_softrandom_results():
     """Process random and softrandom results - handles both L2_norm and maximum_flow_time"""
     
@@ -361,67 +575,14 @@ def process_dynamic_analysis(algorithm_type="Dynamic"):
         output_file = f"{algorithm_type}_percentages_mode{mode}_avg.csv"
         grouped.to_csv(output_file, index=False)
         logger.info(f"Created {output_file}")
-
-def load_worst_case_data(algorithm, data_type="avg30"):
-    """Load worst case data for comparison"""
-    if data_type == "avg30":
-        result_dir = os.path.join(WORST_CASE_PATH, f"{algorithm}_result", "avg30_result")
-        pattern = f"{result_dir}/*_{algorithm}_*_result*.csv"
-    else:
-        result_dir = os.path.join(WORST_CASE_PATH, f"{algorithm}_result", f"{data_type}_result")
-        if algorithm in ['Dynamic', 'Dynamic_BAL']:
-            pattern = f"{result_dir}/{data_type}_result_{algorithm}_njobs100_*.csv"
-        else:
-            pattern = f"{result_dir}/{data_type}_result_{algorithm}_*.csv"
-    
-    files = glob.glob(pattern)
-    if not files:
-        logger.warning(f"No worst case files found for {algorithm} ({data_type})")
-        return None
-    
-    all_dfs = []
-    for file in files:
-        try:
-            df = pd.read_csv(file)
-            all_dfs.append(df)
-        except Exception as e:
-            logger.error(f"Error reading {file}: {e}")
-            continue
-    
-    if not all_dfs:
-        return None
-    
-    combined_df = pd.concat(all_dfs, ignore_index=True)
-    
-    if algorithm in ['Dynamic', 'Dynamic_BAL']:
-        if data_type == "avg30":
-            grouped = combined_df.groupby(['arrival_rate', 'bp_parameter_L', 'bp_parameter_H'])
-            result = []
-            for (arr_rate, bp_L, bp_H), group in grouped:
-                row_data = {'arrival_rate': arr_rate, 'bp_parameter_L': bp_L, 'bp_parameter_H': bp_H}
-                l2_cols = [col for col in group.columns if 'L2_norm_flow_time' in col]
-                for col in l2_cols:
-                    row_data[col] = group[col].mean()
-                result.append(row_data)
-            return pd.DataFrame(result)
-        else:
-            l2_cols = [col for col in combined_df.columns if 'L2_norm_flow_time' in col]
-            return combined_df.groupby('frequency')[l2_cols].mean().reset_index()
-    else:
-        l2_col = f'{algorithm.upper()}_L2_norm_flow_time'
-        if data_type == "avg30":
-            return combined_df.groupby(['arrival_rate', 'bp_parameter_L', 'bp_parameter_H'])[l2_col].mean().reset_index()
-        else:
-            return combined_df.groupby('frequency')[l2_col].mean().reset_index()
-
 # ============================================================================
 # PLOTTING FUNCTIONS
-# ============================================================================
+# Fix 1: Update create_best_worst_comparison to handle njobs1 for worst case
 def create_best_worst_comparison(algorithm, best_col, bp_param, output_path, data_type="avg30"):
     """Compare best case vs worst case results"""
     
-    if data_type == "avg30":
-        best_file = f"{algorithm}_result_avg30.csv"
+    if data_type in ["avg30", "avg60", "avg90"]:
+        best_file = f"{algorithm}_result_{data_type}.csv"
     else:
         best_file = f"{algorithm}_{data_type}_result_avg.csv"
     
@@ -438,7 +599,7 @@ def create_best_worst_comparison(algorithm, best_col, bp_param, output_path, dat
     
     plt.figure(figsize=(12, 8))
     
-    if data_type == "avg30":
+    if data_type in ["avg30", "avg60", "avg90"]:
         best_df_filtered = best_df[(best_df['bp_parameter_L'] == bp_param['L']) & 
                                      (best_df['bp_parameter_H'] == bp_param['H'])]
         worst_df_filtered = worst_df[(worst_df['bp_parameter_L'] == bp_param['L']) & 
@@ -446,6 +607,7 @@ def create_best_worst_comparison(algorithm, best_col, bp_param, output_path, dat
         
         if best_df_filtered.empty or worst_df_filtered.empty:
             logger.warning(f"No data for bp_L={bp_param['L']}, bp_H={bp_param['H']}")
+            plt.close()
             return
         
         best_df_filtered = best_df_filtered.sort_values('arrival_rate')
@@ -453,7 +615,7 @@ def create_best_worst_comparison(algorithm, best_col, bp_param, output_path, dat
         
         x_values = best_df_filtered['arrival_rate'].values
         x_label = 'Arrival Rate'
-        title = f'{algorithm}: Best vs Worst Case - BP: L={bp_param["L"]:.3f}, H={bp_param["H"]}'
+        title = f'{algorithm}: Best vs Worst Case - {data_type.upper()} - BP: L={bp_param["L"]:.3f}, H={bp_param["H"]}'
     else:
         best_df = best_df.sort_values('frequency')
         worst_df = worst_df.sort_values('frequency')
@@ -469,11 +631,26 @@ def create_best_worst_comparison(algorithm, best_col, bp_param, output_path, dat
         best_values = best_df_filtered[best_col].values
     else:
         logger.warning(f"Column {best_col} not found in best case data")
+        plt.close()
         return
     
-    worst_col = best_col.replace('mode6', 'mode1').replace('mode7', 'mode1')
+    # FIX: Handle both njobs100 and njobs1 column naming for worst case
+    # Worst case uses njobs1, normal case uses njobs100
+    if algorithm in ['Dynamic', 'Dynamic_BAL']:
+        # Try to find the worst case column
+        worst_col = best_col.replace('njobs100_mode6', 'njobs1_mode1').replace('njobs100_mode7', 'njobs1_mode1')
+        
+        # If that doesn't exist, try other variations
+        if worst_col not in worst_df_filtered.columns:
+            # Try just njobs1_mode1
+            worst_col = f'{algorithm}_njobs1_mode1_L2_norm_flow_time'
+    else:
+        worst_col = best_col.replace('mode6', 'mode1').replace('mode7', 'mode1')
+    
     if worst_col not in worst_df_filtered.columns:
         logger.warning(f"Column {worst_col} not found in worst case data")
+        logger.info(f"Available columns in worst case: {list(worst_df_filtered.columns)}")
+        plt.close()
         return
     
     worst_values = worst_df_filtered[worst_col].values
@@ -505,16 +682,19 @@ def create_best_worst_comparison(algorithm, best_col, bp_param, output_path, dat
     
     plt.tight_layout()
     plt.savefig(output_path, format='pdf', dpi=300, bbox_inches='tight')
-    plt.close()
+    plt.close()  # IMPORTANT: Close figure to free memory
     
     logger.info(f"Saved best vs worst comparison to {output_path}")
 
+
+# Fix 2: Add plt.close() to create_dynamic_vs_dynamic_bal_comparison
 def create_dynamic_vs_dynamic_bal_comparison(best_dynamic_col, best_bal_col, bp_param, output_path, data_type="avg30"):
     """Compare Dynamic vs Dynamic_BAL"""
     
-    if data_type == "avg30":
-        dynamic_file = "Dynamic_result_avg30.csv"
-        bal_file = "Dynamic_BAL_result_avg30.csv"
+    # Handle different data types
+    if data_type in ["avg30", "avg60", "avg90"]:
+        dynamic_file = f"Dynamic_result_{data_type}.csv"
+        bal_file = f"Dynamic_BAL_result_{data_type}.csv"
     else:
         dynamic_file = f"Dynamic_{data_type}_result_avg.csv"
         bal_file = f"Dynamic_BAL_{data_type}_result_avg.csv"
@@ -528,7 +708,7 @@ def create_dynamic_vs_dynamic_bal_comparison(best_dynamic_col, best_bal_col, bp_
     
     plt.figure(figsize=(12, 8))
     
-    if data_type == "avg30":
+    if data_type in ["avg30", "avg60", "avg90"]:
         dynamic_df = dynamic_df[(dynamic_df['bp_parameter_L'] == bp_param['L']) & 
                                 (dynamic_df['bp_parameter_H'] == bp_param['H'])]
         bal_df = bal_df[(bal_df['bp_parameter_L'] == bp_param['L']) & 
@@ -536,6 +716,7 @@ def create_dynamic_vs_dynamic_bal_comparison(best_dynamic_col, best_bal_col, bp_
         
         if dynamic_df.empty or bal_df.empty:
             logger.warning(f"No data for bp_L={bp_param['L']}, bp_H={bp_param['H']}")
+            plt.close()
             return
         
         dynamic_df = dynamic_df.sort_values('arrival_rate')
@@ -543,7 +724,7 @@ def create_dynamic_vs_dynamic_bal_comparison(best_dynamic_col, best_bal_col, bp_
         
         x_values = dynamic_df['arrival_rate'].values
         x_label = 'Arrival Rate'
-        title = f'Dynamic vs Dynamic_BAL - BP: L={bp_param["L"]:.3f}, H={bp_param["H"]}'
+        title = f'Dynamic vs Dynamic_BAL - {data_type.upper()} - BP: L={bp_param["L"]:.3f}, H={bp_param["H"]}'
     else:
         dynamic_df = dynamic_df.sort_values('frequency')
         bal_df = bal_df.sort_values('frequency')
@@ -584,10 +765,12 @@ def create_dynamic_vs_dynamic_bal_comparison(best_dynamic_col, best_bal_col, bp_
     
     plt.tight_layout()
     plt.savefig(output_path, format='pdf', dpi=300, bbox_inches='tight')
-    plt.close()
+    plt.close()  # IMPORTANT: Close figure to free memory
     
     logger.info(f"Saved Dynamic vs Dynamic_BAL comparison to {output_path}")
 
+
+# Fix 3: Add plt.close() to create_all_algorithms_comparison
 def create_all_algorithms_comparison(df, best_dynamic_col, best_bal_col, bp_param, output_path, data_type="avg30"):
     """Compare all algorithms including Dynamic and Dynamic_BAL"""
     
@@ -595,11 +778,11 @@ def create_all_algorithms_comparison(df, best_dynamic_col, best_bal_col, bp_para
     
     algorithms_to_plot = ['RR', 'SRPT', 'SETF', 'FCFS', 'BAL', 'SJF']
     
-    if data_type == "avg30":
+    if data_type in ["avg30", "avg60", "avg90"]:
         df = df.sort_values('arrival_rate').reset_index(drop=True)
         x_values = df['arrival_rate'].values
         x_label = 'Arrival Rate'
-        title = f'All Algorithms Comparison - BP: L={bp_param["L"]:.3f}, H={bp_param["H"]}'
+        title = f'All Algorithms Comparison - {data_type.upper()} - BP: L={bp_param["L"]:.3f}, H={bp_param["H"]}'
     else:
         df = df.sort_values('frequency').reset_index(drop=True)
         x_values = df['frequency'].values
@@ -648,15 +831,17 @@ def create_all_algorithms_comparison(df, best_dynamic_col, best_bal_col, bp_para
     
     plt.tight_layout()
     plt.savefig(output_path, format='pdf', dpi=300, bbox_inches='tight')
-    plt.close()
+    plt.close()  # IMPORTANT: Close figure to free memory
     
     logger.info(f"Saved all algorithms comparison to {output_path}")
 
+
+# Fix 4: Add plt.close() to create_mode_comparison_plots
 def create_mode_comparison_plots(algorithm_type="Dynamic", data_type="avg30", bp_param=None, output_path=None):
     """Create plots comparing all modes (1-7)"""
     
-    if data_type == "avg30":
-        file_name = f"{algorithm_type}_result_avg30.csv"
+    if data_type in ["avg30", "avg60", "avg90"]:
+        file_name = f"{algorithm_type}_result_{data_type}.csv"
     else:
         file_name = f"{algorithm_type}_{data_type}_result_avg.csv"
     
@@ -668,9 +853,10 @@ def create_mode_comparison_plots(algorithm_type="Dynamic", data_type="avg30", bp
     
     plt.figure(figsize=(12, 8))
     
-    if data_type == "avg30":
+    if data_type in ["avg30", "avg60", "avg90"]:
         if bp_param is None:
-            logger.warning("bp_param required for avg30 data")
+            logger.warning("bp_param required for avg data")
+            plt.close()
             return
         
         df = df[(df['bp_parameter_L'] == bp_param['L']) & 
@@ -678,12 +864,13 @@ def create_mode_comparison_plots(algorithm_type="Dynamic", data_type="avg30", bp
         
         if df.empty:
             logger.warning(f"No data for bp_L={bp_param['L']}, bp_H={bp_param['H']}")
+            plt.close()
             return
         
         df = df.sort_values('arrival_rate')
         x_values = df['arrival_rate'].values
         x_label = 'Arrival Rate'
-        title = f'{algorithm_type} - All Modes Comparison\nBP: L={bp_param["L"]:.3f}, H={bp_param["H"]}'
+        title = f'{algorithm_type} - All Modes Comparison - {data_type.upper()}\nBP: L={bp_param["L"]:.3f}, H={bp_param["H"]}'
     else:
         df = df.sort_values('frequency')
         x_values = df['frequency'].values
@@ -719,9 +906,71 @@ def create_mode_comparison_plots(algorithm_type="Dynamic", data_type="avg30", bp
     
     if output_path:
         plt.savefig(output_path, format='pdf', dpi=300, bbox_inches='tight')
-        plt.close()
+        plt.close()  # IMPORTANT: Close figure to free memory
         logger.info(f"Saved mode comparison plot to {output_path}")
-
+def load_worst_case_data(algorithm, data_type="avg30"):
+    """Load worst case data for comparison"""
+    if data_type in ["avg30", "avg60", "avg90"]:
+        result_dir = os.path.join(WORST_CASE_PATH, f"{algorithm}_result", f"{data_type}_result")
+        # Fix: Different pattern for Dynamic/Dynamic_BAL to match actual file naming
+        if algorithm in ['Dynamic', 'Dynamic_BAL']:
+            pattern = f"{result_dir}/*_{algorithm}_result*.csv"
+        else:
+            pattern = f"{result_dir}/*_{algorithm}_*_result*.csv"
+    else:
+        # For random and softrandom, worst case uses njobs1 not njobs100
+        result_dir = os.path.join(WORST_CASE_PATH, f"{algorithm}_result", f"{data_type}_result")
+        if algorithm in ['Dynamic', 'Dynamic_BAL']:
+            # FIX: Worst case uses njobs1, not njobs100
+            pattern = f"{result_dir}/{data_type}_result_{algorithm}_njobs1_*.csv"
+        else:
+            pattern = f"{result_dir}/{data_type}_result_{algorithm}_*.csv"
+    
+    files = glob.glob(pattern)
+    if not files:
+        logger.warning(f"No worst case files found for {algorithm} ({data_type})")
+        logger.info(f"Searched pattern: {pattern}")
+        return None
+    
+    all_dfs = []
+    for file in files:
+        try:
+            df = pd.read_csv(file)
+            all_dfs.append(df)
+        except Exception as e:
+            logger.error(f"Error reading {file}: {e}")
+            continue
+    
+    if not all_dfs:
+        return None
+    
+    combined_df = pd.concat(all_dfs, ignore_index=True)
+    
+    if algorithm in ['Dynamic', 'Dynamic_BAL']:
+        if data_type in ["avg30", "avg60", "avg90"]:
+            grouped = combined_df.groupby(['arrival_rate', 'bp_parameter_L', 'bp_parameter_H'])
+            result = []
+            for (arr_rate, bp_L, bp_H), group in grouped:
+                row_data = {'arrival_rate': arr_rate, 'bp_parameter_L': bp_L, 'bp_parameter_H': bp_H}
+                l2_cols = [col for col in group.columns if 'L2_norm_flow_time' in col]
+                for col in l2_cols:
+                    row_data[col] = group[col].mean()
+                result.append(row_data)
+            return pd.DataFrame(result)
+        else:
+            # For random/softrandom, just average by frequency
+            l2_cols = [col for col in combined_df.columns if 'L2_norm_flow_time' in col]
+            if l2_cols:
+                return combined_df.groupby('frequency')[l2_cols].mean().reset_index()
+            else:
+                logger.warning(f"No L2 columns found in worst case data for {algorithm}")
+                return None
+    else:
+        l2_col = f'{algorithm.upper()}_L2_norm_flow_time'
+        if data_type in ["avg30", "avg60", "avg90"]:
+            return combined_df.groupby(['arrival_rate', 'bp_parameter_L', 'bp_parameter_H'])[l2_col].mean().reset_index()
+        else:
+            return combined_df.groupby('frequency')[l2_col].mean().reset_index()
 def create_max_flow_time_comparison(best_dynamic_col, best_bal_col, output_path, data_type="random"):
     """Compare maximum flow time for Dynamic and Dynamic_BAL"""
     
@@ -920,102 +1169,152 @@ def create_percentage_plots_all_modes(algorithm_type="Dynamic", output_dir="perc
 # MAIN PROCESSING PIPELINE
 # ============================================================================
 def process_all_data(output_base):
-    """Process all data and generate all plots"""
+    """Process all data and generate all plots for avg30, avg60, avg90"""
     
     logger.info("Step 1: Processing raw data files...")
-    process_avg30_results()
+    process_avg_results(['avg30', 'avg60', 'avg90'])
     process_random_softrandom_results()
     process_dynamic_analysis("Dynamic")
     process_dynamic_analysis("Dynamic_BAL")
     
-    logger.info("Step 2: Loading processed data...")
-    avg30_dynamic = pd.read_csv("Dynamic_result_avg30.csv") if os.path.exists("Dynamic_result_avg30.csv") else None
-    avg30_bal = pd.read_csv("Dynamic_BAL_result_avg30.csv") if os.path.exists("Dynamic_BAL_result_avg30.csv") else None
+    # Dictionary to store data for each avg type
+    avg_types = ['avg30', 'avg60', 'avg90']
+    all_data = {}
+    best_settings = {}
+    
+    for avg_type in avg_types:
+        logger.info(f"\n{'='*60}")
+        logger.info(f"Processing {avg_type} data...")
+        logger.info(f"{'='*60}")
+        
+        logger.info(f"Step 2: Loading processed {avg_type} data...")
+        avg_dynamic = pd.read_csv(f"Dynamic_result_{avg_type}.csv") if os.path.exists(f"Dynamic_result_{avg_type}.csv") else None
+        avg_bal = pd.read_csv(f"Dynamic_BAL_result_{avg_type}.csv") if os.path.exists(f"Dynamic_BAL_result_{avg_type}.csv") else None
+        
+        logger.info(f"Step 3: Finding best settings for {avg_type}...")
+        best_dynamic = find_best_dynamic_setting_v2(avg_dynamic, "Dynamic") if avg_dynamic is not None else None
+        best_bal = find_best_dynamic_setting_v2(avg_bal, "Dynamic_BAL") if avg_bal is not None else None
+        
+        logger.info(f"Best Dynamic ({avg_type}): {best_dynamic}")
+        logger.info(f"Best Dynamic_BAL ({avg_type}): {best_bal}")
+        
+        # Store best settings
+        best_settings[avg_type] = {
+            'Dynamic': best_dynamic,
+            'Dynamic_BAL': best_bal
+        }
+        
+        logger.info(f"Step 4: Merging algorithm data for {avg_type}...")
+        avg_data = avg_dynamic.copy() if avg_dynamic is not None else None
+        
+        for algo in ['Dynamic_BAL', 'BAL', 'FCFS', 'SRPT', 'RR', 'SETF', 'SJF']:
+            file_name = f"{algo}_result_{avg_type}.csv"
+            if os.path.exists(file_name):
+                algo_df = pd.read_csv(file_name)
+                if avg_data is not None:
+                    avg_data = avg_data.merge(algo_df, on=['arrival_rate', 'bp_parameter_L', 'bp_parameter_H'], how='outer')
+        
+        all_data[avg_type] = avg_data
+    
+    # Load random and softrandom data (these are not affected by avg type)
+    logger.info("\nStep 2b: Loading random and softrandom data...")
     random_dynamic = pd.read_csv("Dynamic_random_result_avg.csv") if os.path.exists("Dynamic_random_result_avg.csv") else None
     random_bal = pd.read_csv("Dynamic_BAL_random_result_avg.csv") if os.path.exists("Dynamic_BAL_random_result_avg.csv") else None
     softrandom_dynamic = pd.read_csv("Dynamic_softrandom_result_avg.csv") if os.path.exists("Dynamic_softrandom_result_avg.csv") else None
     softrandom_bal = pd.read_csv("Dynamic_BAL_softrandom_result_avg.csv") if os.path.exists("Dynamic_BAL_softrandom_result_avg.csv") else None
     
-    logger.info("Step 3: Finding best settings...")
-    best_dynamic_avg30 = find_best_dynamic_setting_v2(avg30_dynamic, "Dynamic") if avg30_dynamic is not None else None
-    best_bal_avg30 = find_best_dynamic_setting_v2(avg30_bal, "Dynamic_BAL") if avg30_bal is not None else None
     best_dynamic_random = find_best_dynamic_setting_v2(random_dynamic, "Dynamic") if random_dynamic is not None else None
     best_bal_random = find_best_dynamic_setting_v2(random_bal, "Dynamic_BAL") if random_bal is not None else None
     best_dynamic_softrandom = find_best_dynamic_setting_v2(softrandom_dynamic, "Dynamic") if softrandom_dynamic is not None else None
     best_bal_softrandom = find_best_dynamic_setting_v2(softrandom_bal, "Dynamic_BAL") if softrandom_bal is not None else None
     
-    logger.info(f"Best Dynamic (avg30): {best_dynamic_avg30}")
-    logger.info(f"Best Dynamic_BAL (avg30): {best_bal_avg30}")
-    
-    logger.info("Step 4: Merging algorithm data...")
-    avg30_data = avg30_dynamic.copy() if avg30_dynamic is not None else None
+    # Merge random data
     random_data = random_dynamic.copy() if random_dynamic is not None else None
-    softrandom_data = softrandom_dynamic.copy() if softrandom_dynamic is not None else None
-    
     for algo in ['Dynamic_BAL', 'BAL', 'FCFS', 'SRPT', 'RR', 'SETF', 'SJF']:
-        for data_type, data_df in [('avg30', avg30_data), ('random', random_data), ('softrandom', softrandom_data)]:
-            if data_df is None:
-                continue
-            
-            file_name = f"{algo}_{data_type}_result_avg.csv" if data_type != "avg30" else f"{algo}_result_avg30.csv"
-            if os.path.exists(file_name):
-                algo_df = pd.read_csv(file_name)
-                if data_type == "avg30":
-                    data_df = data_df.merge(algo_df, on=['arrival_rate', 'bp_parameter_L', 'bp_parameter_H'], how='outer')
-                else:
-                    data_df = data_df.merge(algo_df, on='frequency', how='outer')
-                
-                if data_type == 'avg30':
-                    avg30_data = data_df
-                elif data_type == 'random':
-                    random_data = data_df
-                else:
-                    softrandom_data = data_df
+        file_name = f"{algo}_random_result_avg.csv"
+        if os.path.exists(file_name) and random_data is not None:
+            algo_df = pd.read_csv(file_name)
+            random_data = random_data.merge(algo_df, on='frequency', how='outer')
     
-    logger.info("Step 5: Creating output directories...")
-    best_worst_dir = f"{output_base}/best_worst_compare"
-    dynamic_vs_bal_dir = f"{output_base}/dynamic_vs_dynamic_bal"
-    all_algo_dir = f"{output_base}/all_algorithms_with_dynamic_bal"
-    mode_comparison_dir = f"{output_base}/mode_comparisons"
-    max_flow_dir = f"{output_base}/max_flow_time_comparison"
+    # Merge softrandom data
+    softrandom_data = softrandom_dynamic.copy() if softrandom_dynamic is not None else None
+    for algo in ['Dynamic_BAL', 'BAL', 'FCFS', 'SRPT', 'RR', 'SETF', 'SJF']:
+        file_name = f"{algo}_softrandom_result_avg.csv"
+        if os.path.exists(file_name) and softrandom_data is not None:
+            algo_df = pd.read_csv(file_name)
+            softrandom_data = softrandom_data.merge(algo_df, on='frequency', how='outer')
+    
+    logger.info("\nStep 5: Creating output directories...")
     percentage_dynamic_dir = f"{output_base}/percentages_dynamic"
     percentage_bal_dir = f"{output_base}/percentages_dynamic_bal"
+    os.makedirs(percentage_dynamic_dir, exist_ok=True)
+    os.makedirs(percentage_bal_dir, exist_ok=True)
     
-    for dir_path in [best_worst_dir, dynamic_vs_bal_dir, all_algo_dir, mode_comparison_dir, 
-                     max_flow_dir, percentage_dynamic_dir, percentage_bal_dir]:
-        os.makedirs(dir_path, exist_ok=True)
-    
-    logger.info("Step 6: Generating percentage plots...")
+    logger.info("\nStep 6: Generating percentage plots...")
     create_percentage_plots_all_modes("Dynamic", percentage_dynamic_dir)
     create_percentage_plots_all_modes("Dynamic_BAL", percentage_bal_dir)
     
-    if avg30_data is not None:
-        logger.info("Step 7: Processing avg30 data...")
-        bp_groups = avg30_data.groupby(['bp_parameter_L', 'bp_parameter_H'])
+    # Process each avg type
+    for avg_type in avg_types:
+        logger.info(f"\n{'='*60}")
+        logger.info(f"Processing plots for {avg_type}...")
+        logger.info(f"{'='*60}")
+        
+        avg_data = all_data[avg_type]
+        if avg_data is None:
+            logger.warning(f"No data available for {avg_type}, skipping...")
+            continue
+        
+        best_dynamic = best_settings[avg_type]['Dynamic']
+        best_bal = best_settings[avg_type]['Dynamic_BAL']
+        
+        # Create directories for this avg type
+        best_worst_dir = f"{output_base}/{avg_type}/best_worst_compare"
+        dynamic_vs_bal_dir = f"{output_base}/{avg_type}/dynamic_vs_dynamic_bal"
+        all_algo_dir = f"{output_base}/{avg_type}/all_algorithms_with_dynamic_bal"
+        mode_comparison_dir = f"{output_base}/{avg_type}/mode_comparisons"
+        
+        for dir_path in [best_worst_dir, dynamic_vs_bal_dir, all_algo_dir, mode_comparison_dir]:
+            os.makedirs(dir_path, exist_ok=True)
+        
+        logger.info(f"Step 7: Processing {avg_type} data...")
+        bp_groups = avg_data.groupby(['bp_parameter_L', 'bp_parameter_H'])
         
         for (L, H), group_df in bp_groups:
             bp_param = {'L': L, 'H': H}
             
             output_path = f"{best_worst_dir}/Dynamic_BestWorst_L{L:.3f}_H{H}.pdf"
-            create_best_worst_comparison('Dynamic', best_dynamic_avg30, bp_param, output_path, "avg30")
+            create_best_worst_comparison('Dynamic', best_dynamic, bp_param, output_path, avg_type)
             
             output_path = f"{best_worst_dir}/Dynamic_BAL_BestWorst_L{L:.3f}_H{H}.pdf"
-            create_best_worst_comparison('Dynamic_BAL', best_bal_avg30, bp_param, output_path, "avg30")
+            create_best_worst_comparison('Dynamic_BAL', best_bal, bp_param, output_path, avg_type)
             
             output_path = f"{dynamic_vs_bal_dir}/Dynamic_vs_BAL_L{L:.3f}_H{H}.pdf"
-            create_dynamic_vs_dynamic_bal_comparison(best_dynamic_avg30, best_bal_avg30, bp_param, output_path, "avg30")
+            create_dynamic_vs_dynamic_bal_comparison(best_dynamic, best_bal, bp_param, output_path, avg_type)
             
             output_path = f"{all_algo_dir}/All_Algorithms_L{L:.3f}_H{H}.pdf"
-            create_all_algorithms_comparison(group_df, best_dynamic_avg30, best_bal_avg30, bp_param, output_path, "avg30")
+            create_all_algorithms_comparison(group_df, best_dynamic, best_bal, bp_param, output_path, avg_type)
             
             output_path = f"{mode_comparison_dir}/Dynamic_AllModes_L{L:.3f}_H{H}.pdf"
-            create_mode_comparison_plots("Dynamic", "avg30", bp_param, output_path)
+            create_mode_comparison_plots("Dynamic", avg_type, bp_param, output_path)
             
             output_path = f"{mode_comparison_dir}/Dynamic_BAL_AllModes_L{L:.3f}_H{H}.pdf"
-            create_mode_comparison_plots("Dynamic_BAL", "avg30", bp_param, output_path)
+            create_mode_comparison_plots("Dynamic_BAL", avg_type, bp_param, output_path)
     
+    # Process random and softrandom data
     if random_data is not None:
-        logger.info("Step 8: Processing random data...")
+        logger.info("\n{'='*60}")
+        logger.info("Processing random data...")
+        logger.info(f"{'='*60}")
+        
+        best_worst_dir = f"{output_base}/random/best_worst_compare"
+        dynamic_vs_bal_dir = f"{output_base}/random/dynamic_vs_dynamic_bal"
+        all_algo_dir = f"{output_base}/random/all_algorithms_with_dynamic_bal"
+        mode_comparison_dir = f"{output_base}/random/mode_comparisons"
+        max_flow_dir = f"{output_base}/random/max_flow_time_comparison"
+        
+        for dir_path in [best_worst_dir, dynamic_vs_bal_dir, all_algo_dir, mode_comparison_dir, max_flow_dir]:
+            os.makedirs(dir_path, exist_ok=True)
         
         output_path = f"{best_worst_dir}/Dynamic_BestWorst_Random.pdf"
         create_best_worst_comparison('Dynamic', best_dynamic_random, {}, output_path, "random")
@@ -1042,7 +1341,18 @@ def process_all_data(output_base):
         create_all_algorithms_max_flow_comparison(output_path, "random")
     
     if softrandom_data is not None:
-        logger.info("Step 9: Processing softrandom data...")
+        logger.info("\n{'='*60}")
+        logger.info("Processing softrandom data...")
+        logger.info(f"{'='*60}")
+        
+        best_worst_dir = f"{output_base}/softrandom/best_worst_compare"
+        dynamic_vs_bal_dir = f"{output_base}/softrandom/dynamic_vs_dynamic_bal"
+        all_algo_dir = f"{output_base}/softrandom/all_algorithms_with_dynamic_bal"
+        mode_comparison_dir = f"{output_base}/softrandom/mode_comparisons"
+        max_flow_dir = f"{output_base}/softrandom/max_flow_time_comparison"
+        
+        for dir_path in [best_worst_dir, dynamic_vs_bal_dir, all_algo_dir, mode_comparison_dir, max_flow_dir]:
+            os.makedirs(dir_path, exist_ok=True)
         
         output_path = f"{best_worst_dir}/Dynamic_BestWorst_Softrandom.pdf"
         create_best_worst_comparison('Dynamic', best_dynamic_softrandom, {}, output_path, "softrandom")
@@ -1067,7 +1377,6 @@ def process_all_data(output_base):
         
         output_path = f"{max_flow_dir}/MaxFlowTime_AllAlgorithms_Softrandom.pdf"
         create_all_algorithms_max_flow_comparison(output_path, "softrandom")
-
 # ============================================================================
 # MAIN ENTRY POINT
 # ============================================================================
@@ -1084,6 +1393,11 @@ def main():
     
     try:
         process_all_data(output_base)
+        
+        # Generate heavy tail analysis
+        logger.info("\nStep 10: Generating heavy tail analysis...")
+        heavy_tail_dir = os.path.join(output_base, "heavy_tail_analysis")
+        draw_heavy_tail(heavy_tail_dir)
         
         logger.info("\n" + "="*60)
         logger.info("Plot generation completed successfully!")

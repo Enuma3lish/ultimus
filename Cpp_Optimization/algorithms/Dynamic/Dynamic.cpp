@@ -12,10 +12,9 @@
 #include <thread>
 #include <mutex>
 #include <atomic>
-#include "SRPT_algorithm.h"
-#include "FCFS_algorithm.h"
-#include "SRPT_Selector.h"
-#include "FCFS_Selector.h"
+#include "Optimized_SRPT_algorithm.h"
+#include "Optimized_FCFS_algorithm.h"
+#include "Optimized_Selector.h"
 #include "utils.h"
 #include "Job.h"
 
@@ -258,9 +257,9 @@ DynamicResult DYNAMIC(std::vector<Job>& jobs, int nJobsPerRound, int mode,
         Job* selected_job = nullptr;
         if (!active_jobs.empty()) {
             if (is_srpt_better) {
-                selected_job = srpt_select_next_job_optimized(active_jobs);
+                selected_job = srpt_select_next_job_fast(active_jobs);
             } else {
-                selected_job = fcfs_select_next_job_optimized(active_jobs);
+                selected_job = fcfs_select_next_job_fast(active_jobs);
             }
             
             // Defensive check: selected job must have work remaining
@@ -289,57 +288,55 @@ DynamicResult DYNAMIC(std::vector<Job>& jobs, int nJobsPerRound, int mode,
                 selected_job->start_time = current_time;
             }
             
+
             // Calculate delta
             long long next_arrival_t = (jobs_pointer < total_jobs) ? 
-                (long long)jobs[jobs_pointer].arrival_time : LLONG_MAX;
-            
+            (long long)jobs[jobs_pointer].arrival_time : LLONG_MAX;
+
             int delta;
             if (is_srpt_better) {
-                // SRPT: preemptive
-                if (next_arrival_t == LLONG_MAX || next_arrival_t > current_time + selected_job->remaining_time) {
-                    // No arrival before completion, or arrival after job finishes
-                    delta = selected_job->remaining_time;
-                } else {
-                    // Arrival interrupts job
-                    delta = (int)(next_arrival_t - current_time);
-                }
+            // SRPT: preemptive - can be interrupted by arrivals
+            if (next_arrival_t == LLONG_MAX || next_arrival_t > current_time + selected_job->remaining_time) {
+            // No arrival before completion, run to completion
+            delta = selected_job->remaining_time;
             } else {
-                // FCFS: non-preemptive
-                if (next_arrival_t == LLONG_MAX || next_arrival_t >= current_time + selected_job->remaining_time) {
-                    // Run to completion
-                    delta = selected_job->remaining_time;
-                } else {
-                    // Check for arrivals during execution
-                    delta = (int)(next_arrival_t - current_time);
-                }
+            // Arrival interrupts job, run until arrival
+            delta = (int)(next_arrival_t - current_time);
             }
-            
-            // Validate delta with better error message
-            if (delta <= 0 || delta > selected_job->remaining_time) {
-                std::cerr << "FATAL ERROR: delta=" << delta << "\n"
-                          << "  job_index=" << selected_job->job_index << "\n"
-                          << "  remaining_time=" << selected_job->remaining_time << "\n"
-                          << "  current_time=" << current_time << "\n"
-                          << "  next_arrival=" << next_arrival_t << "\n"
-                          << "  is_srpt=" << is_srpt_better << "\n";
-                std::abort();
-            }
-            
-            // Execute
-            current_time += delta;
-            selected_job->remaining_time -= delta;
-            
-            assert(selected_job->remaining_time >= 0 && "Remaining time cannot be negative");
-            
-            if (selected_job->remaining_time == 0) {
-                // Job completed
-                selected_job->completion_time = current_time;
-                completed_jobs.push_back(selected_job);
-                n_completed_jobs++;
             } else {
-                // Job not finished - re-queue
-                active_jobs.push_back(selected_job);
-            }
+                // FCFS: non-preemptive - MUST run to completion once started
+            delta = selected_job->remaining_time;
+        }
+
+        // Validate delta with better error message
+        if (delta <= 0 || delta > selected_job->remaining_time) {
+            std::cerr << "FATAL ERROR: delta=" << delta << "\n"
+              << "  job_index=" << selected_job->job_index << "\n"
+              << "  remaining_time=" << selected_job->remaining_time << "\n"
+              << "  current_time=" << current_time << "\n"
+              << "  next_arrival=" << next_arrival_t << "\n"
+              << "  is_srpt=" << is_srpt_better << "\n";
+            std::abort();
+        }
+
+        // Execute
+        current_time += delta;
+        selected_job->remaining_time -= delta;
+
+        assert(selected_job->remaining_time >= 0 && "Remaining time cannot be negative");
+
+        // For FCFS, job MUST complete here since delta = remaining_time
+        // For SRPT, job may be preempted
+        if (selected_job->remaining_time == 0) {
+        // Job completed
+            selected_job->completion_time = current_time;
+            completed_jobs.push_back(selected_job);
+            n_completed_jobs++;
+        } else {
+        // Job not finished - only happens in SRPT mode
+        assert(is_srpt_better && "Only SRPT can have incomplete jobs after execution");
+        active_jobs.push_back(selected_job);
+    }
             
         } else {
             // No job to run, jump to next arrival
@@ -471,7 +468,7 @@ run_all_modes_for_file_frequency(std::vector<Job> jobs, int nJobsPerRound,
 
 void process_avg_folders(const std::string& data_dir, const std::string& output_dir, 
                         int nJobsPerRound, const std::vector<int>& modes_to_run) {
-    std::vector<std::string> patterns = {"avg_30_"};
+    std::vector<std::string> patterns = {"avg_30_","avg_60_", "avg_90_"};
     
     for (const auto& pattern : patterns) {
         auto folders = list_directory(data_dir);
@@ -641,7 +638,7 @@ void process_random_folders(const std::string& data_dir, const std::string& outp
             out << ",Dynamic_njobs" << nJobsPerRound << "_mode" << mode << "_L2_norm_flow_time";
         }
         for (int mode : modes_to_run) {
-            out << ",Dynamic_njobs" << nJobsPerRound << "_mode" << mode << "_max_flow_time";
+            out << ",Dynamic_njobs" << nJobsPerRound << "_mode" << mode << "_maximum_flow_time";
         }
         out << "\n";
         
@@ -742,7 +739,7 @@ void process_softrandom_folders(const std::string& data_dir, const std::string& 
             out << ",Dynamic_njobs" << nJobsPerRound << "_mode" << mode << "_L2_norm_flow_time";
         }
         for (int mode : modes_to_run) {
-            out << ",Dynamic_njobs" << nJobsPerRound << "_mode" << mode << "_max_flow_time";
+            out << ",Dynamic_njobs" << nJobsPerRound << "_mode" << mode << "_maximum_flow_time";
         }
         out << "\n";
         

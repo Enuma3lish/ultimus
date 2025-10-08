@@ -2,8 +2,7 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
-#include "FCFS_Selector.h"
-#include "FCFS_algorithm.h"
+#include "Optimized_FCFS_algorithm.h"
 #include "utils.h"
 #include "_run.h"
 #include "_run_random.h"

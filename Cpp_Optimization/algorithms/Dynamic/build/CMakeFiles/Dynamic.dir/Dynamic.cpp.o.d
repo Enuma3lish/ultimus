@@ -205,12 +205,9 @@ CMakeFiles/Dynamic.dir/Dynamic.cpp.o: \
  /usr/include/c++/13/bits/unique_lock.h /usr/include/c++/13/atomic \
  /usr/include/c++/13/bits/atomic_base.h \
  /usr/include/c++/13/bits/atomic_lockfree_defines.h \
- /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/SRPT_algorithm.h \
+ /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/Optimized_SRPT_algorithm.h \
  /home/melowu/Work/ultimus/Cpp_Optimization/Job_Format/Job.h \
- /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/SRPT_Selector.h \
- /usr/include/c++/13/queue /usr/include/c++/13/deque \
- /usr/include/c++/13/bits/stl_deque.h /usr/include/c++/13/bits/deque.tcc \
- /usr/include/c++/13/bits/stl_queue.h /usr/include/c++/13/climits \
+ /usr/include/c++/13/climits \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/limits.h \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/syslimits.h \
  /usr/include/limits.h /usr/include/x86_64-linux-gnu/bits/posix1_lim.h \
@@ -218,11 +215,12 @@ CMakeFiles/Dynamic.dir/Dynamic.cpp.o: \
  /usr/include/linux/limits.h \
  /usr/include/x86_64-linux-gnu/bits/posix2_lim.h \
  /usr/include/x86_64-linux-gnu/bits/xopen_lim.h \
- /usr/include/x86_64-linux-gnu/bits/uio_lim.h \
- /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/FCFS_algorithm.h \
- /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/FCFS_Selector.h \
- /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/SRPT_Selector.h \
- /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/FCFS_Selector.h \
+ /usr/include/x86_64-linux-gnu/bits/uio_lim.h /usr/include/c++/13/queue \
+ /usr/include/c++/13/deque /usr/include/c++/13/bits/stl_deque.h \
+ /usr/include/c++/13/bits/deque.tcc /usr/include/c++/13/bits/stl_queue.h \
+ /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/Optimized_Selector.h \
+ /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/Optimized_FCFS_algorithm.h \
+ /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/Optimized_Selector.h \
  /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/utils.h \
  /usr/include/c++/13/regex /usr/include/c++/13/bitset \
  /usr/include/c++/13/stack /usr/include/c++/13/bits/stl_stack.h \
