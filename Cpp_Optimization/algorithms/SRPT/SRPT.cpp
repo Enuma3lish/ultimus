@@ -29,7 +29,7 @@ SRPTResult SRPT(std::vector<Job>& jobs) {
         return a.arrival_time < b.arrival_time;
     });
     
-    int t = 0;
+    long long t = 0;  // Use long long to avoid overflow
     int i = 0;
     std::vector<Job*> waiting;
     Job* current = nullptr;
@@ -55,79 +55,107 @@ SRPTResult SRPT(std::vector<Job>& jobs) {
         if (!waiting.empty()) {
             Job* picked = srpt_select_next_job_optimized(waiting);
             
-            // Find the selected job in waiting queue
+            // FIX: Find the selected job by POINTER comparison
             int sel_idx = -1;
             for (int k = 0; k < waiting.size(); k++) {
-                if (waiting[k]->remaining_time == picked->remaining_time &&
-                    waiting[k]->arrival_time == picked->arrival_time &&
-                    waiting[k]->job_index == picked->job_index) {
+                if (waiting[k] == picked) {  // Direct pointer comparison
                     sel_idx = k;
                     break;
                 }
             }
             
-            if (sel_idx != -1) {
-                current = waiting[sel_idx];
-                waiting.erase(waiting.begin() + sel_idx);
+            if (sel_idx == -1) {
+                // This should never happen - indicates a serious bug
+                std::cerr << "ERROR: Selected job not found in waiting queue!" << std::endl;
+                std::cerr << "  Job index: " << picked->job_index << std::endl;
+                std::cerr << "  Remaining time: " << picked->remaining_time << std::endl;
+                std::cerr << "  Waiting queue size: " << waiting.size() << std::endl;
                 
-                if (current->start_time == -1) {
-                    current->start_time = t;
+                // Try to recover by using the first job
+                sel_idx = 0;
+            }
+            
+            current = waiting[sel_idx];
+            waiting.erase(waiting.begin() + sel_idx);
+            
+            if (current->start_time == -1) {
+                // Validate time consistency
+                if (t < current->arrival_time) {
+                    std::cerr << "WARNING: Time " << t << " < arrival " 
+                              << current->arrival_time << " for job " 
+                              << current->job_index << std::endl;
+                    t = current->arrival_time;
+                }
+                current->start_time = t;
+            }
+            
+            // Determine next arrival time
+            long long next_arrival_t = (i < total) ? jobs[i].arrival_time : -1;
+            
+            if (next_arrival_t == -1) {
+                // No more arrivals: run to completion
+                t += current->remaining_time;
+                current->completion_time = t;
+                current->remaining_time = 0;
+                completed.push_back(current);
+                current = nullptr;
+                continue;
+            } else {
+                // Check if new arrival is at current time
+                if (next_arrival_t == t) {
+                    // New arrival right now - don't execute, reconsider scheduling
+                    continue;
                 }
                 
-                // Determine next arrival time
-                int next_arrival_t = (i < total) ? jobs[i].arrival_time : -1;
+                // Run until either next arrival or completion
+                long long delta = std::min((long long)current->remaining_time, 
+                                          next_arrival_t - t);
                 
-                if (next_arrival_t == -1) {
-                    // No more arrivals: run to completion
-                    t += current->remaining_time;
+                // Safety check: delta should be positive
+                if (delta <= 0) {
+                    std::cerr << "WARNING: Non-positive delta: " << delta << std::endl;
+                    continue;
+                }
+                
+                t += delta;
+                current->remaining_time -= delta;
+                
+                if (current->remaining_time == 0) {
                     current->completion_time = t;
-                    current->remaining_time = 0;
                     completed.push_back(current);
                     current = nullptr;
-                    continue;
-                } else {
-                    // CRITICAL FIX: Check if new arrival is at current time
-                    if (next_arrival_t == t) {
-                        // New arrival right now - don't execute, reconsider scheduling
-                        continue;
-                    }
-                    
-                    // Run until either next arrival or completion
-                    // FIXED: Removed std::max(1, ...) that was forcing execution
-                    int delta = std::min(current->remaining_time, next_arrival_t - t);
-                    
-                    // Safety check: delta should be positive
-                    if (delta <= 0) {
-                        // This should not happen with the fix above, but safety check
-                        continue;
-                    }
-                    
-                    t += delta;
-                    current->remaining_time -= delta;
-                    
-                    if (current->remaining_time == 0) {
-                        current->completion_time = t;
-                        completed.push_back(current);
-                        current = nullptr;
-                    }
-                    // Loop; new arrivals will be admitted at the updated t
-                    continue;
                 }
+                continue;
             }
         }
         
         // If nothing waiting, jump to next arrival
         if (i < total) {
-            t = std::max(t, jobs[i].arrival_time);
+            t = std::max(t, (long long)jobs[i].arrival_time);
         } else {
             break;
         }
     }
     
-    // Calculate metrics
-    std::vector<int> flows;
+    // FIX: Calculate metrics with proper types to avoid overflow
+    std::vector<long long> flows;
+    flows.reserve(completed.size());
+    
     for (Job* c : completed) {
-        flows.push_back(c->completion_time - c->arrival_time);
+        long long flow = (long long)(c->completion_time - c->arrival_time);
+        
+        // Validation
+        if (flow < c->job_size) {
+            std::cerr << "ERROR: Flow time " << flow << " < job size " 
+                      << c->job_size << " for job " << c->job_index << std::endl;
+        }
+        if (c->start_time < c->arrival_time) {
+            std::cerr << "ERROR: Start time " << c->start_time 
+                      << " < arrival time " << c->arrival_time 
+                      << " for job " << c->job_index << std::endl;
+        }
+        
+        flows.push_back(flow);
     }
     
     int n = flows.size();
@@ -135,11 +163,11 @@ SRPTResult SRPT(std::vector<Job>& jobs) {
     
     double avg_flow = 0.0;
     double l2 = 0.0;
-    int max_flow = 0;
+    long long max_flow = 0;
     
-    for (int f : flows) {
+    for (long long f : flows) {
         avg_flow += f;
-        l2 += f * f;
+        l2 += (double)f * f;  // Cast to double before multiplication
         max_flow = std::max(max_flow, f);
     }
     
@@ -148,7 +176,6 @@ SRPTResult SRPT(std::vector<Job>& jobs) {
     
     return {avg_flow, l2, static_cast<double>(max_flow)};
 }
-
 // ============ Main Function ============
 
 int main() {
