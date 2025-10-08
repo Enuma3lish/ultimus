@@ -256,7 +256,6 @@ DynamicResult DYNAMIC_BAL(std::vector<Job>& jobs, int nJobsPerRound, int mode,
             active_jobs.end()
         );
         
-        // Select next job to execute
         Job* selected_job = nullptr;
         if (!active_jobs.empty()) {
             if (is_bal_better) {
@@ -271,9 +270,14 @@ DynamicResult DYNAMIC_BAL(std::vector<Job>& jobs, int nJobsPerRound, int mode,
             assert(selected_job->remaining_time > 0 && "Selected job must have positive remaining time");
             assert(selected_job->arrival_time <= current_time && "Cannot execute job before arrival");
             
-            // Set start time on first execution
+            auto it = std::remove(active_jobs.begin(), active_jobs.end(), selected_job);
+            assert(it != active_jobs.end() && "Selected job must be in active_jobs");
+            active_jobs.erase(it, active_jobs.end());
+            
             if (selected_job->start_time == -1) {
                 selected_job->start_time = current_time;
+                assert(selected_job->start_time >= selected_job->arrival_time && 
+                       "Start time must be after arrival");
             }
             
             // Calculate execution duration
@@ -282,56 +286,94 @@ DynamicResult DYNAMIC_BAL(std::vector<Job>& jobs, int nJobsPerRound, int mode,
                 jobs[jobs_pointer].arrival_time : LLONG_MAX;
             
             if (is_bal_better) {
-                // BAL/SRPT: preemptive - may interrupt for new arrivals
-                if (next_arrival_time > current_time) {
-                    delta = std::min(static_cast<long long>(selected_job->remaining_time), 
-                                   next_arrival_time - current_time);
+                // BAL: preemptive - can be interrupted by arrivals
+                if (next_arrival_time == LLONG_MAX) {
+                    // No more arrivals: run to completion
+                    delta = selected_job->remaining_time;
+                } else if (next_arrival_time <= current_time) {
+                    // CRITICAL FIX: Arrival is NOW or PAST
+                    // Don't execute, put job back and reconsider scheduling
+                    active_jobs.push_back(selected_job);
+                    continue;  // Loop back to admit arrivals and reselect
+                } else if (next_arrival_time > current_time + selected_job->remaining_time) {
+                    // Job completes before next arrival
+                    delta = selected_job->remaining_time;
                 } else {
-                    // Next arrival is immediate, execute for 1 time unit
-                    delta = std::min(static_cast<long long>(selected_job->remaining_time), 1LL);
+                    // Arrival interrupts job execution
+                    delta = next_arrival_time - current_time;
                 }
             } else {
-                // FCFS: non-preemptive - run to completion
+                // FCFS: non-preemptive - MUST run to completion once started
                 delta = selected_job->remaining_time;
             }
+            if (delta <= 0) {
+                std::cerr << "FATAL ERROR: Invalid delta=" << delta << "\n"
+                          << "  job_index=" << selected_job->job_index << "\n"
+                          << "  remaining_time=" << selected_job->remaining_time << "\n"
+                          << "  current_time=" << current_time << "\n"
+                          << "  next_arrival=" << next_arrival_time << "\n"
+                          << "  is_bal=" << is_bal_better << "\n"
+                          << "  active_jobs.size()=" << active_jobs.size() << "\n"
+                          << "  jobs_pointer=" << jobs_pointer << "\n"
+                          << "  n_completed=" << n_completed_jobs << "/" << total_jobs << "\n";
+                
+                if (selected_job->remaining_time <= 0) {
+                    std::cerr << "  ERROR: Job has no remaining time!\n";
+                }
+                if (next_arrival_time <= current_time && next_arrival_time != LLONG_MAX) {
+                    std::cerr << "  ERROR: Next arrival is in the past/present!\n";
+                }
+                
+                std::abort();
+            }
             
-            // Ensure delta is valid
+           // Validate delta doesn't exceed remaining time
             assert(delta > 0 && delta <= selected_job->remaining_time && 
                    "Delta must be positive and not exceed remaining time");
-            
+            assert(selected_job->remaining_time >= 0 && "Remaining time cannot be negative");
             // Execute the job
             current_time += delta;
             selected_job->remaining_time -= delta;
             
             // Check if job completed
+            
+            // If not completed, job remains in active_jobs for next iteration
             if (selected_job->remaining_time == 0) {
                 selected_job->completion_time = current_time;
                 
-                // Verify completion is valid
+                // Validate completion time relationships
                 assert(selected_job->completion_time >= selected_job->arrival_time &&
                        "Job must complete after arrival");
                 assert(selected_job->completion_time >= selected_job->start_time &&
                        "Job must complete after start");
+                assert(selected_job->start_time >= selected_job->arrival_time &&
+                       "Job must start after arrival");
+                
+                long long flow_time = selected_job->completion_time - selected_job->arrival_time;
+                assert(flow_time >= selected_job->job_size && 
+                       "Flow time must be at least job size");
                 
                 completed_jobs.push_back(selected_job);
                 n_completed_jobs++;
+            } else {
+                // Job not finished - only valid in BAL mode (preemptive)
+                assert(is_bal_better && "Only BAL can have incomplete jobs after execution");
+                assert(selected_job->remaining_time > 0 && 
+                       "Incomplete job must have remaining work");
                 
-                // Remove from active jobs
-                active_jobs.erase(
-                    std::remove(active_jobs.begin(), active_jobs.end(), selected_job),
-                    active_jobs.end()
-                );
+                // Put job back in active queue for later execution
+                active_jobs.push_back(selected_job);
             }
-            // If not completed, job remains in active_jobs for next iteration
             
         } else if (jobs_pointer < total_jobs) {
             // No job to run but more arrivals coming - jump to next arrival
             current_time = jobs[jobs_pointer].arrival_time;
         } else {
-            // No jobs and no arrivals - should not happen
-            assert(false && "No progress possible - this shouldn't happen");
+            // No jobs and no arrivals - should not happen if loop condition is correct
+            assert(active_jobs.empty() && "If no job selected and no arrivals, active_jobs must be empty");
             break;
         }
+        
     }
     
     // Handle any remaining jobs in the last round

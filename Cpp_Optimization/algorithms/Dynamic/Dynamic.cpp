@@ -291,52 +291,79 @@ DynamicResult DYNAMIC(std::vector<Job>& jobs, int nJobsPerRound, int mode,
 
             // Calculate delta
             long long next_arrival_t = (jobs_pointer < total_jobs) ? 
-            (long long)jobs[jobs_pointer].arrival_time : LLONG_MAX;
+                (long long)jobs[jobs_pointer].arrival_time : LLONG_MAX;
 
             int delta;
             if (is_srpt_better) {
             // SRPT: preemptive - can be interrupted by arrivals
-            if (next_arrival_t == LLONG_MAX || next_arrival_t > current_time + selected_job->remaining_time) {
-            // No arrival before completion, run to completion
-            delta = selected_job->remaining_time;
+            if (next_arrival_t == LLONG_MAX) {
+                // No more arrivals: run to completion
+                delta = selected_job->remaining_time;
+            } else if (next_arrival_t <= current_time) {
+            // CRITICAL FIX: Arrival is NOW or PAST - don't execute, reconsider scheduling
+            // Put job back and continue to admit arrivals
+                        active_jobs.push_back(selected_job);
+                        continue;  // Loop back to admit arrivals and reselect
+            } else if (next_arrival_t > current_time + selected_job->remaining_time) {
+                // Job completes before next arrival
+                delta = selected_job->remaining_time;
             } else {
-            // Arrival interrupts job, run until arrival
+            // Arrival interrupts job
             delta = (int)(next_arrival_t - current_time);
-            }
-            } else {
-                // FCFS: non-preemptive - MUST run to completion once started
-            delta = selected_job->remaining_time;
         }
-
-        // Validate delta with better error message
-        if (delta <= 0 || delta > selected_job->remaining_time) {
-            std::cerr << "FATAL ERROR: delta=" << delta << "\n"
+} else {
+    // FCFS: non-preemptive - MUST run to completion once started
+    // No need to check arrivals, job runs to completion
+    delta = selected_job->remaining_time;
+}
+if (delta <= 0) {
+    std::cerr << "FATAL ERROR: Invalid delta=" << delta << "\n"
               << "  job_index=" << selected_job->job_index << "\n"
               << "  remaining_time=" << selected_job->remaining_time << "\n"
               << "  current_time=" << current_time << "\n"
               << "  next_arrival=" << next_arrival_t << "\n"
-              << "  is_srpt=" << is_srpt_better << "\n";
-            std::abort();
-        }
-
-        // Execute
-        current_time += delta;
-        selected_job->remaining_time -= delta;
-
-        assert(selected_job->remaining_time >= 0 && "Remaining time cannot be negative");
-
-        // For FCFS, job MUST complete here since delta = remaining_time
-        // For SRPT, job may be preempted
-        if (selected_job->remaining_time == 0) {
-        // Job completed
-            selected_job->completion_time = current_time;
-            completed_jobs.push_back(selected_job);
-            n_completed_jobs++;
-        } else {
-        // Job not finished - only happens in SRPT mode
-        assert(is_srpt_better && "Only SRPT can have incomplete jobs after execution");
-        active_jobs.push_back(selected_job);
+              << "  is_srpt=" << is_srpt_better << "\n"
+              << "  active_jobs.size()=" << active_jobs.size() << "\n"
+              << "  jobs_pointer=" << jobs_pointer << "\n"
+              << "  n_completed=" << n_completed_jobs << "/" << total_jobs << "\n";
+    
+    // Additional diagnostics
+    if (selected_job->remaining_time <= 0) {
+        std::cerr << "  ERROR: Job has no remaining time!\n";
     }
+    if (next_arrival_t <= current_time && next_arrival_t != LLONG_MAX) {
+        std::cerr << "  ERROR: Next arrival is in the past/present!\n";
+    }
+    
+    std::abort();
+}
+// Execute
+current_time += delta;
+selected_job->remaining_time -= delta;
+
+// Postcondition checks
+assert(selected_job->remaining_time >= 0 && "Remaining time cannot be negative");
+// Check completion
+if (selected_job->remaining_time == 0) {
+    // Job completed
+    selected_job->completion_time = current_time;
+    
+    // Validate completion time
+    assert(selected_job->completion_time >= selected_job->arrival_time && 
+           "Completion must be after arrival");
+    assert(selected_job->completion_time >= selected_job->start_time && 
+           "Completion must be after start");
+    assert(selected_job->start_time >= selected_job->arrival_time && 
+           "Start must be after arrival");
+    
+    completed_jobs.push_back(selected_job);
+    n_completed_jobs++;
+} else {
+    // Job not finished - only valid in SRPT mode
+    assert(is_srpt_better && "Only SRPT can have incomplete jobs after execution");
+    assert(selected_job->remaining_time > 0 && "Incomplete job must have remaining work");
+    active_jobs.push_back(selected_job);
+}
             
         } else {
             // No job to run, jump to next arrival

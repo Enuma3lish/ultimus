@@ -8,13 +8,14 @@
 #include <cassert>
 #include "Job.h"
 #include "Optimized_Selector.h"
+#include <climits>
 
 struct BALResult {
     double l2_norm_flow_time;
     double max_flow_time;
 };
 
-// Corrected BAL implementation with proper validation
+// Fixed BAL implementation with proper preemption handling
 inline BALResult Bal(std::vector<Job> jobs, double starvation_threshold) {
     if (jobs.empty()) {
         return {0.0, 0.0};
@@ -29,7 +30,7 @@ inline BALResult Bal(std::vector<Job> jobs, double starvation_threshold) {
         job.waiting_time_ratio = 0.0;
     }
     
-    // Sort jobs by arrival time
+    // Sort jobs by arrival time (stable sort for deterministic behavior)
     std::stable_sort(jobs.begin(), jobs.end(), [](const Job& a, const Job& b) {
         if (a.arrival_time != b.arrival_time)
             return a.arrival_time < b.arrival_time;
@@ -40,6 +41,7 @@ inline BALResult Bal(std::vector<Job> jobs, double starvation_threshold) {
     
     long long current_time = 0;
     std::vector<Job*> active_jobs;
+    active_jobs.reserve(jobs.size());
     size_t next_arrival_idx = 0;
     int completed_count = 0;
     const int total_jobs = jobs.size();
@@ -50,18 +52,25 @@ inline BALResult Bal(std::vector<Job> jobs, double starvation_threshold) {
     // Main scheduling loop
     while (completed_count < total_jobs) {
         long long prev_time = current_time;  // For progress assertion
+        int prev_completed = completed_count;
         
         // Add newly arrived jobs at current_time
+        bool new_arrivals = false;
         while (next_arrival_idx < jobs.size() && 
                jobs[next_arrival_idx].arrival_time <= current_time) {
             active_jobs.push_back(&jobs[next_arrival_idx]);
             next_arrival_idx++;
+            new_arrivals = true;
         }
         
         // If no active jobs, jump to next arrival
         if (active_jobs.empty()) {
             if (next_arrival_idx < jobs.size()) {
                 current_time = jobs[next_arrival_idx].arrival_time;
+            } else {
+                // No jobs and no arrivals - shouldn't happen
+                assert(false && "No jobs to schedule but not all completed");
+                break;
             }
             continue;
         }
@@ -73,6 +82,14 @@ inline BALResult Bal(std::vector<Job> jobs, double starvation_threshold) {
             // No valid job found - shouldn't happen if active_jobs not empty
             std::cerr << "ERROR: No job selected but active_jobs not empty at time " 
                       << current_time << std::endl;
+            std::cerr << "  active_jobs.size()=" << active_jobs.size() << std::endl;
+            std::cerr << "  completed_count=" << completed_count << "/" << total_jobs << std::endl;
+            
+            // Debug: print first few jobs in active queue
+            for (size_t i = 0; i < std::min(size_t(5), active_jobs.size()); i++) {
+                std::cerr << "  Job " << i << ": remaining=" << active_jobs[i]->remaining_time 
+                          << ", arrival=" << active_jobs[i]->arrival_time << std::endl;
+            }
             break;
         }
         
@@ -85,31 +102,60 @@ inline BALResult Bal(std::vector<Job> jobs, double starvation_threshold) {
         // Record start time on first execution
         if (selected->start_time == -1) {
             selected->start_time = current_time;
+            assert(selected->start_time >= selected->arrival_time &&
+                   "Start time must be after arrival");
         }
         
-        // Determine execution duration
-        // Execute until: job completes, or next arrival
-        long long next_event_time = current_time + selected->remaining_time; // Job completion
+        // Calculate next event time
+        long long next_arrival = (next_arrival_idx < jobs.size()) ? 
+            jobs[next_arrival_idx].arrival_time : LLONG_MAX;
         
-        // Check if another job arrives before completion
-        if (next_arrival_idx < jobs.size()) {
-            long long next_arrival = jobs[next_arrival_idx].arrival_time;
-            if (next_arrival < next_event_time) {
-                next_event_time = next_arrival;
+        long long execution_time;
+        
+        if (next_arrival == LLONG_MAX) {
+            // No more arrivals: run to completion
+            execution_time = selected->remaining_time;
+        } else if (next_arrival <= current_time) {
+            // CRITICAL FIX: Arrival is NOW or PAST
+            // This should have been caught by the admission loop above,
+            // but as a safety check, reconsider scheduling
+            continue;
+        } else if (next_arrival >= current_time + selected->remaining_time) {
+            // Job completes before next arrival
+            execution_time = selected->remaining_time;
+        } else {
+            // Next arrival interrupts job execution (preemption)
+            execution_time = next_arrival - current_time;
+        }
+        
+        // Validate execution time with comprehensive error checking
+        if (execution_time <= 0) {
+            std::cerr << "FATAL ERROR: Invalid execution_time=" << execution_time << "\n"
+                      << "  job_index=" << selected->job_index << "\n"
+                      << "  remaining_time=" << selected->remaining_time << "\n"
+                      << "  current_time=" << current_time << "\n"
+                      << "  next_arrival=" << next_arrival << "\n"
+                      << "  next_arrival_idx=" << next_arrival_idx << "/" << jobs.size() << "\n"
+                      << "  active_jobs.size()=" << active_jobs.size() << "\n"
+                      << "  completed=" << completed_count << "/" << total_jobs << "\n";
+            
+            if (selected->remaining_time <= 0) {
+                std::cerr << "  ERROR: Job has no remaining time!\n";
             }
+            if (next_arrival <= current_time && next_arrival != LLONG_MAX) {
+                std::cerr << "  ERROR: Next arrival is in the past/present!\n";
+            }
+            
+            std::abort();
         }
         
-        // Calculate execution time
-        long long execution_time = next_event_time - current_time;
-        
-        // Validate execution time
         assert(execution_time > 0 && "Execution time must be positive");
         assert(execution_time <= selected->remaining_time && 
                "Cannot execute more than remaining time");
         
         // Execute the selected job
         selected->remaining_time -= execution_time;
-        current_time = next_event_time;
+        current_time += execution_time;
         
         assert(selected->remaining_time >= 0 && "Remaining time cannot be negative");
         
@@ -117,13 +163,23 @@ inline BALResult Bal(std::vector<Job> jobs, double starvation_threshold) {
         if (selected->remaining_time == 0) {
             selected->completion_time = current_time;
             
-            // Validate completion
+            // Validate completion with comprehensive checks
             assert(selected->completion_time >= selected->arrival_time &&
                    "Completion must be after arrival");
-            assert(selected->completion_time >= selected->start_time + selected->job_size &&
-                   "Completion must account for full job size");
+            assert(selected->start_time >= selected->arrival_time &&
+                   "Start must be after arrival");
+            assert(selected->completion_time >= selected->start_time &&
+                   "Completion must be after start");
+            
+            // Additional validation: completion time should be at least start + job_size
+            long long actual_execution = selected->completion_time - selected->start_time;
+            assert(actual_execution >= selected->job_size &&
+                   "Total execution time must equal job size");
             
             long long flow_time = current_time - selected->arrival_time;
+            assert(flow_time >= selected->job_size &&
+                   "Flow time must be at least job size");
+            
             double flow_time_d = static_cast<double>(flow_time);
             
             sum_squared_flow_times += flow_time_d * flow_time_d;
@@ -137,18 +193,34 @@ inline BALResult Bal(std::vector<Job> jobs, double starvation_threshold) {
             
             completed_count++;
         }
+        // If not completed, job remains in active_jobs for next iteration
         
         // Assert progress is being made
-        assert(current_time > prev_time && "Time must advance each iteration");
+        assert((current_time > prev_time || completed_count > prev_completed) && 
+               "Must make progress each iteration");
     }
     
     // Validate all jobs completed
     assert(completed_count == total_jobs && "All jobs must complete");
     assert(active_jobs.empty() && "Active jobs queue must be empty");
     
+    // Validate all jobs have valid completion times
+    for (const auto& job : jobs) {
+        assert(job.completion_time > 0 && "All jobs must have completion time");
+        assert(job.remaining_time == 0 && "All jobs must have zero remaining time");
+        assert(job.start_time >= job.arrival_time && 
+               "All jobs must start after arrival");
+        assert(job.completion_time >= job.start_time &&
+               "All jobs must complete after start");
+    }
+    
     // Validate metrics
-    assert(!std::isnan(sum_squared_flow_times) && !std::isinf(sum_squared_flow_times));
-    assert(!std::isnan(max_flow_time) && !std::isinf(max_flow_time));
+    assert(!std::isnan(sum_squared_flow_times) && !std::isinf(sum_squared_flow_times) &&
+           "L2 norm must be valid");
+    assert(!std::isnan(max_flow_time) && !std::isinf(max_flow_time) &&
+           "Max flow time must be valid");
+    assert(sum_squared_flow_times >= 0 && "Sum of squares cannot be negative");
+    assert(max_flow_time >= 0 && "Max flow time cannot be negative");
     
     BALResult result;
     result.l2_norm_flow_time = std::sqrt(sum_squared_flow_times);
