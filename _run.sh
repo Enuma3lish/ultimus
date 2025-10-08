@@ -6,7 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="/home/melowu/Work/ultimus"
 VENV_PATH="${PROJECT_ROOT}/.venv"
 JOB_INIT_SCRIPT="${PROJECT_ROOT}/Job_init.py"
-PLOTTER_SCRIPT="${PROJECT_ROOT}/algorithm_comparison_plotter.py"
+PLOTTER_SCRIPT="${PROJECT_ROOT}/_plotter.py"
 
 # Result directories
 RESULT_BASE_DIR="${PROJECT_ROOT}"
@@ -468,8 +468,8 @@ run_plotter() {
     return 1
   fi
 
-  local logf="${LOG_DIR}/plotter.log"
-  echo "Running algorithm_comparison_plotter.py..."
+  local logf="${LOG_DIR}/_plotter.log"
+  echo "Running _plotter.py..."
   echo "Log: $logf"
 
   if "${VENV_PATH}/bin/python" "$PLOTTER_SCRIPT" > "$logf" 2>&1; then
