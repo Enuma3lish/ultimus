@@ -14,7 +14,7 @@ find_package(Threads REQUIRED)
 # Add include directories
 include_directories(/home/melowu/Work/ultimus/Cpp_Optimization/function_tools)
 include_directories(/home/melowu/Work/ultimus/Cpp_Optimization/Job_Format)
-
+include_directories(/home/melowu/Work/ultimus/Cpp_Optimization/algorithm_executer)
 # Add executable
 add_executable(Dynamic Dynamic.cpp)
 

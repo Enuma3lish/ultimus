@@ -4,9 +4,14 @@
 CMakeFiles/Dynamic.dir/Dynamic.cpp.o
  /home/melowu/Work/ultimus/Cpp_Optimization/algorithms/Dynamic/Dynamic.cpp
  /home/melowu/Work/ultimus/Cpp_Optimization/Job_Format/Job.h
+ /home/melowu/Work/ultimus/Cpp_Optimization/algorithm_executer/_run.h
+ /home/melowu/Work/ultimus/Cpp_Optimization/algorithm_executer/_run_random.h
  /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/Optimized_FCFS_algorithm.h
  /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/Optimized_SRPT_algorithm.h
  /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/Optimized_Selector.h
+ /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/process_avg_folders.h
+ /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/process_random_folders.h
+ /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/process_softrandom_folders.h
  /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/utils.h
  /usr/include/alloca.h
  /usr/include/asm-generic/bitsperlong.h
@@ -106,6 +111,7 @@ CMakeFiles/Dynamic.dir/Dynamic.cpp.o
  /usr/include/c++/13/bits/stl_multiset.h
  /usr/include/c++/13/bits/stl_pair.h
  /usr/include/c++/13/bits/stl_queue.h
+ /usr/include/c++/13/bits/stl_relops.h
  /usr/include/c++/13/bits/stl_set.h
  /usr/include/c++/13/bits/stl_stack.h
  /usr/include/c++/13/bits/stl_tempbuf.h
@@ -173,6 +179,7 @@ CMakeFiles/Dynamic.dir/Dynamic.cpp.o
  /usr/include/c++/13/tuple
  /usr/include/c++/13/type_traits
  /usr/include/c++/13/typeinfo
+ /usr/include/c++/13/utility
  /usr/include/c++/13/vector
  /usr/include/ctype.h
  /usr/include/dirent.h

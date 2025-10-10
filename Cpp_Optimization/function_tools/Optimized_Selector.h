@@ -70,7 +70,9 @@ inline Job* fcfs_select_next_job_fast(std::vector<Job*>& active_jobs) {
         });
 }
 
-// Optimized BAL selector with integrated starving check
+// Optimized BAL selector - CORRECTED to match paper's algorithm
+// Among starving jobs, select by SRPT (shortest remaining time)
+// Among non-starving jobs, select by SRPT
 inline Job* bal_select_next_job_fast(std::vector<Job*>& active_jobs, 
                                      long long current_time, 
                                      double starvation_threshold) {
@@ -83,34 +85,24 @@ inline Job* bal_select_next_job_fast(std::vector<Job*>& active_jobs,
     for (Job* job : active_jobs) {
         if (job->remaining_time <= 0) continue; // Skip completed jobs
         
-        // Update waiting time ratio
-        job->waiting_time_ratio = (double)(current_time - job->arrival_time) / 
-                                  std::max(1, job->remaining_time);
+        // Calculate waiting time ratio
+        double waiting_time_ratio = (double)(current_time - job->arrival_time) / 
+                                   std::max(1, job->remaining_time);
         
         // Check if starving
-        if (job->waiting_time_ratio >= starvation_threshold) {
-            if (job->starving_time == -1) {
-                job->starving_time = current_time;
-            }
-            
-            // Update best starving job
+        if (waiting_time_ratio >= starvation_threshold) {
+            // Among starving jobs: select by SRPT (shortest remaining time)
             if (!best_starving || 
-                job->starving_time < best_starving->starving_time ||
-                (job->starving_time == best_starving->starving_time && 
-                 job->waiting_time_ratio > best_starving->waiting_time_ratio) ||
-                (job->starving_time == best_starving->starving_time && 
-                 std::abs(job->waiting_time_ratio - best_starving->waiting_time_ratio) < 1e-9 &&
+                job->remaining_time < best_starving->remaining_time ||
+                (job->remaining_time == best_starving->remaining_time && 
                  job->job_index < best_starving->job_index)) {
                 best_starving = job;
             }
         } else {
-            // Update best non-starving job (SRPT)
+            // Among non-starving jobs: select by SRPT
             if (!best_normal ||
                 job->remaining_time < best_normal->remaining_time ||
                 (job->remaining_time == best_normal->remaining_time && 
-                 job->arrival_time < best_normal->arrival_time) ||
-                (job->remaining_time == best_normal->remaining_time && 
-                 job->arrival_time == best_normal->arrival_time && 
                  job->job_index < best_normal->job_index)) {
                 best_normal = job;
             }

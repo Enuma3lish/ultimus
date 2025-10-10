@@ -73,9 +73,6 @@ ALGORITHM_MARKERS = {
 BEST_WORST_COLORS = {'best': '#2ecc71', 'worst': '#e74c3c'}
 BEST_WORST_MARKERS = {'best': 'o', 'worst': 's'}
 
-# ============================================================================
-# MATPLOTLIB SETUP
-# ============================================================================
 def setup_plot_style():
     """Set up matplotlib style for publication-quality plots"""
     plt.style.use('default')
@@ -92,25 +89,50 @@ def setup_plot_style():
         'savefig.dpi': 300,
         'savefig.bbox': 'tight',
     })
+# ============================================================================
+# MODE COLORS AND MARKERS (Updated to include Mode 8)
+# ============================================================================
+MODE_COLORS = [
+    '#1f77b4',  # Mode 1 - Blue
+    '#ff7f0e',  # Mode 2 - Orange
+    '#2ca02c',  # Mode 3 - Green
+    '#d62728',  # Mode 4 - Red
+    '#9467bd',  # Mode 5 - Purple
+    '#8c564b',  # Mode 6 - Brown
+    '#e377c2',  # Mode 7 - Pink
+    '#17becf'   # Mode 8 - Cyan
+]
 
+MODE_MARKERS = [
+    '^',  # Mode 1 - Triangle up
+    'v',  # Mode 2 - Triangle down
+    's',  # Mode 3 - Square
+    'D',  # Mode 4 - Diamond
+    'o',  # Mode 5 - Circle
+    'x',  # Mode 6 - X
+    'P',  # Mode 7 - Plus (filled)
+    '*'   # Mode 8 - Star
+]
 # ============================================================================
-# BEST SETTING SELECTION (MODE 7 vs MODE 6)
-# ============================================================================
+# BEST SETTING SELECTION (MODE 7 vs MODE 6 VS MODE 8)
 def find_best_dynamic_setting_v2(df, algorithm_type="Dynamic"):
     """
     Find best Dynamic/Dynamic_BAL setting:
-    - If mode7_L2 / mode6_L2 <= 1.1, pick mode7
+    - If mode8 / mode7 <= 1.1 AND mode7 / mode6 <= 1.1, pick mode8
+    - Else if mode7 / mode6 <= 1.1, pick mode7
     - Otherwise pick mode6
     """
     if algorithm_type == "Dynamic":
         mode6_col = 'Dynamic_njobs100_mode6_L2_norm_flow_time'
         mode7_col = 'Dynamic_njobs100_mode7_L2_norm_flow_time'
+        mode8_col = 'Dynamic_njobs100_mode8_L2_norm_flow_time'
     else:  # Dynamic_BAL
         mode6_col = 'Dynamic_BAL_njobs100_mode6_L2_norm_flow_time'
         mode7_col = 'Dynamic_BAL_njobs100_mode7_L2_norm_flow_time'
+        mode8_col = 'Dynamic_BAL_njobs100_mode8_L2_norm_flow_time'
     
-    if mode6_col not in df.columns or mode7_col not in df.columns:
-        logger.warning(f"Mode 6 or 7 not found for {algorithm_type}, falling back to best available")
+    if mode6_col not in df.columns or mode7_col not in df.columns or mode8_col not in df.columns:
+        logger.warning(f"Mode 6 or 7 or 8 not found for {algorithm_type}, falling back to best available")
         mode_cols = [col for col in df.columns if algorithm_type in col and 'mode' in col and 'L2_norm' in col]
         if mode_cols:
             best_col = df[mode_cols].mean().idxmin()
@@ -120,19 +142,24 @@ def find_best_dynamic_setting_v2(df, algorithm_type="Dynamic"):
     
     mode6_mean = df[mode6_col].mean()
     mode7_mean = df[mode7_col].mean()
+    mode8_mean = df[mode8_col].mean()
     
     if mode6_mean > 0:
-        ratio = mode7_mean / mode6_mean
-        if ratio <= 1.1:
-            logger.info(f"{algorithm_type}: mode7/mode6 = {ratio:.4f} <= 1.1, selecting mode7")
+        ratio_7_to_6 = mode7_mean / mode6_mean
+        ratio_8_to_7 = mode8_mean / mode7_mean 
+        
+        if ratio_7_to_6 <= 1.1 and ratio_8_to_7 <= 1.1:
+            logger.info(f"{algorithm_type}: mode7/mode6={ratio_7_to_6:.4f}, mode8/mode7={ratio_8_to_7:.4f} - selecting mode8")
+            return mode8_col
+        elif ratio_7_to_6 <= 1.1:
+            logger.info(f"{algorithm_type}: mode7/mode6={ratio_7_to_6:.4f}, mode8/mode7={ratio_8_to_7:.4f} - selecting mode7")
             return mode7_col
         else:
-            logger.info(f"{algorithm_type}: mode7/mode6 = {ratio:.4f} > 1.1, selecting mode6")
+            logger.info(f"{algorithm_type}: mode7/mode6={ratio_7_to_6:.4f} > 1.1 - selecting mode6")
             return mode6_col
     else:
         logger.warning(f"{algorithm_type}: mode6 mean is 0, defaulting to mode7")
         return mode7_col
-
 # ============================================================================
 # HEAVY TAIL ANALYSIS
 # ============================================================================
@@ -548,7 +575,7 @@ def process_dynamic_analysis(algorithm_type="Dynamic"):
         logger.warning(f"Directory {analysis_dir} not found")
         return
     
-    for mode in range(1, 8):
+    for mode in range(1, 9):
         logger.info(f"Processing {algorithm_type} analysis for mode {mode}")
         
         mode_dir = os.path.join(analysis_dir, f"mode_{mode}")
@@ -768,10 +795,8 @@ def create_all_algorithms_comparison(df, best_dynamic_col, best_bal_col, bp_para
     
     logger.info(f"Saved all algorithms comparison to {output_path}")
 
-
-# Fix 4: Add plt.close() to create_mode_comparison_plots
 def create_mode_comparison_plots(algorithm_type="Dynamic", data_type="avg30", bp_param=None, output_path=None):
-    """Create plots comparing all modes (1-7)"""
+    """Create plots comparing all modes (1-8)"""
     
     if data_type in ["avg30", "avg60", "avg90"]:
         file_name = f"{algorithm_type}_result_{data_type}.csv"
@@ -810,15 +835,13 @@ def create_mode_comparison_plots(algorithm_type="Dynamic", data_type="avg30", bp
         x_label = 'Coherence Time'
         title = f'{algorithm_type} - All Modes Comparison ({data_type.capitalize()})'
     
-    mode_colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2']
-    mode_markers = ['^', 'v', 's', 'D', 'o', 'x', 'P']
-    
-    for mode in range(1, 8):
+    # Plot modes 1-8
+    for mode in range(1, 9):
         col_name = f'{algorithm_type}_njobs100_mode{mode}_L2_norm_flow_time'
         if col_name in df.columns:
             plt.plot(x_values, df[col_name].values,
-                    color=mode_colors[mode-1],
-                    marker=mode_markers[mode-1],
+                    color=MODE_COLORS[mode-1],
+                    marker=MODE_MARKERS[mode-1],
                     linewidth=2, markersize=8,
                     label=f'Mode {mode}',
                     alpha=0.9)
@@ -839,8 +862,10 @@ def create_mode_comparison_plots(algorithm_type="Dynamic", data_type="avg30", bp
     
     if output_path:
         plt.savefig(output_path, format='jpg', dpi=300, bbox_inches='tight')
-        plt.close()  # IMPORTANT: Close figure to free memory
+        plt.close()
         logger.info(f"Saved mode comparison plot to {output_path}")
+
+
 # ============================================================================
 # WORST CASE DATA PROCESSING FUNCTIONS
 # ============================================================================
@@ -1440,11 +1465,11 @@ def create_all_algorithms_max_flow_comparison(output_path, data_type="random"):
     logger.info(f"Saved all algorithms max flow time comparison to {output_path}")
 
 def create_percentage_plots_all_modes(algorithm_type="Dynamic", output_dir="percentage_plots"):
-    """Create percentage plots for each mode - auto-detects BAL/FCFS or SRPT/FCFS"""
+    """Create percentage plots for each mode (1-8) - auto-detects BAL/FCFS or SRPT/FCFS"""
     
     os.makedirs(output_dir, exist_ok=True)
     
-    for mode in range(1, 8):
+    for mode in range(1, 9):
         filename = f"{algorithm_type}_percentages_mode{mode}_avg.csv"
         
         if not os.path.exists(filename):
@@ -1517,7 +1542,6 @@ def create_percentage_plots_all_modes(algorithm_type="Dynamic", output_dir="perc
             
         except Exception as e:
             logger.error(f"Error creating percentage plot for {algorithm_type} mode {mode}: {e}")
-
 # ============================================================================
 # MAIN PROCESSING PIPELINE
 # ============================================================================

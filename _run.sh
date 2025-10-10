@@ -18,8 +18,8 @@ WORST_CASE_RESULT_DIR="${RESULT_BASE_DIR}/worst_case"
 ALGORITHMS=(
   "BAL:${PROJECT_ROOT}/Cpp_Optimization/algorithms/BAL/build/BAL:0::"
   "SRPT:${PROJECT_ROOT}/Cpp_Optimization/algorithms/SRPT/build/SRPT:1::"
-  "Dynamic:${PROJECT_ROOT}/Cpp_Optimization/algorithms/Dynamic/build/Dynamic:2,3,4,5:MULTITHREAD:100 1,2,3,4,5,6,7"
-  "Dynamic_BAL:${PROJECT_ROOT}/Cpp_Optimization/algorithms/Dynamic_BAL/build/Dynamic_BAL:6,7,8,9:MULTITHREAD:100 1,2,3,4,5,6,7"
+  "Dynamic:${PROJECT_ROOT}/Cpp_Optimization/algorithms/Dynamic/build/Dynamic:2,3,4,5:MULTITHREAD:100 1,2,3,4,5,6,7,8"
+  "Dynamic_BAL:${PROJECT_ROOT}/Cpp_Optimization/algorithms/Dynamic_BAL/build/Dynamic_BAL:6,7,8,9:MULTITHREAD:100 1,2,3,4,5,6,7,8"
   "FCFS:${PROJECT_ROOT}/Cpp_Optimization/algorithms/FCFS/build/FCFS:10::"
   "RR:${PROJECT_ROOT}/Cpp_Optimization/algorithms/RR/build/RR:11::"
   "SETF:${PROJECT_ROOT}/Cpp_Optimization/algorithms/SETF/build/SETF:12::"
@@ -794,14 +794,14 @@ run_pipeline() {
     echo "✓ Worst case results successfully moved"
   fi
 
-  # Step 7: Run plotter
-  echo ""
-  echo "Waiting ${STEP_DELAY} seconds before plotting..."
-  sleep $STEP_DELAY
-  if ! run_plotter; then
-    echo "✗ Pipeline failed at Plotting"
-    return 1
-  fi
+  # # Step 7: Run plotter
+  # echo ""
+  # echo "Waiting ${STEP_DELAY} seconds before plotting..."
+  # sleep $STEP_DELAY
+  # if ! run_plotter; then
+  #   echo "✗ Pipeline failed at Plotting"
+  #   return 1
+  # fi
 
   local end_time=$(date +%s)
   local duration=$((end_time - start_time))

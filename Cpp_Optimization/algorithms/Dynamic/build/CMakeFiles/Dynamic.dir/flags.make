@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/home/melowu/Work/ultimus/Cpp_Optimization/function_tools -I/home/melowu/Work/ultimus/Cpp_Optimization/Job_Format
+CXX_INCLUDES = -I/home/melowu/Work/ultimus/Cpp_Optimization/function_tools -I/home/melowu/Work/ultimus/Cpp_Optimization/Job_Format -I/home/melowu/Work/ultimus/Cpp_Optimization/algorithm_executer
 
 CXX_FLAGS =  -Wall -O3 -pthread -std=gnu++14
 

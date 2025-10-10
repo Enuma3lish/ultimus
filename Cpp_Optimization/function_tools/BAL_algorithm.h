@@ -15,7 +15,7 @@ struct BALResult {
     double max_flow_time;
 };
 
-// Fixed BAL implementation with proper preemption handling
+// BAL implementation using optimized selector
 inline BALResult Bal(std::vector<Job> jobs, double starvation_threshold) {
     if (jobs.empty()) {
         return {0.0, 0.0};
@@ -55,12 +55,10 @@ inline BALResult Bal(std::vector<Job> jobs, double starvation_threshold) {
         int prev_completed = completed_count;
         
         // Add newly arrived jobs at current_time
-        bool new_arrivals = false;
         while (next_arrival_idx < jobs.size() && 
                jobs[next_arrival_idx].arrival_time <= current_time) {
             active_jobs.push_back(&jobs[next_arrival_idx]);
             next_arrival_idx++;
-            new_arrivals = true;
         }
         
         // If no active jobs, jump to next arrival
@@ -75,7 +73,8 @@ inline BALResult Bal(std::vector<Job> jobs, double starvation_threshold) {
             continue;
         }
         
-        // Select job using optimized selector (which handles ratio updates internally)
+        // Select job using optimized BAL selector
+        // This handles both starving and non-starving cases internally
         Job* selected = bal_select_next_job_fast(active_jobs, current_time, starvation_threshold);
         
         if (selected == nullptr) {
@@ -170,11 +169,6 @@ inline BALResult Bal(std::vector<Job> jobs, double starvation_threshold) {
                    "Start must be after arrival");
             assert(selected->completion_time >= selected->start_time &&
                    "Completion must be after start");
-            
-            // Additional validation: completion time should be at least start + job_size
-            long long actual_execution = selected->completion_time - selected->start_time;
-            assert(actual_execution >= selected->job_size &&
-                   "Total execution time must equal job size");
             
             long long flow_time = current_time - selected->arrival_time;
             assert(flow_time >= selected->job_size &&

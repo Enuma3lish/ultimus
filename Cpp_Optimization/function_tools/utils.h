@@ -22,11 +22,13 @@ inline int extract_version_from_path(const std::string& folder_path) {
     return -1;
 }
 
-// ============ parse_avg_filename ============
 struct AvgParams {
     double arrival_rate;
     double bp_L;
-    int bp_H;
+    double bp_H;
+    std::string distribution_type;  // "BP" or "Normal"
+    double normal_mean;  // For Normal distribution
+    double normal_std;   // For Normal distribution
 };
 
 inline AvgParams parse_avg_filename(const std::string& filename) {

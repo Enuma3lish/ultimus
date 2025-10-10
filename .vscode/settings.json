@@ -2,6 +2,9 @@
     "python.analysis.typeCheckingMode": "basic",
     "cmake.sourceDirectory": "/home/melowu/Work/ultimus/Cpp_Optimization/algorithms/BAL",
     "files.associations": {
-        "iostream": "cpp"
-    }
+        "iostream": "cpp",
+        "fstream": "cpp",
+        "climits": "cpp"
+    },
+    "git.ignoreLimitWarning": true
 }

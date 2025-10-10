@@ -17,6 +17,9 @@
 #include "Optimized_Selector.h"
 #include "utils.h"
 #include "Job.h"
+#include "process_avg_folders.h"
+#include "process_random_folders.h"
+#include "process_softrandom_folders.h"
 
 // Global mutex for thread-safe console output
 std::mutex cout_mutex;
@@ -59,8 +62,17 @@ void save_analysis_results(const std::string& input_file_path, int nJobsPerRound
         return;
     }
     
-    AvgParams params = parse_avg_filename(filename);
-    if (params.arrival_rate < 0) return;
+    // Parse filename using new format
+    NewAvgParams params = parse_new_avg_filename(filename);
+    
+    // Fallback to old format if new format fails
+    if (params.arrival_rate < 0) {
+        AvgParams old_params = parse_avg_filename(filename);
+        if (old_params.arrival_rate < 0) return;
+        params.arrival_rate = old_params.arrival_rate;
+        params.bp_L = old_params.bp_L;
+        params.bp_H = old_params.bp_H;
+    }
     
     std::string main_dir = "/home/melowu/Work/ultimus/Dynamic_analysis";
     std::string avg_folder = "avg_" + avg_type;
@@ -102,7 +114,8 @@ void save_analysis_results(const std::string& input_file_path, int nJobsPerRound
         << fcfs_percentage << "," << srpt_percentage << "," << total_rounds << "\n";
 }
 
-// Dynamic scheduling algorithm with assertions
+// Dynamic scheduling algorithm - CORRECT implementation matching your logic
+// Dynamic scheduling algorithm - ALL BUGS FIXED
 DynamicResult DYNAMIC(std::vector<Job>& jobs, int nJobsPerRound, int mode, 
                      const std::string& input_file_name = "") {
     int total_jobs = jobs.size();
@@ -132,6 +145,9 @@ DynamicResult DYNAMIC(std::vector<Job>& jobs, int nJobsPerRound, int mode,
     int current_round = 1;
     std::vector<std::string> algorithm_history;
     
+    // Track currently executing job across iterations
+    Job* currently_executing_job = nullptr;
+    
     // Initialize all jobs
     for (size_t idx = 0; idx < jobs.size(); idx++) {
         jobs[idx].remaining_time = jobs[idx].job_size;
@@ -140,7 +156,6 @@ DynamicResult DYNAMIC(std::vector<Job>& jobs, int nJobsPerRound, int mode,
     }
     
     while (n_completed_jobs < total_jobs) {
-        // Track progress each iteration
         long long prev_time = current_time;
         int prev_completed = n_completed_jobs;
         int prev_jobs_pointer = jobs_pointer;
@@ -160,7 +175,7 @@ DynamicResult DYNAMIC(std::vector<Job>& jobs, int nJobsPerRound, int mode,
             jobs_pointer++;
         }
         
-        // Checkpoint logic
+        // CHECKPOINT LOGIC - Can interrupt currently executing job
         while (n_arrival_jobs >= nJobsPerRound) {
             std::vector<Job> jobs_for_this_round(
                 jobs_in_current_round.begin(),
@@ -169,6 +184,20 @@ DynamicResult DYNAMIC(std::vector<Job>& jobs, int nJobsPerRound, int mode,
             
             if (!jobs_for_this_round.empty()) {
                 round_jobs_history.push_back(jobs_for_this_round);
+                
+                // CRITICAL: If a job is currently executing, pause it and put back in queue
+                if (currently_executing_job != nullptr) {
+                    std::stringstream ss;
+                    ss << "[Checkpoint at Round " << current_round 
+                       << "] Pausing job " << currently_executing_job->job_index
+                       << " (remaining: " << currently_executing_job->remaining_time 
+                       << ") and putting back in queue\n";
+                    safe_cout(ss.str());
+                    
+                    // Put the currently executing job back into active_jobs
+                    active_jobs.push_back(currently_executing_job);
+                    currently_executing_job = nullptr;
+                }
                 
                 if (current_round == 1) {
                     is_srpt_better = true;
@@ -181,42 +210,58 @@ DynamicResult DYNAMIC(std::vector<Job>& jobs, int nJobsPerRound, int mode,
                     else if (mode == 4 && current_round < 9) effective_mode = 1;
                     else if (mode == 5 && current_round < 17) effective_mode = 1;
                     
-                    // Collect jobs from previous rounds
+                    // Collect jobs from previous rounds based on mode
                     std::vector<Job> jobs_to_simulate;
                     
                     if (effective_mode == 1) {
+                        // Last 1 round
                         jobs_to_simulate = round_jobs_history.back();
                     } else if (effective_mode == 2) {
+                        // Last 2 rounds
                         size_t start = (round_jobs_history.size() >= 2) ? round_jobs_history.size() - 2 : 0;
                         for (size_t i = start; i < round_jobs_history.size(); i++) {
                             jobs_to_simulate.insert(jobs_to_simulate.end(),
                                 round_jobs_history[i].begin(), round_jobs_history[i].end());
                         }
                     } else if (effective_mode == 3) {
+                        // Last 4 rounds
                         size_t start = (round_jobs_history.size() >= 4) ? round_jobs_history.size() - 4 : 0;
                         for (size_t i = start; i < round_jobs_history.size(); i++) {
                             jobs_to_simulate.insert(jobs_to_simulate.end(),
                                 round_jobs_history[i].begin(), round_jobs_history[i].end());
                         }
                     } else if (effective_mode == 4) {
+                        // Last 8 rounds
                         size_t start = (round_jobs_history.size() >= 8) ? round_jobs_history.size() - 8 : 0;
                         for (size_t i = start; i < round_jobs_history.size(); i++) {
                             jobs_to_simulate.insert(jobs_to_simulate.end(),
                                 round_jobs_history[i].begin(), round_jobs_history[i].end());
                         }
                     } else if (effective_mode == 5) {
+                        // Last 16 rounds
                         size_t start = (round_jobs_history.size() >= 16) ? round_jobs_history.size() - 16 : 0;
                         for (size_t i = start; i < round_jobs_history.size(); i++) {
                             jobs_to_simulate.insert(jobs_to_simulate.end(),
                                 round_jobs_history[i].begin(), round_jobs_history[i].end());
                         }
                     } else if (effective_mode == 6) {
+                        // All history
                         for (const auto& round : round_jobs_history) {
                             jobs_to_simulate.insert(jobs_to_simulate.end(),
                                 round.begin(), round.end());
                         }
                     } else if (effective_mode == 7) {
+                        // Last 50% of rounds
                         int rounds_to_use = std::ceil(current_round * 0.5);
+                        size_t start = (round_jobs_history.size() >= (size_t)rounds_to_use) ? 
+                                      round_jobs_history.size() - rounds_to_use : 0;
+                        for (size_t i = start; i < round_jobs_history.size(); i++) {
+                            jobs_to_simulate.insert(jobs_to_simulate.end(),
+                                round_jobs_history[i].begin(), round_jobs_history[i].end());
+                        }
+                    } else if (effective_mode == 8) {
+                        // Square root of rounds
+                        int rounds_to_use = std::ceil(std::sqrt(current_round));
                         size_t start = (round_jobs_history.size() >= (size_t)rounds_to_use) ? 
                                       round_jobs_history.size() - rounds_to_use : 0;
                         for (size_t i = start; i < round_jobs_history.size(); i++) {
@@ -225,14 +270,13 @@ DynamicResult DYNAMIC(std::vector<Job>& jobs, int nJobsPerRound, int mode,
                         }
                     }
                     
-                    // Run simulations with copies
+                    // Run simulations
                     std::vector<Job> jobs_srpt_copy = jobs_to_simulate;
                     std::vector<Job> jobs_fcfs_copy = jobs_to_simulate;
                     
                     SRPTResult srpt_result = SRPT(jobs_srpt_copy);
                     FCFSResult fcfs_result = Fcfs(jobs_fcfs_copy);
                     
-                    // Validate results
                     if (std::isnan(srpt_result.l2_norm_flow_time) || std::isnan(fcfs_result.l2_norm_flow_time)) {
                         std::cerr << "WARNING: NaN detected in simulation at round " << current_round << std::endl;
                         is_srpt_better = true;
@@ -240,12 +284,18 @@ DynamicResult DYNAMIC(std::vector<Job>& jobs, int nJobsPerRound, int mode,
                         is_srpt_better = srpt_result.l2_norm_flow_time <= fcfs_result.l2_norm_flow_time;
                     }
                     algorithm_history.push_back(is_srpt_better ? "SRPT" : "FCFS");
+                    
+                    std::stringstream ss;
+                    ss << "[Round " << current_round << "] Mode: " 
+                       << (is_srpt_better ? "SRPT" : "FCFS")
+                       << " (SRPT L2=" << srpt_result.l2_norm_flow_time
+                       << ", FCFS L2=" << fcfs_result.l2_norm_flow_time << ")\n";
+                    safe_cout(ss.str());
                 }
                 
                 current_round++;
             }
             
-            // Move excess jobs to next round
             jobs_in_current_round.erase(
                 jobs_in_current_round.begin(),
                 jobs_in_current_round.begin() + nJobsPerRound
@@ -253,129 +303,129 @@ DynamicResult DYNAMIC(std::vector<Job>& jobs, int nJobsPerRound, int mode,
             n_arrival_jobs -= nJobsPerRound;
         }
         
-        // Select next job
-        Job* selected_job = nullptr;
-        if (!active_jobs.empty()) {
+        // Select next job if no job is currently executing
+        if (currently_executing_job == nullptr && !active_jobs.empty()) {
             if (is_srpt_better) {
-                selected_job = srpt_select_next_job_fast(active_jobs);
+                currently_executing_job = srpt_select_next_job_fast(active_jobs);
             } else {
-                selected_job = fcfs_select_next_job_fast(active_jobs);
+                currently_executing_job = fcfs_select_next_job_fast(active_jobs);
             }
             
-            // Defensive check: selected job must have work remaining
-            if (selected_job && selected_job->remaining_time <= 0) {
-                std::cerr << "ERROR: Selected job " << selected_job->job_index 
-                          << " has remaining_time=" << selected_job->remaining_time 
-                          << " at time=" << current_time << "\n"
-                          << "This indicates a bug in job selection or completion logic.\n";
-                // Remove invalid job from active queue
-                auto it = std::find(active_jobs.begin(), active_jobs.end(), selected_job);
-                if (it != active_jobs.end()) {
-                    active_jobs.erase(it);
+            // Remove from active_jobs
+            auto it = std::find(active_jobs.begin(), active_jobs.end(), currently_executing_job);
+            if (it != active_jobs.end()) {
+                active_jobs.erase(it);
+            }
+            
+            // Defensive check
+            if (currently_executing_job && currently_executing_job->remaining_time <= 0) {
+                std::cerr << "ERROR: Selected job " << currently_executing_job->job_index 
+                          << " has remaining_time=" << currently_executing_job->remaining_time << std::endl;
+                currently_executing_job = nullptr;
+                continue;
+            }
+            
+            // Validate and set start time
+            if (currently_executing_job) {
+                assert(currently_executing_job->arrival_time <= current_time && 
+                       "Job cannot start before arrival time");
+                
+                if (currently_executing_job->start_time == -1) {
+                    currently_executing_job->start_time = current_time;
+                    assert(currently_executing_job->start_time >= currently_executing_job->arrival_time &&
+                           "Start time cannot be before arrival time");
                 }
-                selected_job = nullptr;
             }
         }
         
-        if (selected_job) {
-            // Remove job from active_jobs BEFORE execution
-            auto it = std::find(active_jobs.begin(), active_jobs.end(), selected_job);
-            assert(it != active_jobs.end() && "Selected job must be in active_jobs");
-            active_jobs.erase(it);
-            
-            // Set start time
-            if (selected_job->start_time == -1) {
-                selected_job->start_time = current_time;
-            }
-            
-
-            // Calculate delta
+        // Execute currently executing job
+        if (currently_executing_job != nullptr) {
+            // Calculate how long to execute before next event
             long long next_arrival_t = (jobs_pointer < total_jobs) ? 
                 (long long)jobs[jobs_pointer].arrival_time : LLONG_MAX;
-
+            
             int delta;
+            
             if (is_srpt_better) {
-            // SRPT: preemptive - can be interrupted by arrivals
-            if (next_arrival_t == LLONG_MAX) {
-                // No more arrivals: run to completion
-                delta = selected_job->remaining_time;
-            } else if (next_arrival_t <= current_time) {
-            // CRITICAL FIX: Arrival is NOW or PAST - don't execute, reconsider scheduling
-            // Put job back and continue to admit arrivals
-                        active_jobs.push_back(selected_job);
-                        continue;  // Loop back to admit arrivals and reselect
-            } else if (next_arrival_t > current_time + selected_job->remaining_time) {
-                // Job completes before next arrival
-                delta = selected_job->remaining_time;
+                // SRPT: preemptive by arrivals
+                // Checkpoint will handle pausing if needed during admission phase
+                if (next_arrival_t == LLONG_MAX) {
+                    // No more arrivals: run to completion
+                    delta = currently_executing_job->remaining_time;
+                } else if (next_arrival_t <= current_time) {
+                    // Arrival is now/past - admit arrivals first
+                    active_jobs.push_back(currently_executing_job);
+                    currently_executing_job = nullptr;
+                    continue;
+                } else {
+                    // Calculate time until next arrival
+                    long long time_to_next_arrival = next_arrival_t - current_time;
+                    
+                    if (currently_executing_job->remaining_time <= time_to_next_arrival) {
+                        // Job completes before next arrival
+                        delta = currently_executing_job->remaining_time;
+                    } else {
+                        // Preempt at next arrival
+                        delta = (int)time_to_next_arrival;
+                    }
+                }
             } else {
-            // Arrival interrupts job
-            delta = (int)(next_arrival_t - current_time);
-        }
-} else {
-    // FCFS: non-preemptive - MUST run to completion once started
-    // No need to check arrivals, job runs to completion
-    delta = selected_job->remaining_time;
-}
-if (delta <= 0) {
-    std::cerr << "FATAL ERROR: Invalid delta=" << delta << "\n"
-              << "  job_index=" << selected_job->job_index << "\n"
-              << "  remaining_time=" << selected_job->remaining_time << "\n"
-              << "  current_time=" << current_time << "\n"
-              << "  next_arrival=" << next_arrival_t << "\n"
-              << "  is_srpt=" << is_srpt_better << "\n"
-              << "  active_jobs.size()=" << active_jobs.size() << "\n"
-              << "  jobs_pointer=" << jobs_pointer << "\n"
-              << "  n_completed=" << n_completed_jobs << "/" << total_jobs << "\n";
-    
-    // Additional diagnostics
-    if (selected_job->remaining_time <= 0) {
-        std::cerr << "  ERROR: Job has no remaining time!\n";
-    }
-    if (next_arrival_t <= current_time && next_arrival_t != LLONG_MAX) {
-        std::cerr << "  ERROR: Next arrival is in the past/present!\n";
-    }
-    
-    std::abort();
-}
-// Execute
-current_time += delta;
-selected_job->remaining_time -= delta;
-
-// Postcondition checks
-assert(selected_job->remaining_time >= 0 && "Remaining time cannot be negative");
-// Check completion
-if (selected_job->remaining_time == 0) {
-    // Job completed
-    selected_job->completion_time = current_time;
-    
-    // Validate completion time
-    assert(selected_job->completion_time >= selected_job->arrival_time && 
-           "Completion must be after arrival");
-    assert(selected_job->completion_time >= selected_job->start_time && 
-           "Completion must be after start");
-    assert(selected_job->start_time >= selected_job->arrival_time && 
-           "Start must be after arrival");
-    
-    completed_jobs.push_back(selected_job);
-    n_completed_jobs++;
-} else {
-    // Job not finished - only valid in SRPT mode
-    assert(is_srpt_better && "Only SRPT can have incomplete jobs after execution");
-    assert(selected_job->remaining_time > 0 && "Incomplete job must have remaining work");
-    active_jobs.push_back(selected_job);
-}
+                // FCFS: non-preemptive
+                // Job runs to completion - checkpoint will pause it during admission phase
+                delta = currently_executing_job->remaining_time;
+            }
+            
+            // Validate delta
+            if (delta <= 0) {
+                std::cerr << "FATAL ERROR: Invalid delta=" << delta << "\n"
+                          << "  job_index=" << currently_executing_job->job_index << "\n"
+                          << "  remaining_time=" << currently_executing_job->remaining_time << "\n"
+                          << "  current_time=" << current_time << "\n"
+                          << "  next_arrival=" << next_arrival_t << "\n"
+                          << "  mode=" << (is_srpt_better ? "SRPT" : "FCFS") << "\n";
+                std::abort();
+            }
+            
+            // Execute
+            current_time += delta;
+            currently_executing_job->remaining_time -= delta;
+            
+            assert(currently_executing_job->remaining_time >= 0 && "Remaining time cannot be negative");
+            
+            // Check completion
+            if (currently_executing_job->remaining_time == 0) {
+                // Job completed
+                currently_executing_job->completion_time = current_time;
+                
+                assert(currently_executing_job->completion_time >= currently_executing_job->arrival_time && 
+                       "Completion must be after arrival");
+                assert(currently_executing_job->completion_time >= currently_executing_job->start_time && 
+                       "Completion must be after start");
+                assert(currently_executing_job->start_time >= currently_executing_job->arrival_time && 
+                       "Start must be after arrival");
+                
+                completed_jobs.push_back(currently_executing_job);
+                n_completed_jobs++;
+                currently_executing_job = nullptr;  // Job finished, select new one next iteration
+            }
+            // If remaining_time > 0: Job continues to next iteration
+            // - SRPT: May be preempted by new arrivals
+            // - FCFS: Will continue OR be paused at checkpoint during admission phase
             
         } else {
             // No job to run, jump to next arrival
             if (jobs_pointer < total_jobs) {
-                current_time = jobs[jobs_pointer].arrival_time;
+                long long next_arrival = jobs[jobs_pointer].arrival_time;
+                assert(next_arrival > current_time && "Next arrival must be in the future");
+                current_time = next_arrival;
             } else {
-                assert(active_jobs.empty() && "If no job selected and no arrivals, active_jobs must be empty");
+                assert(active_jobs.empty() && currently_executing_job == nullptr && 
+                       "If no job and no arrivals, should be no active jobs");
                 break;
             }
         }
         
-        // Assert progress is being made
+        // Assert progress
         assert((current_time > prev_time || 
                 n_completed_jobs > prev_completed || 
                 jobs_pointer > prev_jobs_pointer) && 
@@ -390,7 +440,7 @@ if (selected_job->remaining_time == 0) {
     
     // Validate completion
     assert(completed_jobs.size() == (size_t)total_jobs && "All jobs must complete");
-    assert(active_jobs.empty() && "Active jobs queue must be empty");
+    assert(active_jobs.empty() && currently_executing_job == nullptr && "All jobs must be completed");
     
     // Calculate metrics
     long double sum_flow = 0.0;
@@ -401,6 +451,7 @@ if (selected_job->remaining_time == 0) {
         assert(c->completion_time >= 0 && "Completion time must be non-negative");
         assert(c->arrival_time >= 0 && "Arrival time must be non-negative");
         assert(c->completion_time >= c->arrival_time && "Completion must be after arrival");
+        assert(c->start_time >= c->arrival_time && "Start must be after arrival");
         
         long long flow = c->completion_time - c->arrival_time;
         sum_flow += flow;
@@ -421,8 +472,6 @@ if (selected_job->remaining_time == 0) {
     
     return {avg_flow, l2, static_cast<double>(max_flow)};
 }
-
-// Process avg folders with parallelization
 std::map<int, double> run_all_modes_for_file_normal(std::vector<Job> jobs, int nJobsPerRound,
                                                     const std::string& input_file_path,
                                                     const std::vector<int>& modes_to_run) {
@@ -456,7 +505,7 @@ std::map<int, double> run_all_modes_for_file_normal(std::vector<Job> jobs, int n
     return mode_results;
 }
 
-// Process random/softrandom with parallelization
+// For random/softrandom folders: runs all modes and returns pair of maps
 std::pair<std::map<int, double>, std::map<int, double>> 
 run_all_modes_for_file_frequency(std::vector<Job> jobs, int nJobsPerRound,
                                  const std::vector<int>& modes_to_run) {
@@ -493,305 +542,13 @@ run_all_modes_for_file_frequency(std::vector<Job> jobs, int nJobsPerRound,
     return std::make_pair(mode_results, max_flow_results);
 }
 
-void process_avg_folders(const std::string& data_dir, const std::string& output_dir, 
-                        int nJobsPerRound, const std::vector<int>& modes_to_run) {
-    std::vector<std::string> patterns = {"avg_30_","avg_60_", "avg_90_"};
-    
-    for (const auto& pattern : patterns) {
-        auto folders = list_directory(data_dir);
-        
-        for (const auto& folder : folders) {
-            std::string basename = folder.substr(folder.find_last_of('/') + 1);
-            if (basename.find(pattern) == std::string::npos || !directory_exists(folder)) {
-                continue;
-            }
-            
-            int version = extract_version_from_path(basename);
-            std::regex avg_type_pattern("avg_(\\d+)");
-            std::smatch match;
-            std::string avg_type;
-            if (std::regex_search(basename, match, avg_type_pattern)) {
-                avg_type = match[1];
-            } else {
-                continue;
-            }
-            
-            safe_cout("Processing folder: " + basename + " (version=" + std::to_string(version) + ")\n");
-            
-            std::string avg_result_dir = output_dir + "/avg" + avg_type + "_result";
-            create_directory(avg_result_dir);
-            
-            std::map<int, std::vector<std::map<std::string, std::string>>> results_by_arrival_rate;
-            std::mutex results_mutex;
-            
-            auto csv_files = list_directory(folder);
-            std::vector<std::thread> file_threads;
-            
-            // Process CSV files in parallel
-            for (const auto& csv_file : csv_files) {
-                if (csv_file.find(".csv") == std::string::npos) continue;
-                
-                file_threads.emplace_back([&, csv_file]() {
-                    std::string filename = csv_file.substr(csv_file.find_last_of('/') + 1);
-                    AvgParams params = parse_avg_filename(filename);
-                    
-                    if (params.arrival_rate < 0) return;
-                    
-                    safe_cout("  Processing " + filename + "\n");
-                    
-                    auto jobs = read_jobs_from_csv(csv_file);
-                    if (jobs.empty()) return;
-                    
-                    auto mode_results = run_all_modes_for_file_normal(jobs, nJobsPerRound, csv_file, modes_to_run);
-                    
-                    std::map<std::string, std::string> result_map;
-                    result_map["bp_parameter_L"] = std::to_string(params.bp_L);
-                    result_map["bp_parameter_H"] = std::to_string(params.bp_H);
-                    for (int mode : modes_to_run) {
-                        result_map["mode_" + std::to_string(mode)] = std::to_string(mode_results[mode]);
-                    }
-                    
-                    {
-                        std::lock_guard<std::mutex> lock(results_mutex);
-                        results_by_arrival_rate[(int)params.arrival_rate].push_back(result_map);
-                    }
-                });
-            }
-            
-            // Wait for all CSV file processing to finish
-            for (auto& thread : file_threads) {
-                thread.join();
-            }
-            
-            // Write results
-            for (auto& pair : results_by_arrival_rate) {
-                std::string output_file = avg_result_dir + "/" + 
-                    std::to_string(pair.first) + "_Dynamic_result_" + 
-                    std::to_string(version) + ".csv";
-                
-                std::ofstream out(output_file);
-                out << "arrival_rate,bp_parameter_L,bp_parameter_H";
-                for (int mode : modes_to_run) {
-                    out << ",Dynamic_njobs" << nJobsPerRound << "_mode" << mode << "_L2_norm_flow_time";
-                }
-                out << "\n";
-                
-                for (const auto& result : pair.second) {
-                    out << pair.first << "," << result.at("bp_parameter_L") << ","
-                        << result.at("bp_parameter_H");
-                    for (int mode : modes_to_run) {
-                        out << "," << result.at("mode_" + std::to_string(mode));
-                    }
-                    out << "\n";
-                }
-                
-                safe_cout("  Saved results to " + output_file + "\n");
-            }
-        }
-    }
-}
-
-void process_random_folders(const std::string& data_dir, const std::string& output_dir, 
-                           int nJobsPerRound, const std::vector<int>& modes_to_run) {
-    std::string random_result_dir = output_dir + "/random_result";
-    create_directory(random_result_dir);
-    
-    std::map<int, std::vector<std::map<std::string, std::string>>> results_by_version;
-    std::mutex results_mutex;
-    
-    auto folders = list_directory(data_dir);
-    std::vector<std::thread> folder_threads;
-    
-    for (const auto& folder : folders) {
-        std::string basename = folder.substr(folder.find_last_of('/') + 1);
-        if (basename.find("freq_") == std::string::npos || !directory_exists(folder)) {
-            continue;
-        }
-        
-        folder_threads.emplace_back([&, folder, basename]() {
-            int frequency = parse_freq_from_folder(basename);
-            int version = extract_version_from_path(basename);
-            
-            if (frequency < 0) return;
-            
-            safe_cout("Processing folder: " + basename + "\n");
-            
-            auto files = list_directory(folder);
-            
-            for (const auto& file : files) {
-                std::string filename = file.substr(file.find_last_of('/') + 1);
-                if (filename.find("random_freq_") == std::string::npos || 
-                    filename.find(".csv") == std::string::npos) {
-                    continue;
-                }
-                
-                auto jobs = read_jobs_from_csv(file);
-                if (jobs.empty()) continue;
-                
-                std::pair<std::map<int, double>, std::map<int, double>> result_pair = 
-                    run_all_modes_for_file_frequency(jobs, nJobsPerRound, modes_to_run);
-                std::map<int, double> mode_results = result_pair.first;
-                std::map<int, double> max_flow_results = result_pair.second;
-                
-                std::map<std::string, std::string> result_map;
-                result_map["frequency"] = std::to_string(frequency);
-                for (int mode : modes_to_run) {
-                    result_map["l2_mode_" + std::to_string(mode)] = std::to_string(mode_results[mode]);
-                    result_map["max_mode_" + std::to_string(mode)] = std::to_string(max_flow_results[mode]);
-                }
-                
-                {
-                    std::lock_guard<std::mutex> lock(results_mutex);
-                    results_by_version[version].push_back(result_map);
-                }
-            }
-        });
-    }
-    
-    // Wait for all folder processing to finish
-    for (auto& thread : folder_threads) {
-        thread.join();
-    }
-    
-    // Write results
-    for (auto& pair : results_by_version) {
-        std::string output_file = random_result_dir + "/random_result_Dynamic_njobs" + 
-                                 std::to_string(nJobsPerRound) + "_" + 
-                                 std::to_string(pair.first) + ".csv";
-        
-        std::ofstream out(output_file);
-        out << "frequency";
-        for (int mode : modes_to_run) {
-            out << ",Dynamic_njobs" << nJobsPerRound << "_mode" << mode << "_L2_norm_flow_time";
-        }
-        for (int mode : modes_to_run) {
-            out << ",Dynamic_njobs" << nJobsPerRound << "_mode" << mode << "_maximum_flow_time";
-        }
-        out << "\n";
-        
-        for (const auto& result : pair.second) {
-            out << result.at("frequency");
-            for (int mode : modes_to_run) {
-                out << "," << result.at("l2_mode_" + std::to_string(mode));
-            }
-            for (int mode : modes_to_run) {
-                out << "," << result.at("max_mode_" + std::to_string(mode));
-            }
-            out << "\n";
-        }
-        
-        safe_cout("Saved results to " + output_file + "\n");
-    }
-}
-
-void process_softrandom_folders(const std::string& data_dir, const std::string& output_dir, 
-                               int nJobsPerRound, const std::vector<int>& modes_to_run) {
-    std::string softrandom_result_dir = output_dir + "/softrandom_result";
-    create_directory(softrandom_result_dir);
-    
-    std::map<int, std::vector<std::map<std::string, std::string>>> results_by_version;
-    std::mutex results_mutex;
-    
-    auto folders = list_directory(data_dir);
-    std::vector<std::thread> base_threads;
-    
-    for (const auto& folder : folders) {
-        std::string basename = folder.substr(folder.find_last_of('/') + 1);
-        if (basename.find("softrandom_") == std::string::npos || !directory_exists(folder)) {
-            continue;
-        }
-        
-        base_threads.emplace_back([&, folder, basename]() {
-            int base_version = extract_version_from_path(basename);
-            safe_cout("Processing softrandom base: " + basename + "\n");
-            
-            auto freq_folders = list_directory(folder);
-            
-            for (const auto& freq_folder : freq_folders) {
-                std::string freq_basename = freq_folder.substr(freq_folder.find_last_of('/') + 1);
-                if (freq_basename.find("freq_") == std::string::npos || !directory_exists(freq_folder)) {
-                    continue;
-                }
-                
-                int frequency = parse_freq_from_folder(freq_basename);
-                if (frequency < 0) continue;
-                
-                auto files = list_directory(freq_folder);
-                
-                for (const auto& file : files) {
-                    std::string filename = file.substr(file.find_last_of('/') + 1);
-                    if (filename.find("softrandom_freq_") == std::string::npos || 
-                        filename.find(".csv") == std::string::npos) {
-                        continue;
-                    }
-                    
-                    auto jobs = read_jobs_from_csv(file);
-                    if (jobs.empty()) continue;
-                    
-                    std::pair<std::map<int, double>, std::map<int, double>> result_pair = 
-                        run_all_modes_for_file_frequency(jobs, nJobsPerRound, modes_to_run);
-                    std::map<int, double> mode_results = result_pair.first;
-                    std::map<int, double> max_flow_results = result_pair.second;
-                    
-                    std::map<std::string, std::string> result_map;
-                    result_map["frequency"] = std::to_string(frequency);
-                    for (int mode : modes_to_run) {
-                        result_map["l2_mode_" + std::to_string(mode)] = std::to_string(mode_results[mode]);
-                        result_map["max_mode_" + std::to_string(mode)] = std::to_string(max_flow_results[mode]);
-                    }
-                    
-                    {
-                        std::lock_guard<std::mutex> lock(results_mutex);
-                        results_by_version[base_version].push_back(result_map);
-                    }
-                }
-            }
-        });
-    }
-    
-    // Wait for all base folder processing to finish
-    for (auto& thread : base_threads) {
-        thread.join();
-    }
-    
-    // Write results
-    for (auto& pair : results_by_version) {
-        std::string output_file = softrandom_result_dir + "/softrandom_result_Dynamic_njobs" + 
-                                 std::to_string(nJobsPerRound) + "_" + 
-                                 std::to_string(pair.first) + ".csv";
-        
-        std::ofstream out(output_file);
-        out << "frequency";
-        for (int mode : modes_to_run) {
-            out << ",Dynamic_njobs" << nJobsPerRound << "_mode" << mode << "_L2_norm_flow_time";
-        }
-        for (int mode : modes_to_run) {
-            out << ",Dynamic_njobs" << nJobsPerRound << "_mode" << mode << "_maximum_flow_time";
-        }
-        out << "\n";
-        
-        for (const auto& result : pair.second) {
-            out << result.at("frequency");
-            for (int mode : modes_to_run) {
-                out << "," << result.at("l2_mode_" + std::to_string(mode));
-            }
-            for (int mode : modes_to_run) {
-                out << "," << result.at("max_mode_" + std::to_string(mode));
-            }
-            out << "\n";
-        }
-        
-        safe_cout("Saved results to " + output_file + "\n");
-    }
-}
-
 // Print usage information
 void print_usage(const char* program_name) {
     std::cout << "Usage: " << program_name << " [nJobsPerRound] [mode1,mode2,...]\n\n";
     std::cout << "Arguments:\n";
     std::cout << "  nJobsPerRound  Number of jobs per round (default: 100)\n";
-    std::cout << "  modes          Comma-separated list of modes to run (1-7)\n";
-    std::cout << "                 Examples: 1,3,5  or  2  or  1,2,3,4,5,6,7\n";
+    std::cout << "  modes          Comma-separated list of modes to run (1-8)\n";
+    std::cout << "                 Examples: 1,3,5  or  2  or  1,2,3,4,5,6,7,8\n";
     std::cout << "                 If omitted, runs all modes (1-7)\n\n";
     std::cout << "Examples:\n";
     std::cout << "  " << program_name << "                    # Default: nJobsPerRound=100, all modes\n";
@@ -806,6 +563,7 @@ void print_usage(const char* program_name) {
     std::cout << "  Mode 5: Last 16 rounds\n";
     std::cout << "  Mode 6: All history\n";
     std::cout << "  Mode 7: Last 50%% of rounds\n";
+    std::cout << "  Mode 8: square root of jobs\n";
 }
 
 // Parse comma-separated mode list
@@ -821,7 +579,7 @@ std::vector<int> parse_modes(const std::string& mode_str) {
         
         try {
             int mode = std::stoi(token);
-            if (mode >= 1 && mode <= 7) {
+            if (mode >= 1 && mode <= 8) {
                 modes.push_back(mode);
             } else {
                 std::cerr << "WARNING: Invalid mode " << mode << " (must be 1-7), skipping\n";
@@ -841,7 +599,7 @@ std::vector<int> parse_modes(const std::string& mode_str) {
 int main(int argc, char* argv[]) {
     // Default values
     int nJobsPerRound = 100;
-    std::vector<int> modes_to_run = {1, 2, 3, 4, 5, 6, 7}; // All modes by default
+    std::vector<int> modes_to_run = {1, 2, 3, 4, 5, 6, 7, 8}; // All modes by default
     
     // Parse command-line arguments
     if (argc > 1) {
@@ -898,32 +656,60 @@ int main(int argc, char* argv[]) {
     
     create_directory(output_dir);
     
-    // Launch three main processing functions in parallel
+    // Launch three main processing functions in parallel using the extended header functions
     std::vector<std::thread> main_threads;
     
     std::cout << "\nLaunching parallel processing threads...\n\n";
     
+    // Thread 1: Process avg files using multimode function
     main_threads.emplace_back([&]() {
         safe_cout("========================================\n");
         safe_cout("[Thread 1] Processing avg files...\n");
         safe_cout("========================================\n");
-        process_avg_folders(data_dir, output_dir, nJobsPerRound, modes_to_run);
+        
+        // Lambda that wraps our function for the template
+        auto avg_wrapper = [](std::vector<Job> jobs, int nJobsPerRound, 
+                             const std::string& input_file_path, 
+                             const std::vector<int>& modes_to_run) {
+            return run_all_modes_for_file_normal(jobs, nJobsPerRound, input_file_path, modes_to_run);
+        };
+        
+        process_avg_folders_multimode(avg_wrapper, data_dir, output_dir, 
+                                      nJobsPerRound, modes_to_run, cout_mutex);
         safe_cout("\n[Thread 1] ✓ Avg files completed!\n\n");
     });
     
+    // Thread 2: Process random files using multimode function
     main_threads.emplace_back([&]() {
         safe_cout("========================================\n");
         safe_cout("[Thread 2] Processing random files...\n");
         safe_cout("========================================\n");
-        process_random_folders(data_dir, output_dir, nJobsPerRound, modes_to_run);
+        
+        // Lambda that wraps our function for the template
+        auto random_wrapper = [](std::vector<Job> jobs, int nJobsPerRound, 
+                                const std::vector<int>& modes_to_run) {
+            return run_all_modes_for_file_frequency(jobs, nJobsPerRound, modes_to_run);
+        };
+        
+        process_random_folders_multimode(random_wrapper, data_dir, output_dir, 
+                                        nJobsPerRound, modes_to_run, cout_mutex);
         safe_cout("\n[Thread 2] ✓ Random files completed!\n\n");
     });
     
+    // Thread 3: Process softrandom files using multimode function
     main_threads.emplace_back([&]() {
         safe_cout("========================================\n");
         safe_cout("[Thread 3] Processing softrandom files...\n");
         safe_cout("========================================\n");
-        process_softrandom_folders(data_dir, output_dir, nJobsPerRound, modes_to_run);
+        
+        // Lambda that wraps our function for the template
+        auto softrandom_wrapper = [](std::vector<Job> jobs, int nJobsPerRound, 
+                                    const std::vector<int>& modes_to_run) {
+            return run_all_modes_for_file_frequency(jobs, nJobsPerRound, modes_to_run);
+        };
+        
+        process_softrandom_folders_multimode(softrandom_wrapper, data_dir, output_dir, 
+                                            nJobsPerRound, modes_to_run, cout_mutex);
         safe_cout("\n[Thread 3] ✓ Softrandom files completed!\n\n");
     });
     

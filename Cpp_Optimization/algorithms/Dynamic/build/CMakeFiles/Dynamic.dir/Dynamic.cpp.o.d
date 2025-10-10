@@ -256,4 +256,11 @@ CMakeFiles/Dynamic.dir/Dynamic.cpp.o: \
  /usr/include/x86_64-linux-gnu/bits/types/struct_statx_timestamp.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_statx.h \
  /usr/include/dirent.h /usr/include/x86_64-linux-gnu/bits/dirent.h \
- /usr/include/x86_64-linux-gnu/bits/dirent_ext.h
+ /usr/include/x86_64-linux-gnu/bits/dirent_ext.h \
+ /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/process_avg_folders.h \
+ /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/utils.h \
+ /home/melowu/Work/ultimus/Cpp_Optimization/algorithm_executer/_run.h \
+ /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/process_random_folders.h \
+ /home/melowu/Work/ultimus/Cpp_Optimization/algorithm_executer/_run_random.h \
+ /usr/include/c++/13/utility /usr/include/c++/13/bits/stl_relops.h \
+ /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/process_softrandom_folders.h

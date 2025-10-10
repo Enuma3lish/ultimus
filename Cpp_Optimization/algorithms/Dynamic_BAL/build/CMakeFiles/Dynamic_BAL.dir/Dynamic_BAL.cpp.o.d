@@ -190,14 +190,9 @@ CMakeFiles/Dynamic_BAL.dir/Dynamic_BAL.cpp.o: \
  /usr/include/c++/13/bits/quoted_string.h /usr/include/c++/13/sstream \
  /usr/include/c++/13/bits/sstream.tcc /usr/include/c++/13/set \
  /usr/include/c++/13/bits/stl_set.h \
- /usr/include/c++/13/bits/stl_multiset.h \
- /usr/include/c++/13/unordered_set \
- /usr/include/c++/13/bits/unordered_set.h \
- /usr/include/c++/13/bits/hashtable.h \
- /usr/include/c++/13/bits/hashtable_policy.h \
- /usr/include/c++/13/bits/enable_special_members.h \
- /usr/include/c++/13/cassert /usr/include/assert.h \
- /usr/include/c++/13/thread /usr/include/c++/13/bits/std_thread.h \
+ /usr/include/c++/13/bits/stl_multiset.h /usr/include/c++/13/cassert \
+ /usr/include/assert.h /usr/include/c++/13/thread \
+ /usr/include/c++/13/bits/std_thread.h \
  /usr/include/c++/13/bits/unique_ptr.h \
  /usr/include/c++/13/bits/this_thread_sleep.h \
  /usr/include/c++/13/bits/chrono.h /usr/include/c++/13/ratio \
@@ -210,14 +205,6 @@ CMakeFiles/Dynamic_BAL.dir/Dynamic_BAL.cpp.o: \
  /usr/include/c++/13/bits/unique_lock.h /usr/include/c++/13/atomic \
  /usr/include/c++/13/bits/atomic_base.h \
  /usr/include/c++/13/bits/atomic_lockfree_defines.h \
- /usr/include/c++/13/memory \
- /usr/include/c++/13/bits/stl_raw_storage_iter.h \
- /usr/include/c++/13/bits/align.h /usr/include/c++/13/bits/shared_ptr.h \
- /usr/include/c++/13/bits/shared_ptr_base.h \
- /usr/include/c++/13/bits/allocated_ptr.h \
- /usr/include/c++/13/ext/concurrence.h \
- /usr/include/c++/13/bits/shared_ptr_atomic.h \
- /usr/include/c++/13/backward/auto_ptr.h \
  /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/BAL_algorithm.h \
  /home/melowu/Work/ultimus/Cpp_Optimization/Job_Format/Job.h \
  /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/Optimized_Selector.h \
@@ -237,6 +224,10 @@ CMakeFiles/Dynamic_BAL.dir/Dynamic_BAL.cpp.o: \
  /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/utils.h \
  /usr/include/c++/13/regex /usr/include/c++/13/bitset \
  /usr/include/c++/13/stack /usr/include/c++/13/bits/stl_stack.h \
+ /usr/include/c++/13/bits/shared_ptr.h \
+ /usr/include/c++/13/bits/shared_ptr_base.h \
+ /usr/include/c++/13/bits/allocated_ptr.h \
+ /usr/include/c++/13/ext/concurrence.h \
  /usr/include/c++/13/bits/std_function.h \
  /usr/include/c++/13/bits/regex_constants.h \
  /usr/include/c++/13/bits/regex_error.h \
@@ -265,4 +256,11 @@ CMakeFiles/Dynamic_BAL.dir/Dynamic_BAL.cpp.o: \
  /usr/include/x86_64-linux-gnu/bits/types/struct_statx_timestamp.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_statx.h \
  /usr/include/dirent.h /usr/include/x86_64-linux-gnu/bits/dirent.h \
- /usr/include/x86_64-linux-gnu/bits/dirent_ext.h
+ /usr/include/x86_64-linux-gnu/bits/dirent_ext.h \
+ /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/process_avg_folders.h \
+ /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/utils.h \
+ /home/melowu/Work/ultimus/Cpp_Optimization/algorithm_executer/_run.h \
+ /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/process_random_folders.h \
+ /home/melowu/Work/ultimus/Cpp_Optimization/algorithm_executer/_run_random.h \
+ /usr/include/c++/13/utility /usr/include/c++/13/bits/stl_relops.h \
+ /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/process_softrandom_folders.h

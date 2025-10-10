@@ -3,9 +3,14 @@
 
 CMakeFiles/Dynamic.dir/Dynamic.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization/algorithms/Dynamic/Dynamic.cpp \
   /home/melowu/Work/ultimus/Cpp_Optimization/Job_Format/Job.h \
+  /home/melowu/Work/ultimus/Cpp_Optimization/algorithm_executer/_run.h \
+  /home/melowu/Work/ultimus/Cpp_Optimization/algorithm_executer/_run_random.h \
   /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/Optimized_FCFS_algorithm.h \
   /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/Optimized_SRPT_algorithm.h \
   /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/Optimized_Selector.h \
+  /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/process_avg_folders.h \
+  /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/process_random_folders.h \
+  /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/process_softrandom_folders.h \
   /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/utils.h \
   /usr/include/alloca.h \
   /usr/include/asm-generic/bitsperlong.h \
@@ -105,6 +110,7 @@ CMakeFiles/Dynamic.dir/Dynamic.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization
   /usr/include/c++/13/bits/stl_multiset.h \
   /usr/include/c++/13/bits/stl_pair.h \
   /usr/include/c++/13/bits/stl_queue.h \
+  /usr/include/c++/13/bits/stl_relops.h \
   /usr/include/c++/13/bits/stl_set.h \
   /usr/include/c++/13/bits/stl_stack.h \
   /usr/include/c++/13/bits/stl_tempbuf.h \
@@ -172,6 +178,7 @@ CMakeFiles/Dynamic.dir/Dynamic.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization
   /usr/include/c++/13/tuple \
   /usr/include/c++/13/type_traits \
   /usr/include/c++/13/typeinfo \
+  /usr/include/c++/13/utility \
   /usr/include/c++/13/vector \
   /usr/include/ctype.h \
   /usr/include/dirent.h \
@@ -406,19 +413,13 @@ CMakeFiles/Dynamic.dir/Dynamic.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization
 
 /usr/include/x86_64-linux-gnu/bits/types/FILE.h:
 
-/usr/include/c++/13/clocale:
+/usr/include/x86_64-linux-gnu/bits/types.h:
 
-/usr/include/c++/13/cerrno:
+/usr/include/x86_64-linux-gnu/bits/time64.h:
 
-/usr/include/x86_64-linux-gnu/bits/stdint-least.h:
+/usr/include/x86_64-linux-gnu/bits/thread-shared-types.h:
 
-/usr/include/c++/13/cctype:
-
-/usr/include/x86_64-linux-gnu/bits/types/struct_tm.h:
-
-/usr/include/c++/13/ext/atomicity.h:
-
-/usr/include/x86_64-linux-gnu/bits/posix1_lim.h:
+/usr/include/x86_64-linux-gnu/bits/struct_stat.h:
 
 /usr/include/c++/13/bitset:
 
@@ -454,9 +455,9 @@ CMakeFiles/Dynamic.dir/Dynamic.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization
 
 /usr/include/c++/13/bits/uses_allocator.h:
 
-/usr/include/c++/13/bits/stl_multiset.h:
-
 /usr/include/c++/13/bits/postypes.h:
+
+/usr/include/c++/13/bits/stl_multiset.h:
 
 /usr/include/c++/13/iomanip:
 
@@ -479,8 +480,6 @@ CMakeFiles/Dynamic.dir/Dynamic.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization
 /usr/include/c++/13/bits/shared_ptr.h:
 
 /usr/include/x86_64-linux-gnu/bits/struct_mutex.h:
-
-/usr/include/c++/13/bits/stl_deque.h:
 
 /usr/include/c++/13/bits/regex_executor.tcc:
 
@@ -518,13 +517,9 @@ CMakeFiles/Dynamic.dir/Dynamic.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization
 
 /usr/include/c++/13/bits/range_access.h:
 
-/usr/include/x86_64-linux-gnu/bits/thread-shared-types.h:
-
 /usr/include/c++/13/bits/predefined_ops.h:
 
 /usr/include/c++/13/iosfwd:
-
-/usr/include/c++/13/bits/stl_heap.h:
 
 /usr/include/c++/13/bits/std_abs.h:
 
@@ -536,23 +531,17 @@ CMakeFiles/Dynamic.dir/Dynamic.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization
 
 /usr/include/c++/13/bits/ostream.tcc:
 
-/usr/include/c++/13/bits/invoke.h:
+/usr/include/c++/13/bits/move.h:
 
-/usr/include/c++/13/bits/stl_queue.h:
+/usr/include/c++/13/bits/memoryfwd.h:
 
-/usr/include/c++/13/bits/requires_hosted.h:
+/usr/include/c++/13/bits/locale_facets_nonio.tcc:
 
-/usr/include/x86_64-linux-gnu/bits/floatn-common.h:
+/usr/include/c++/13/bits/stl_heap.h:
 
-/usr/include/c++/13/bits/atomic_lockfree_defines.h:
+/usr/include/c++/13/utility:
 
-/usr/include/x86_64-linux-gnu/asm/errno.h:
-
-/usr/include/x86_64-linux-gnu/bits/stdlib.h:
-
-/usr/include/c++/13/atomic:
-
-/usr/include/c++/13/bits/locale_facets.h:
+/usr/include/x86_64-linux-gnu/bits/dirent.h:
 
 /usr/include/c++/13/bits/alloc_traits.h:
 
@@ -570,11 +559,27 @@ CMakeFiles/Dynamic.dir/Dynamic.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization
 
 /usr/include/stdc-predef.h:
 
+/usr/include/c++/13/bits/regex.h:
+
+/usr/include/c++/13/backward/binders.h:
+
+/usr/include/c++/13/bits/stl_queue.h:
+
+/usr/include/c++/13/bits/atomic_lockfree_defines.h:
+
+/usr/include/x86_64-linux-gnu/asm/errno.h:
+
+/usr/include/x86_64-linux-gnu/bits/stdlib.h:
+
 /usr/include/c++/13/bits/unique_lock.h:
+
+/home/melowu/Work/ultimus/Cpp_Optimization/function_tools/process_softrandom_folders.h:
 
 /usr/include/c++/13/mutex:
 
 /usr/include/x86_64-linux-gnu/bits/statx.h:
+
+/usr/include/c++/13/bits/basic_string.tcc:
 
 /usr/include/x86_64-linux-gnu/bits/types/__sigset_t.h:
 
@@ -582,25 +587,7 @@ CMakeFiles/Dynamic.dir/Dynamic.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization
 
 /usr/include/c++/13/fstream:
 
-/usr/include/c++/13/bits/allocated_ptr.h:
-
-/usr/include/c++/13/bit:
-
-/usr/include/c++/13/bits/basic_string.tcc:
-
-/usr/include/c++/13/bits/regex.h:
-
-/usr/include/c++/13/backward/binders.h:
-
-/usr/include/c++/13/bits/regex_automaton.tcc:
-
-/usr/include/x86_64-linux-gnu/c++/13/bits/gthr-default.h:
-
-/usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h:
-
-/usr/include/x86_64-linux-gnu/bits/stdint-uintn.h:
-
-/usr/include/assert.h:
+/usr/include/c++/13/bits/locale_facets.h:
 
 /usr/include/c++/13/bits/stl_vector.h:
 
@@ -609,26 +596,6 @@ CMakeFiles/Dynamic.dir/Dynamic.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization
 /usr/include/c++/13/bits/stl_tree.h:
 
 /usr/include/c++/13/bits/codecvt.h:
-
-/usr/include/c++/13/bits/refwrap.h:
-
-/usr/include/c++/13/bits/fstream.tcc:
-
-/usr/include/c++/13/algorithm:
-
-/usr/include/x86_64-linux-gnu/c++/13/bits/cpu_defines.h:
-
-/home/melowu/Work/ultimus/Cpp_Optimization/function_tools/Optimized_FCFS_algorithm.h:
-
-/usr/include/c++/13/bits/locale_facets.tcc:
-
-/usr/include/linux/stat.h:
-
-/usr/include/c++/13/bits/locale_facets_nonio.h:
-
-/usr/include/c++/13/cstdio:
-
-/home/melowu/Work/ultimus/Cpp_Optimization/function_tools/utils.h:
 
 /usr/include/asm-generic/int-ll64.h:
 
@@ -644,6 +611,72 @@ CMakeFiles/Dynamic.dir/Dynamic.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization
 
 /usr/include/c++/13/bits/locale_conv.h:
 
+/usr/include/c++/13/bits/regex_automaton.tcc:
+
+/usr/include/x86_64-linux-gnu/c++/13/bits/gthr-default.h:
+
+/usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h:
+
+/usr/include/x86_64-linux-gnu/bits/stdint-uintn.h:
+
+/usr/include/assert.h:
+
+/home/melowu/Work/ultimus/Cpp_Optimization/algorithm_executer/_run_random.h:
+
+/usr/include/c++/13/algorithm:
+
+/usr/include/c++/13/bits/stl_iterator_base_funcs.h:
+
+/usr/include/asm-generic/errno-base.h:
+
+/usr/include/c++/13/bits/hash_bytes.h:
+
+/usr/include/x86_64-linux-gnu/bits/math-vector.h:
+
+/usr/include/x86_64-linux-gnu/c++/13/bits/cpu_defines.h:
+
+/home/melowu/Work/ultimus/Cpp_Optimization/function_tools/Optimized_FCFS_algorithm.h:
+
+/usr/include/c++/13/bits/locale_facets_nonio.h:
+
+/usr/include/c++/13/cstdio:
+
+/home/melowu/Work/ultimus/Cpp_Optimization/function_tools/utils.h:
+
+/home/melowu/Work/ultimus/Cpp_Optimization/algorithm_executer/_run.h:
+
+/usr/include/x86_64-linux-gnu/bits/types/sigset_t.h:
+
+/usr/include/asm-generic/types.h:
+
+/usr/include/asm-generic/bitsperlong.h:
+
+/usr/include/c++/13/cctype:
+
+/usr/include/x86_64-linux-gnu/bits/types/struct_tm.h:
+
+/usr/include/c++/13/ext/atomicity.h:
+
+/usr/include/x86_64-linux-gnu/bits/posix1_lim.h:
+
+/usr/include/c++/13/bits/stl_deque.h:
+
+/home/melowu/Work/ultimus/Cpp_Optimization/function_tools/process_random_folders.h:
+
+/usr/include/x86_64-linux-gnu/bits/floatn-common.h:
+
+/usr/include/c++/13/bits/requires_hosted.h:
+
+/usr/include/linux/stat.h:
+
+/usr/include/c++/13/bits/locale_facets.tcc:
+
+/usr/include/c++/13/bit:
+
+/usr/include/c++/13/bits/allocated_ptr.h:
+
+/usr/include/c++/13/clocale:
+
 /usr/include/c++/13/bits/basic_ios.tcc:
 
 /usr/include/linux/stddef.h:
@@ -656,21 +689,7 @@ CMakeFiles/Dynamic.dir/Dynamic.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization
 
 /home/melowu/Work/ultimus/Cpp_Optimization/function_tools/Optimized_Selector.h:
 
-/usr/include/c++/13/map:
-
-/usr/include/x86_64-linux-gnu/bits/iscanonical.h:
-
 /usr/include/c++/13/ostream:
-
-/usr/include/c++/13/cassert:
-
-/usr/include/c++/13/bits/cpp_type_traits.h:
-
-/usr/include/x86_64-linux-gnu/bits/types.h:
-
-/usr/include/c++/13/bits/move.h:
-
-/usr/include/alloca.h:
 
 /usr/include/wchar.h:
 
@@ -680,21 +699,19 @@ CMakeFiles/Dynamic.dir/Dynamic.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization
 
 /usr/include/c++/13/bits/basic_ios.h:
 
-/usr/include/x86_64-linux-gnu/bits/time64.h:
+/usr/include/c++/13/atomic:
 
-/usr/include/c++/13/bits/hash_bytes.h:
+/usr/include/c++/13/bits/invoke.h:
 
-/usr/include/x86_64-linux-gnu/bits/math-vector.h:
+/usr/include/alloca.h:
 
-/usr/include/c++/13/bits/stl_iterator_base_funcs.h:
+/usr/include/c++/13/bits/refwrap.h:
 
-/usr/include/asm-generic/errno-base.h:
+/usr/include/x86_64-linux-gnu/bits/iscanonical.h:
 
-/usr/include/x86_64-linux-gnu/bits/types/sigset_t.h:
+/usr/include/c++/13/map:
 
-/usr/include/asm-generic/bitsperlong.h:
-
-/usr/include/asm-generic/types.h:
+/usr/include/c++/13/bits/fstream.tcc:
 
 /usr/include/x86_64-linux-gnu/bits/endianness.h:
 
@@ -707,8 +724,6 @@ CMakeFiles/Dynamic.dir/Dynamic.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization
 /usr/include/c++/13/bits/char_traits.h:
 
 /usr/include/c++/13/bits/cxxabi_forced.h:
-
-/usr/include/c++/13/climits:
 
 /usr/include/x86_64-linux-gnu/bits/wchar2-decl.h:
 
@@ -746,6 +761,12 @@ CMakeFiles/Dynamic.dir/Dynamic.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization
 
 /usr/include/c++/13/bits/ios_base.h:
 
+/usr/include/x86_64-linux-gnu/bits/timesize.h:
+
+/usr/include/c++/13/bits/locale_classes.h:
+
+/usr/include/c++/13/bits/stl_relops.h:
+
 /usr/include/c++/13/stack:
 
 /usr/include/x86_64-linux-gnu/bits/mathcalls.h:
@@ -756,11 +777,15 @@ CMakeFiles/Dynamic.dir/Dynamic.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization
 
 /usr/include/c++/13/bits/locale_classes.tcc:
 
-/usr/include/c++/13/bits/locale_facets_nonio.tcc:
+/usr/include/c++/13/bits/cpp_type_traits.h:
 
-/usr/include/x86_64-linux-gnu/bits/dirent.h:
+/usr/include/c++/13/cassert:
 
-/usr/include/c++/13/bits/memoryfwd.h:
+/usr/include/c++/13/cerrno:
+
+/usr/include/x86_64-linux-gnu/bits/stdint-least.h:
+
+/usr/include/c++/13/climits:
 
 /usr/include/c++/13/ctime:
 
@@ -819,6 +844,8 @@ CMakeFiles/Dynamic.dir/Dynamic.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization
 /usr/include/x86_64-linux-gnu/bits/libm-simd-decl-stubs.h:
 
 /usr/include/x86_64-linux-gnu/bits/types/wint_t.h:
+
+/home/melowu/Work/ultimus/Cpp_Optimization/function_tools/process_avg_folders.h:
 
 /usr/include/c++/13/limits:
 
@@ -932,7 +959,9 @@ CMakeFiles/Dynamic.dir/Dynamic.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization
 
 /usr/include/x86_64-linux-gnu/bits/sched.h:
 
-/usr/include/x86_64-linux-gnu/bits/struct_stat.h:
+/usr/include/x86_64-linux-gnu/bits/time.h:
+
+/usr/include/x86_64-linux-gnu/bits/select.h:
 
 /usr/include/time.h:
 
@@ -952,16 +981,8 @@ CMakeFiles/Dynamic.dir/Dynamic.cpp.o: /home/melowu/Work/ultimus/Cpp_Optimization
 
 /usr/include/x86_64-linux-gnu/bits/stdio2.h:
 
-/usr/include/x86_64-linux-gnu/bits/struct_rwlock.h:
-
-/usr/include/x86_64-linux-gnu/bits/select.h:
-
-/usr/include/x86_64-linux-gnu/bits/time.h:
-
-/usr/include/c++/13/bits/locale_classes.h:
-
-/usr/include/x86_64-linux-gnu/bits/timesize.h:
+/usr/include/x86_64-linux-gnu/bits/timex.h:
 
 /usr/include/x86_64-linux-gnu/bits/stdio_lim.h:
 
-/usr/include/x86_64-linux-gnu/bits/timex.h:
+/usr/include/x86_64-linux-gnu/bits/struct_rwlock.h:
