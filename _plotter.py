@@ -113,6 +113,27 @@ MODE_MARKERS = [
     'P',  # Mode 7 - Plus (filled)
     '*'   # Mode 8 - Star
 ]
+bp_parameter_60 = [
+    {"L": 56.300, "H": pow(2, 6)},
+    {"L": 18.900, "H": pow(2, 9)},
+    {"L": 12.400, "H": pow(2, 12)},
+    {"L": 9.800, "H": pow(2, 15)},
+    {"L": 8.500, "H": pow(2, 18)}
+]
+bp_parameter_90 = [
+    {"L": 32.300, "H": pow(2, 9)},
+    {"L": 19.700, "H": pow(2, 12)},
+    {"L": 15.300, "H": pow(2, 15)},
+    {"L": 13.000, "H": pow(2, 18)}
+]
+bp_parameter_30 = [
+    {"L": 16.772, "H": pow(2, 6)},
+    {"L": 7.918, "H": pow(2, 9)},
+    {"L": 5.649, "H": pow(2, 12)},
+    {"L": 4.639, "H": pow(2, 15)},
+    {"L": 4.073, "H": pow(2, 18)}
+]
+bp_set = bp_parameter_30+bp_parameter_60+bp_parameter_90
 # ============================================================================
 # BEST SETTING SELECTION (MODE 7 vs MODE 6 VS MODE 8)
 def find_best_dynamic_setting_v2(df, algorithm_type="Dynamic"):
@@ -742,7 +763,11 @@ def create_all_algorithms_comparison(df, best_dynamic_col, best_bal_col, bp_para
         df = df.sort_values('arrival_rate').reset_index(drop=True)
         x_values = df['arrival_rate'].values
         x_label = 'Arrival Rate'
-        title = f'All Algorithms Comparison - {data_type.upper()} - BP: L={bp_param["L"]:.3f}, H={bp_param["H"]}'
+        if bp_param["H"] in bp_set:
+            title = f'All Algorithms Comparison - {data_type.upper()} - BP: L={bp_param["L"]:.3f}, H={bp_param["H"]}'
+        else:
+            title = f'All Algorithms Comparison - {data_type.upper()} - Mean: {bp_param["L"]:.3f}, Std: {bp_param["H"]}'
+            
     else:
         df = df.sort_values('frequency').reset_index(drop=True)
         x_values = df['frequency'].values
@@ -1176,8 +1201,12 @@ def create_best_worst_comparison(algorithm, best_col, bp_param, output_path, dat
         
         x_values = best_df_filtered['arrival_rate'].values
         x_label = 'Arrival Rate'
-        title = (f'{algorithm}: Best (njobs100 {best_mode_label}) vs Worst (njobs1 Mode1)\n'
+        if bp_param["H"] in bp_set:
+            title = (f'{algorithm}: Best (njobs100 {best_mode_label}) vs Worst (njobs1 Mode1)\n'
                 f'{data_type.upper()} - BP: L={bp_param["L"]:.3f}, H={bp_param["H"]}')
+        else:
+            title = (f'{algorithm}: Best (njobs100 {best_mode_label}) vs Worst (njobs1 Mode1)\n'
+                f'{data_type.upper()} - Mean: {bp_param["L"]:.3f}, Std: {bp_param["H"]}')
     else:
         best_df = best_df.sort_values('frequency')
         worst_df = worst_df.sort_values('frequency')
@@ -1659,24 +1688,43 @@ def process_all_data(output_base):
         
         for (L, H), group_df in bp_groups:
             bp_param = {'L': L, 'H': H}
+            if bp_param in bp_set:
+                output_path = f"{best_worst_dir}/Dynamic_BestWorst_L{L:.3f}_H{H}.jpg"
+                create_best_worst_comparison('Dynamic', best_dynamic, bp_param, output_path, avg_type)
             
-            output_path = f"{best_worst_dir}/Dynamic_BestWorst_L{L:.3f}_H{H}.jpg"
-            create_best_worst_comparison('Dynamic', best_dynamic, bp_param, output_path, avg_type)
+                output_path = f"{best_worst_dir}/Dynamic_BAL_BestWorst_L{L:.3f}_H{H}.jpg"
+                create_best_worst_comparison('Dynamic_BAL', best_bal, bp_param, output_path, avg_type)
             
-            output_path = f"{best_worst_dir}/Dynamic_BAL_BestWorst_L{L:.3f}_H{H}.jpg"
-            create_best_worst_comparison('Dynamic_BAL', best_bal, bp_param, output_path, avg_type)
+                output_path = f"{dynamic_vs_bal_dir}/Dynamic_vs_BAL_L{L:.3f}_H{H}.jpg"
+                create_dynamic_vs_dynamic_bal_comparison(best_dynamic, best_bal, bp_param, output_path, avg_type)
             
-            output_path = f"{dynamic_vs_bal_dir}/Dynamic_vs_BAL_L{L:.3f}_H{H}.jpg"
-            create_dynamic_vs_dynamic_bal_comparison(best_dynamic, best_bal, bp_param, output_path, avg_type)
+                output_path = f"{all_algo_dir}/All_Algorithms_L{L:.3f}_H{H}.jpg"
+                create_all_algorithms_comparison(group_df, best_dynamic, best_bal, bp_param, output_path, avg_type)
             
-            output_path = f"{all_algo_dir}/All_Algorithms_L{L:.3f}_H{H}.jpg"
-            create_all_algorithms_comparison(group_df, best_dynamic, best_bal, bp_param, output_path, avg_type)
+                output_path = f"{mode_comparison_dir}/Dynamic_AllModes_L{L:.3f}_H{H}.jpg"
+                create_mode_comparison_plots("Dynamic", avg_type, bp_param, output_path)
             
-            output_path = f"{mode_comparison_dir}/Dynamic_AllModes_L{L:.3f}_H{H}.jpg"
-            create_mode_comparison_plots("Dynamic", avg_type, bp_param, output_path)
+                output_path = f"{mode_comparison_dir}/Dynamic_BAL_AllModes_L{L:.3f}_H{H}.jpg"
+                create_mode_comparison_plots("Dynamic_BAL", avg_type, bp_param, output_path)
+            else:
+                output_path = f"{best_worst_dir}/Dynamic_BestWorst_mean{L:.3f}_std{H}.jpg"
+                create_best_worst_comparison('Dynamic', best_dynamic, bp_param, output_path, avg_type)
             
-            output_path = f"{mode_comparison_dir}/Dynamic_BAL_AllModes_L{L:.3f}_H{H}.jpg"
-            create_mode_comparison_plots("Dynamic_BAL", avg_type, bp_param, output_path)
+                output_path = f"{best_worst_dir}/Dynamic_BAL_BestWorst_mean{L:.3f}_std{H}.jpg"
+                create_best_worst_comparison('Dynamic_BAL', best_bal, bp_param, output_path, avg_type)
+            
+                output_path = f"{dynamic_vs_bal_dir}/Dynamic_vs_BAL_mean{L:.3f}_std{H}.jpg"
+                create_dynamic_vs_dynamic_bal_comparison(best_dynamic, best_bal, bp_param, output_path, avg_type)
+            
+                output_path = f"{all_algo_dir}/All_Algorithms_mean{L:.3f}_std{H}.jpg"
+                create_all_algorithms_comparison(group_df, best_dynamic, best_bal, bp_param, output_path, avg_type)
+            
+                output_path = f"{mode_comparison_dir}/Dynamic_AllModes_mean{L:.3f}_std{H}.jpg"
+                create_mode_comparison_plots("Dynamic", avg_type, bp_param, output_path)
+            
+                output_path = f"{mode_comparison_dir}/Dynamic_BAL_AllModes_mean{L:.3f}_std{H}.jpg"
+                create_mode_comparison_plots("Dynamic_BAL", avg_type, bp_param, output_path)
+                
     
     # Process random and softrandom data
     if random_data is not None:
@@ -1905,47 +1953,88 @@ def main():
                 bp_param = {'L': L, 'H': H}
                 
                 logger.info(f"\nProcessing BP: L={L:.3f}, H={H}")
-                
+                if bp_param in bp_set:
+                    
                 # Best vs Worst comparisons
-                try:
-                    output_path = f"{best_worst_dir}/Dynamic_BestWorst_L{L:.3f}_H{H}.jpg"
-                    create_best_worst_comparison('Dynamic', best_dynamic, bp_param, output_path, avg_type)
-                except Exception as e:
-                    logger.error(f"Error creating Dynamic best/worst: {e}")
+                    try:
+                        output_path = f"{best_worst_dir}/Dynamic_BestWorst_L{L:.3f}_H{H}.jpg"
+                        create_best_worst_comparison('Dynamic', best_dynamic, bp_param, output_path, avg_type)
+                    except Exception as e:
+                        logger.error(f"Error creating Dynamic best/worst: {e}")
                 
-                try:
-                    output_path = f"{best_worst_dir}/Dynamic_BAL_BestWorst_L{L:.3f}_H{H}.jpg"
-                    create_best_worst_comparison('Dynamic_BAL', best_bal, bp_param, output_path, avg_type)
-                except Exception as e:
-                    logger.error(f"Error creating Dynamic_BAL best/worst: {e}")
+                    try:
+                        output_path = f"{best_worst_dir}/Dynamic_BAL_BestWorst_L{L:.3f}_H{H}.jpg"
+                        create_best_worst_comparison('Dynamic_BAL', best_bal, bp_param, output_path, avg_type)
+                    except Exception as e:
+                        logger.error(f"Error creating Dynamic_BAL best/worst: {e}")
                 
                 # Dynamic vs Dynamic_BAL
-                try:
-                    output_path = f"{dynamic_vs_bal_dir}/Dynamic_vs_BAL_L{L:.3f}_H{H}.jpg"
-                    create_dynamic_vs_dynamic_bal_comparison(best_dynamic, best_bal, bp_param, output_path, avg_type)
-                except Exception as e:
-                    logger.error(f"Error creating Dynamic vs BAL: {e}")
+                    try:
+                        output_path = f"{dynamic_vs_bal_dir}/Dynamic_vs_BAL_L{L:.3f}_H{H}.jpg"
+                        create_dynamic_vs_dynamic_bal_comparison(best_dynamic, best_bal, bp_param, output_path, avg_type)
+                    except Exception as e:
+                        logger.error(f"Error creating Dynamic vs BAL: {e}")
                 
-                # All algorithms
-                try:
-                    output_path = f"{all_algo_dir}/All_Algorithms_L{L:.3f}_H{H}.jpg"
-                    create_all_algorithms_comparison(group_df, best_dynamic, best_bal, bp_param, output_path, avg_type)
-                except Exception as e:
-                    logger.error(f"Error creating all algorithms comparison: {e}")
+                    # All algorithms
+                    try:
+                        output_path = f"{all_algo_dir}/All_Algorithms_L{L:.3f}_H{H}.jpg"
+                        create_all_algorithms_comparison(group_df, best_dynamic, best_bal, bp_param, output_path, avg_type)
+                    except Exception as e:
+                        logger.error(f"Error creating all algorithms comparison: {e}")
                 
-                # Mode comparisons
-                try:
-                    output_path = f"{mode_comparison_dir}/Dynamic_AllModes_L{L:.3f}_H{H}.jpg"
-                    create_mode_comparison_plots("Dynamic", avg_type, bp_param, output_path)
-                except Exception as e:
-                    logger.error(f"Error creating Dynamic mode comparison: {e}")
+                    # Mode comparisons
+                    try:
+                        output_path = f"{mode_comparison_dir}/Dynamic_AllModes_L{L:.3f}_H{H}.jpg"
+                        create_mode_comparison_plots("Dynamic", avg_type, bp_param, output_path)
+                    except Exception as e:
+                        logger.error(f"Error creating Dynamic mode comparison: {e}")
                 
-                try:
-                    output_path = f"{mode_comparison_dir}/Dynamic_BAL_AllModes_L{L:.3f}_H{H}.jpg"
-                    create_mode_comparison_plots("Dynamic_BAL", avg_type, bp_param, output_path)
-                except Exception as e:
-                    logger.error(f"Error creating Dynamic_BAL mode comparison: {e}")
-        
+                    try:
+                        output_path = f"{mode_comparison_dir}/Dynamic_BAL_AllModes_L{L:.3f}_H{H}.jpg"
+                        create_mode_comparison_plots("Dynamic_BAL", avg_type, bp_param, output_path)
+                    except Exception as e:
+                        logger.error(f"Error creating Dynamic_BAL mode comparison: {e}")
+                #  mean , std      
+                else:
+                    # Best vs Worst comparisons
+                    try:
+                        output_path = f"{best_worst_dir}/Dynamic_BestWorst_mean{L:.3f}_std{H}.jpg"
+                        create_best_worst_comparison('Dynamic', best_dynamic, bp_param, output_path, avg_type)
+                    except Exception as e:
+                        logger.error(f"Error creating Dynamic best/worst: {e}")
+                
+                    try:
+                        output_path = f"{best_worst_dir}/Dynamic_BAL_BestWorst_mean{L:.3f}_std{H}.jpg"
+                        create_best_worst_comparison('Dynamic_BAL', best_bal, bp_param, output_path, avg_type)
+                    except Exception as e:
+                        logger.error(f"Error creating Dynamic_BAL best/worst: {e}")
+                
+                # Dynamic vs Dynamic_BAL
+                    try:
+                        output_path = f"{dynamic_vs_bal_dir}/Dynamic_vs_BAL_mean{L:.3f}_std{H}.jpg"
+                        create_dynamic_vs_dynamic_bal_comparison(best_dynamic, best_bal, bp_param, output_path, avg_type)
+                    except Exception as e:
+                        logger.error(f"Error creating Dynamic vs BAL: {e}")
+                
+                    # All algorithms
+                    try:
+                        output_path = f"{all_algo_dir}/All_Algorithms_mean{L:.3f}_std{H}.jpg"
+                        create_all_algorithms_comparison(group_df, best_dynamic, best_bal, bp_param, output_path, avg_type)
+                    except Exception as e:
+                        logger.error(f"Error creating all algorithms comparison: {e}")
+                
+                    # Mode comparisons
+                    try:
+                        output_path = f"{mode_comparison_dir}/Dynamic_AllModes_mean{L:.3f}_std{H}.jpg"
+                        create_mode_comparison_plots("Dynamic", avg_type, bp_param, output_path)
+                    except Exception as e:
+                        logger.error(f"Error creating Dynamic mode comparison: {e}")
+                
+                    try:
+                        output_path = f"{mode_comparison_dir}/Dynamic_BAL_AllModes_mean{L:.3f}_std{H}.jpg"
+                        create_mode_comparison_plots("Dynamic_BAL", avg_type, bp_param, output_path)
+                    except Exception as e:
+                        logger.error(f"Error creating Dynamic_BAL mode comparison: {e}")
         # STEP 8: Process random data
         if random_data is not None:
             logger.info("\n{'='*60}")
