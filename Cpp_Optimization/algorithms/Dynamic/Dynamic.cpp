@@ -250,24 +250,6 @@ DynamicResult DYNAMIC(std::vector<Job>& jobs, int nJobsPerRound, int mode,
                             jobs_to_simulate.insert(jobs_to_simulate.end(),
                                 round.begin(), round.end());
                         }
-                    } else if (effective_mode == 7) {
-                        // Last 50% of rounds
-                        int rounds_to_use = std::ceil(current_round * 0.5);
-                        size_t start = (round_jobs_history.size() >= (size_t)rounds_to_use) ? 
-                                      round_jobs_history.size() - rounds_to_use : 0;
-                        for (size_t i = start; i < round_jobs_history.size(); i++) {
-                            jobs_to_simulate.insert(jobs_to_simulate.end(),
-                                round_jobs_history[i].begin(), round_jobs_history[i].end());
-                        }
-                    } else if (effective_mode == 8) {
-                        // Square root of rounds
-                        int rounds_to_use = std::ceil(std::sqrt(current_round));
-                        size_t start = (round_jobs_history.size() >= (size_t)rounds_to_use) ? 
-                                      round_jobs_history.size() - rounds_to_use : 0;
-                        for (size_t i = start; i < round_jobs_history.size(); i++) {
-                            jobs_to_simulate.insert(jobs_to_simulate.end(),
-                                round_jobs_history[i].begin(), round_jobs_history[i].end());
-                        }
                     }
                     
                     // Run simulations
@@ -542,30 +524,6 @@ run_all_modes_for_file_frequency(std::vector<Job> jobs, int nJobsPerRound,
     return std::make_pair(mode_results, max_flow_results);
 }
 
-// Print usage information
-void print_usage(const char* program_name) {
-    std::cout << "Usage: " << program_name << " [nJobsPerRound] [mode1,mode2,...]\n\n";
-    std::cout << "Arguments:\n";
-    std::cout << "  nJobsPerRound  Number of jobs per round (default: 100)\n";
-    std::cout << "  modes          Comma-separated list of modes to run (1-8)\n";
-    std::cout << "                 Examples: 1,3,5  or  2  or  1,2,3,4,5,6,7,8\n";
-    std::cout << "                 If omitted, runs all modes (1-7)\n\n";
-    std::cout << "Examples:\n";
-    std::cout << "  " << program_name << "                    # Default: nJobsPerRound=100, all modes\n";
-    std::cout << "  " << program_name << " 50                 # nJobsPerRound=50, all modes\n";
-    std::cout << "  " << program_name << " 100 1,3,5          # nJobsPerRound=100, modes 1,3,5\n";
-    std::cout << "  " << program_name << " 200 2              # nJobsPerRound=200, mode 2 only\n\n";
-    std::cout << "Available modes:\n";
-    std::cout << "  Mode 1: Last 1 round\n";
-    std::cout << "  Mode 2: Last 2 rounds\n";
-    std::cout << "  Mode 3: Last 4 rounds\n";
-    std::cout << "  Mode 4: Last 8 rounds\n";
-    std::cout << "  Mode 5: Last 16 rounds\n";
-    std::cout << "  Mode 6: All history\n";
-    std::cout << "  Mode 7: Last 50%% of rounds\n";
-    std::cout << "  Mode 8: square root of jobs\n";
-}
-
 // Parse comma-separated mode list
 std::vector<int> parse_modes(const std::string& mode_str) {
     std::vector<int> modes;
@@ -599,12 +557,11 @@ std::vector<int> parse_modes(const std::string& mode_str) {
 int main(int argc, char* argv[]) {
     // Default values
     int nJobsPerRound = 100;
-    std::vector<int> modes_to_run = {1, 2, 3, 4, 5, 6, 7, 8}; // All modes by default
+    std::vector<int> modes_to_run = {1, 2, 3, 4, 5, 6}; // All modes by default
     
     // Parse command-line arguments
     if (argc > 1) {
         if (std::string(argv[1]) == "-h" || std::string(argv[1]) == "--help") {
-            print_usage(argv[0]);
             return 0;
         }
         
@@ -613,12 +570,10 @@ int main(int argc, char* argv[]) {
             nJobsPerRound = std::atoi(argv[1]);
             if (nJobsPerRound <= 0) {
                 std::cerr << "ERROR: nJobsPerRound must be positive\n";
-                print_usage(argv[0]);
                 return 1;
             }
         } catch (const std::exception& e) {
             std::cerr << "ERROR: Invalid nJobsPerRound value\n";
-            print_usage(argv[0]);
             return 1;
         }
     }
@@ -628,7 +583,6 @@ int main(int argc, char* argv[]) {
         modes_to_run = parse_modes(argv[2]);
         if (modes_to_run.empty()) {
             std::cerr << "ERROR: No valid modes specified\n";
-            print_usage(argv[0]);
             return 1;
         }
     }
@@ -721,6 +675,8 @@ int main(int argc, char* argv[]) {
     std::cout << "\n============================================================\n";
     std::cout << "All Dynamic processing completed successfully!\n";
     std::cout << "============================================================\n";
+
+
     
     return 0;
 }

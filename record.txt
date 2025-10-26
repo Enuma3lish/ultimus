@@ -1,4 +1,0 @@
-1. Why we need to add discover mode? : In the result of expriment we found that the L2 norm is very close, when H is 512 and 4096; 
-In this part we need to define what is very close, a result of L2 norm of an algorithm is A and another is B,
-and the result of A/B is in range of +-10% we define very close , this result might cause temporary hallucination our calculation method.
-

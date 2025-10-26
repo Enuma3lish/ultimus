@@ -4,7 +4,7 @@ set -e
 PROJECT_ROOT="/home/melowu/Work/ultimus"
 ALGO_DIR="${PROJECT_ROOT}/Cpp_Optimization/algorithms"
 
-ALGORITHMS=(BAL SRPT Dynamic Dynamic_BAL FCFS RR SETF SJF)
+ALGORITHMS=(BAL SRPT Dynamic Dynamic_BAL FCFS RR SETF SJF MLFQ RMLF RFDynamic ) 
 
 echo "Building all algorithms..."
 

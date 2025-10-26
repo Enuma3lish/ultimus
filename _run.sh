@@ -11,19 +11,21 @@ PLOTTER_SCRIPT="${PROJECT_ROOT}/_plotter.py"
 # Result directories
 RESULT_BASE_DIR="${PROJECT_ROOT}"
 ALGORITHM_RESULT_DIR="${RESULT_BASE_DIR}/algorithm_result"
-WORST_CASE_RESULT_DIR="${RESULT_BASE_DIR}/worst_case"
 
 # Algorithm executables with CPU allocation and optional parameters
 # Format: "NAME:PATH:CPU_LIST:FLAGS:PARAMETERS"
 ALGORITHMS=(
   "BAL:${PROJECT_ROOT}/Cpp_Optimization/algorithms/BAL/build/BAL:0::"
   "SRPT:${PROJECT_ROOT}/Cpp_Optimization/algorithms/SRPT/build/SRPT:1::"
-  "Dynamic:${PROJECT_ROOT}/Cpp_Optimization/algorithms/Dynamic/build/Dynamic:2,3,4,5:MULTITHREAD:100 1,2,3,4,5,6,7,8"
-  "Dynamic_BAL:${PROJECT_ROOT}/Cpp_Optimization/algorithms/Dynamic_BAL/build/Dynamic_BAL:6,7,8,9:MULTITHREAD:100 1,2,3,4,5,6,7,8"
-  "FCFS:${PROJECT_ROOT}/Cpp_Optimization/algorithms/FCFS/build/FCFS:10::"
-  "RR:${PROJECT_ROOT}/Cpp_Optimization/algorithms/RR/build/RR:11::"
-  "SETF:${PROJECT_ROOT}/Cpp_Optimization/algorithms/SETF/build/SETF:12::"
-  "SJF:${PROJECT_ROOT}/Cpp_Optimization/algorithms/SJF/build/SJF:13::"
+  "Dynamic:${PROJECT_ROOT}/Cpp_Optimization/algorithms/Dynamic/build/Dynamic:2,3,4:MULTITHREAD:100 1,2,3,4,5,6"
+  "Dynamic_BAL:${PROJECT_ROOT}/Cpp_Optimization/algorithms/Dynamic_BAL/build/Dynamic_BAL:5,6,7:MULTITHREAD:100 1,2,3,4,5,6"
+  "FCFS:${PROJECT_ROOT}/Cpp_Optimization/algorithms/FCFS/build/FCFS:8::"
+  "RR:${PROJECT_ROOT}/Cpp_Optimization/algorithms/RR/build/RR:9::"
+  "SETF:${PROJECT_ROOT}/Cpp_Optimization/algorithms/SETF/build/SETF:10::"
+  "SJF:${PROJECT_ROOT}/Cpp_Optimization/algorithms/SJF/build/SJF:11::"
+  "RMLF:${PROJECT_ROOT}/Cpp_Optimization/algorithms/RMLF/build/RMLF:12::"
+  "MLFQ:${PROJECT_ROOT}/Cpp_Optimization/algorithms/MLFQ/build/MLFQ:13::"
+  "RFDynamic:${PROJECT_ROOT}/Cpp_Optimization/algorithms/RFDynamic/build/RFDynamic:14,15:MULTITHREAD:100 1,2,3,4,5,6"
 )
 
 LOG_DIR="${PROJECT_ROOT}/logs"
@@ -40,7 +42,6 @@ ensure_env() {
   # Create directories first
   mkdir -p "$LOG_DIR"
   mkdir -p "$ALGORITHM_RESULT_DIR"
-  mkdir -p "$WORST_CASE_RESULT_DIR"
 
   # Check Python virtual environment
   if [[ ! -d "$VENV_PATH" ]]; then
@@ -63,8 +64,8 @@ ensure_env() {
   cores="$(nproc || echo 1)"
   echo "System has $cores CPU cores available"
 
-  if (( cores < 14 )); then
-    echo "Warning: System has only $cores cores, but script expects 14"
+  if (( cores < 16 )); then
+    echo "Warning: System has only $cores cores, but script expects 16"
     echo "Consider reducing the number of concurrent processes"
   fi
 }
@@ -192,7 +193,7 @@ move_result_folders() {
     local folder_name=$(basename "$result_folder")
     
     # Skip destination directories
-    if [[ "$folder_name" == "algorithm_result" || "$folder_name" == "worst_case" || "$folder_name" == "Analysis" ]]; then
+    if [[ "$folder_name" == "algorithm_result" || "$folder_name" == "Analysis" ]]; then
       continue
     fi
     
@@ -505,7 +506,7 @@ stop_processes() {
     return 1
   fi
   for proc_name in "$@"; do
-    stop_one "$proc_name" || stop_one "${proc_name}_Worst"
+    stop_one "$proc_name"
   done
 }
 
@@ -513,9 +514,6 @@ stop_all() {
   for item in "${ALGORITHMS[@]}"; do
     IFS=":" read -r name _ _ _ _ <<< "$item"
     stop_one "$name"
-  done
-  for variant in "Dynamic_Worst" "Dynamic_BAL_Worst"; do
-    systemctl --user is-active "$(unit_name_for "$variant")" >/dev/null 2>&1 && stop_one "$variant"
   done
 }
 
@@ -557,7 +555,6 @@ check_all_executables() {
     [[ -x "$cmd" ]] && echo "✓ $name" || echo "✗ $name (not executable)"
   done
 }
-#!/usr/bin/env bash
 
 # Add this function to verify results exist before moving
 verify_result_folders() {
@@ -590,83 +587,6 @@ verify_result_folders() {
   return 0
 }
 
-# Replace the existing run_worst_case function with this updated version:
-run_worst_case() {
-  echo ""
-  echo "=========================================="
-  echo "Step 4: Running Worst Case Scenarios"
-  echo "=========================================="
-
-  need_tools
-
-  local dynamic_cmd="${PROJECT_ROOT}/Cpp_Optimization/algorithms/Dynamic/build/Dynamic"
-  local dynamic_bal_cmd="${PROJECT_ROOT}/Cpp_Optimization/algorithms/Dynamic_BAL/build/Dynamic_BAL"
-  local worst_params="1 1"
-  local started_units=()
-  local succeeded=0
-
-  echo "Running Dynamic (worst case: nJobsPerRound=1, mode=1)..."
-  if start_one "Dynamic_Worst" "$dynamic_cmd" "2,3,4,5" "MULTITHREAD" "$worst_params"; then
-    echo "✓ Dynamic worst case started"
-    started_units+=("$(unit_name_for "Dynamic_Worst")")
-    ((succeeded++))
-  else
-    echo "✗ Failed to start Dynamic worst case"
-  fi
-
-  echo ""
-  echo "Running Dynamic_BAL (worst case: nJobsPerRound=1, mode=1)..."
-  if start_one "Dynamic_BAL_Worst" "$dynamic_bal_cmd" "6,7,8,9" "MULTITHREAD" "$worst_params"; then
-    echo "✓ Dynamic_BAL worst case started"
-    started_units+=("$(unit_name_for "Dynamic_BAL_Worst")")
-    ((succeeded++))
-  else
-    echo "✗ Failed to start Dynamic_BAL worst case"
-  fi
-
-  if [[ ${#started_units[@]} -eq 0 ]]; then
-    echo ""
-    echo "✗ No worst case scenarios started successfully"
-    return 1
-  fi
-
-  echo ""
-  echo "Waiting for ${succeeded} worst case scenario(s) to complete (no timeout)..."
-
-  local check_interval=5
-
-  while true; do
-    local running=0
-    local completed=0
-
-    for unit in "${started_units[@]}"; do
-      if systemctl --user is-active "$unit" >/dev/null 2>&1; then
-        ((running++))
-      else
-        ((completed++))
-      fi
-    done
-
-    echo "[$(date +%H:%M:%S)] Worst case - Running: $running, Completed: $completed / ${#started_units[@]}"
-
-    if [[ $running -eq 0 ]]; then
-      echo "✓ All started worst case scenarios completed"
-      break
-    fi
-
-    sleep $check_interval
-  done
-
-  # IMPORTANT: Add extra delay to ensure all files are flushed to disk
-  echo ""
-  echo "Waiting additional 10 seconds for file system sync..."
-  sleep 10
-  sync  # Force filesystem sync
-
-  return 0
-}
-
-# Replace the relevant section in run_pipeline function:
 run_pipeline() {
   ensure_env
 
@@ -697,9 +617,9 @@ run_pipeline() {
   echo "Waiting ${STEP_DELAY} seconds before moving results..."
   sleep $STEP_DELAY
 
-  # Step 3: Verify and move ALL results to algorithm_result (including Dynamic)
+  # Step 3: Verify and move ALL results to algorithm_result
   echo ""
-  if ! verify_result_folders "*_result" "normal case"; then
+  if ! verify_result_folders "*_result" "algorithm"; then
     echo "⚠ Warning: Some result folders are empty, but continuing..."
   fi
   
@@ -712,89 +632,13 @@ run_pipeline() {
   echo "Waiting ${STEP_DELAY} seconds before moving analysis..."
   sleep $STEP_DELAY
 
-  # Step 3.5: Move analysis folders to Analysis directory
+  # Step 4: Move analysis folders to Analysis directory
   if ! move_analysis_folders; then
     echo "✗ Failed to move analysis folders"
     return 1
   fi
 
-  echo ""
-  echo "Waiting ${STEP_DELAY} seconds before worst case scenarios..."
-  sleep $STEP_DELAY
-
-  # Step 4: Run worst case scenarios
-  if ! run_worst_case; then
-    echo "✗ Pipeline failed at Worst Case Execution"
-    return 1
-  fi
-
-  # Step 5: Verify worst case results exist before moving
-  echo ""
-  echo "Verifying worst case output was created..."
-  
-  # Check if Dynamic_result and Dynamic_BAL_result folders exist and have content
-  local dynamic_exists=false
-  local dynamic_bal_exists=false
-  
-  if [[ -d "${RESULT_BASE_DIR}/Dynamic_result" ]]; then
-    local file_count=$(find "${RESULT_BASE_DIR}/Dynamic_result" -type f 2>/dev/null | wc -l)
-    echo "Dynamic_result folder: $file_count files"
-    if [[ $file_count -gt 0 ]]; then
-      dynamic_exists=true
-    fi
-  else
-    echo "⚠ Warning: Dynamic_result folder not found after worst case run"
-  fi
-  
-  if [[ -d "${RESULT_BASE_DIR}/Dynamic_BAL_result" ]]; then
-    local file_count=$(find "${RESULT_BASE_DIR}/Dynamic_BAL_result" -type f 2>/dev/null | wc -l)
-    echo "Dynamic_BAL_result folder: $file_count files"
-    if [[ $file_count -gt 0 ]]; then
-      dynamic_bal_exists=true
-    fi
-  else
-    echo "⚠ Warning: Dynamic_BAL_result folder not found after worst case run"
-  fi
-  
-  if [[ "$dynamic_exists" == false ]] && [[ "$dynamic_bal_exists" == false ]]; then
-    echo "✗ Error: No worst case results generated!"
-    echo "Checking logs for errors..."
-    echo ""
-    echo "=== Dynamic_Worst log ==="
-    logs_one "Dynamic_Worst" 50
-    echo ""
-    echo "=== Dynamic_BAL_Worst log ==="
-    logs_one "Dynamic_BAL_Worst" 50
-    return 1
-  fi
-
-  echo ""
-  echo "Waiting ${STEP_DELAY} seconds before moving worst case results..."
-  sleep $STEP_DELAY
-
-  # Step 6: Move Dynamic results to worst_case
-  mkdir -p "$WORST_CASE_RESULT_DIR"
-  chmod 755 "$WORST_CASE_RESULT_DIR" 2>/dev/null || true
-  
-  if ! move_result_folders "$WORST_CASE_RESULT_DIR" "Worst Case Results" "only_dynamic"; then
-    echo "✗ Failed to move worst case results"
-    return 1
-  fi
-  
-  # Verify worst case folder is not empty
-  echo ""
-  echo "Verifying worst case folder contents..."
-  local worst_case_file_count=$(find "$WORST_CASE_RESULT_DIR" -type f 2>/dev/null | wc -l)
-  echo "Worst case folder contains: $worst_case_file_count files"
-  
-  if [[ $worst_case_file_count -eq 0 ]]; then
-    echo "⚠ Warning: Worst case folder is empty after move operation!"
-    echo "This might indicate an issue with the move operation or file generation."
-  else
-    echo "✓ Worst case results successfully moved"
-  fi
-
-  # # Step 7: Run plotter
+  # # Step 5: Run plotter
   # echo ""
   # echo "Waiting ${STEP_DELAY} seconds before plotting..."
   # sleep $STEP_DELAY
@@ -817,18 +661,15 @@ run_pipeline() {
   printf "Total duration: %dh %dm %ds\n" "$hours" "$minutes" "$seconds"
   echo ""
   echo "Results organized in:"
-  echo "  - Normal runs:    ${ALGORITHM_RESULT_DIR}/"
-  echo "  - Worst case:     ${WORST_CASE_RESULT_DIR}/"
+  echo "  - Algorithm runs: ${ALGORITHM_RESULT_DIR}/"
   echo "  - Analysis:       ${PROJECT_ROOT}/Analysis/"
   echo "  - Logs:           ${LOG_DIR}/"
   
   # Final verification
   echo ""
   echo "Final file counts:"
-  local normal_count=$(find "$ALGORITHM_RESULT_DIR" -type f 2>/dev/null | wc -l)
-  local worst_count=$(find "$WORST_CASE_RESULT_DIR" -type f 2>/dev/null | wc -l)
-  echo "  - Normal results:  $normal_count files"
-  echo "  - Worst case:      $worst_count files"
+  local algorithm_count=$(find "$ALGORITHM_RESULT_DIR" -type f 2>/dev/null | wc -l)
+  echo "  - Algorithm results: $algorithm_count files"
 }
 
 usage() {
