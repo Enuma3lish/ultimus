@@ -475,14 +475,17 @@ void process_avg_folders_multimode_RF(MultiModeFunc multi_mode_algo,
                     auto jobs = read_jobs_from_csv(csv_file);
                     if (jobs.empty()) return;
                     
-                    // Run multi-mode algorithm - expects function that returns map<int, double>
-                    auto mode_results = multi_mode_algo(jobs, nJobsPerRound, csv_file, modes_to_run);
+                    // Run multi-mode algorithm - expects function that returns pair<map<int,double>, map<int,double>>
+                    auto result_pair = multi_mode_algo(jobs, nJobsPerRound, modes_to_run);
+                    std::map<int, double> mode_results = result_pair.first;
+                    std::map<int, double> max_flow_results = result_pair.second;
                     
                     std::map<std::string, std::string> result_map;
                     result_map["bp_parameter_L"] = std::to_string(params.bp_L);
                     result_map["bp_parameter_H"] = std::to_string(params.bp_H);
                     for (int mode : modes_to_run) {
-                        result_map["mode_" + std::to_string(mode)] = std::to_string(mode_results[mode]);
+                        result_map["l2_mode_" + std::to_string(mode)] = std::to_string(mode_results[mode]);
+                        result_map["max_mode_" + std::to_string(mode)] = std::to_string(max_flow_results[mode]);
                     }
                     
                     {
@@ -508,13 +511,19 @@ void process_avg_folders_multimode_RF(MultiModeFunc multi_mode_algo,
                 for (int mode : modes_to_run) {
                     out << ",RFDynamic_njobs" << nJobsPerRound << "_mode" << mode << "_L2_norm_flow_time";
                 }
+                for (int mode : modes_to_run) {
+                    out << ",RFDynamic_njobs" << nJobsPerRound << "_mode" << mode << "_maximum_flow_time";
+                }
                 out << "\n";
                 
                 for (const auto& result : pair.second) {
                     out << pair.first << "," << result.at("bp_parameter_L") << ","
                         << result.at("bp_parameter_H");
                     for (int mode : modes_to_run) {
-                        out << "," << result.at("mode_" + std::to_string(mode));
+                        out << "," << result.at("l2_mode_" + std::to_string(mode));
+                    }
+                    for (int mode : modes_to_run) {
+                        out << "," << result.at("max_mode_" + std::to_string(mode));
                     }
                     out << "\n";
                 }

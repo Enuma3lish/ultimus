@@ -10,6 +10,7 @@
 #include <limits>
 #include "Job.h"
 #include <iostream>
+#include <map> // <-- Added for the fix
 
 struct RMLFResult {
     double avg_flow_time;
@@ -116,20 +117,22 @@ public:
     }
     
     void remove(RMLFJob* job) {
-        if (active_jobs.find(job) != active_jobs.end()) {
-            // Verify job is actually completed
-            if (!job->is_completed()) {
-                std::cerr << "WARNING: Removing job " << job->id 
-                         << " that is not completed! Remaining: " 
-                         << job->get_remaining_time() << std::endl;
-            }
-            
-            active_jobs.erase(job);
-            finished_jobs.push_back(job);
-            queues[job->current_queue].dequeue(job);
+    if (active_jobs.find(job) != active_jobs.end()) {
+        // CRITICAL: Job MUST be completed before removal
+        if (!job->is_completed()) {
+            std::cerr << "FATAL ERROR: Attempting to remove incomplete job " 
+                     << job->id << "!" << std::endl;
+            std::cerr << "  Executed: " << job->executing_time 
+                     << " / " << job->job_size << std::endl;
+            assert(false && "Cannot remove incomplete job");
+            return;  // Don't remove
         }
+        
+        active_jobs.erase(job);
+        finished_jobs.push_back(job);
+        queues[job->current_queue].dequeue(job);
     }
-    
+}
     void increase(RMLFJob* job) {
         if (active_jobs.find(job) == active_jobs.end()) {
             return;
@@ -210,7 +213,7 @@ private:
 };
 
 // Main RMLF algorithm function
-inline RMLFResult RMLF_algorithm(std::vector<Job> jobs) {
+inline RMLFResult RMLF_algorithm(std::vector<Job>& jobs) {
     if (jobs.empty()) {
         return {0.0, 0.0, 0.0};
     }
@@ -300,6 +303,28 @@ inline RMLFResult RMLF_algorithm(std::vector<Job> jobs) {
             break;
         }
     }
+    
+    // =================================================================
+    // >>> START FIX
+    // Copy completion times from internal RMLFJob list back to the original Job vector
+    // This allows RFDynamic to see the completions.
+    
+    // Map job_index (id) to completion time
+    std::map<int, long long> completion_times;
+    for (auto* rmlf_job : all_rmlf_jobs) {
+        if (rmlf_job->completion_time > 0) {
+            completion_times[rmlf_job->id] = rmlf_job->completion_time;
+        }
+    }
+    
+    // Update the original input vector
+    for (auto& job : jobs) {
+        if (completion_times.count(job.job_index)) {
+            job.completion_time = completion_times[job.job_index];
+        }
+    }
+    // <<< END FIX
+    // =================================================================
     
     // Calculate metrics
     std::vector<long long> flow_times;

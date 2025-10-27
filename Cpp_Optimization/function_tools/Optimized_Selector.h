@@ -92,17 +92,25 @@ inline Job* bal_select_next_job_fast(std::vector<Job*>& active_jobs,
         // Check if starving
         if (waiting_time_ratio >= starvation_threshold) {
             // Among starving jobs: select by SRPT (shortest remaining time)
+            // WITH PROPER TIE-BREAKING: remaining_time → arrival_time → job_index
             if (!best_starving || 
                 job->remaining_time < best_starving->remaining_time ||
                 (job->remaining_time == best_starving->remaining_time && 
+                 job->arrival_time < best_starving->arrival_time) ||
+                (job->remaining_time == best_starving->remaining_time && 
+                 job->arrival_time == best_starving->arrival_time &&
                  job->job_index < best_starving->job_index)) {
                 best_starving = job;
             }
         } else {
             // Among non-starving jobs: select by SRPT
+            // WITH PROPER TIE-BREAKING: remaining_time → arrival_time → job_index
             if (!best_normal ||
                 job->remaining_time < best_normal->remaining_time ||
                 (job->remaining_time == best_normal->remaining_time && 
+                 job->arrival_time < best_normal->arrival_time) ||
+                (job->remaining_time == best_normal->remaining_time && 
+                 job->arrival_time == best_normal->arrival_time &&
                  job->job_index < best_normal->job_index)) {
                 best_normal = job;
             }
@@ -112,5 +120,4 @@ inline Job* bal_select_next_job_fast(std::vector<Job*>& active_jobs,
     // Prioritize starving jobs
     return best_starving ? best_starving : best_normal;
 }
-
 #endif // OPTIMIZED_SELECTORS_H

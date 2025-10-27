@@ -46,10 +46,9 @@ public:
                 Job& job = (*jobs_ptr)[idx];
                 Job& best = (*jobs_ptr)[best_idx];
                 
+                // FCFS: First Come First Served (arrival time only)
                 if (job.arrival_time < best.arrival_time ||
-                    (job.arrival_time == best.arrival_time && job.job_size < best.job_size) ||
-                    (job.arrival_time == best.arrival_time && job.job_size == best.job_size && 
-                     job.job_index < best.job_index)) {
+                    (job.arrival_time == best.arrival_time && job.job_index < best.job_index)) {
                     best_idx = idx;
                     best_pos = i;
                 }
@@ -66,10 +65,10 @@ public:
                 Job& a = (*jobs_ptr)[a_idx];
                 Job& b = (*jobs_ptr)[b_idx];
                 
+                // FCFS: First Come First Served (arrival time only)
                 if (a.arrival_time != b.arrival_time)
                     return a.arrival_time < b.arrival_time;
-                if (a.job_size != b.job_size)
-                    return a.job_size < b.job_size;
+                // Tiebreaker: use job_index to maintain deterministic order
                 return a.job_index < b.job_index;
             });
         
@@ -88,7 +87,7 @@ public:
 };
 
 // Optimized FCFS algorithm with correctness guarantees
-inline FCFSResult Fcfs_Optimized(std::vector<Job> jobs) {
+inline FCFSResult Fcfs_Optimized(std::vector<Job>& jobs) {
     const int total_jobs = jobs.size();
     if (total_jobs == 0) {
         return {0.0, 0.0, 0.0};
@@ -103,12 +102,12 @@ inline FCFSResult Fcfs_Optimized(std::vector<Job> jobs) {
         job.waiting_time_ratio = 0.0;
     }
     
-    // Sort by arrival time (stable sort for deterministic behavior)
+    // Sort ONLY by arrival time (FCFS = First Come First Served)
+    // Use stable_sort to maintain original order for jobs with same arrival time
     std::stable_sort(jobs.begin(), jobs.end(), [](const Job& a, const Job& b) {
         if (a.arrival_time != b.arrival_time)
             return a.arrival_time < b.arrival_time;
-        if (a.job_size != b.job_size)
-            return a.job_size < b.job_size;
+        // Tiebreaker: use job_index for deterministic behavior
         return a.job_index < b.job_index;
     });
     
@@ -199,7 +198,7 @@ inline FCFSResult Fcfs_Optimized(std::vector<Job> jobs) {
 }
 
 // Wrapper for backward compatibility
-inline FCFSResult Fcfs(std::vector<Job> jobs) {
+inline FCFSResult Fcfs(std::vector<Job>& jobs) {
     return Fcfs_Optimized(jobs);
 }
 
