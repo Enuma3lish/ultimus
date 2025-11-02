@@ -14,19 +14,28 @@ ALGORITHM_RESULT_DIR="${RESULT_BASE_DIR}/algorithm_result"
 
 # Algorithm executables with CPU allocation and optional parameters
 # Format: "NAME:PATH:CPU_LIST:FLAGS:PARAMETERS"
-ALGORITHMS=(
+
+# Priority algorithms (run first with all 16 cores)
+PRIORITY_ALGORITHMS=(
+  "Dynamic:${PROJECT_ROOT}/Cpp_Optimization/algorithms/Dynamic/build/Dynamic:0,1,2,3,4,5:MULTITHREAD:100 1,2,3,4,5,6"
+  "Dynamic_BAL:${PROJECT_ROOT}/Cpp_Optimization/algorithms/Dynamic_BAL/build/Dynamic_BAL:6,7,8,9,10:MULTITHREAD:100 1,2,3,4,5,6"
+  "RFDynamic:${PROJECT_ROOT}/Cpp_Optimization/algorithms/RFDynamic/build/RFDynamic:11,12,13,14,15:MULTITHREAD:100 1,2,3,4,5,6"
+)
+
+# Regular algorithms (run after priority algorithms complete)
+REGULAR_ALGORITHMS=(
   "BAL:${PROJECT_ROOT}/Cpp_Optimization/algorithms/BAL/build/BAL:0::"
   "SRPT:${PROJECT_ROOT}/Cpp_Optimization/algorithms/SRPT/build/SRPT:1::"
-  "Dynamic:${PROJECT_ROOT}/Cpp_Optimization/algorithms/Dynamic/build/Dynamic:2,3,4:MULTITHREAD:100 1,2,3,4,5,6"
-  "Dynamic_BAL:${PROJECT_ROOT}/Cpp_Optimization/algorithms/Dynamic_BAL/build/Dynamic_BAL:5,6,7:MULTITHREAD:100 1,2,3,4,5,6"
-  "FCFS:${PROJECT_ROOT}/Cpp_Optimization/algorithms/FCFS/build/FCFS:8::"
-  "RR:${PROJECT_ROOT}/Cpp_Optimization/algorithms/RR/build/RR:9::"
-  "SETF:${PROJECT_ROOT}/Cpp_Optimization/algorithms/SETF/build/SETF:10::"
-  "SJF:${PROJECT_ROOT}/Cpp_Optimization/algorithms/SJF/build/SJF:11::"
-  "RMLF:${PROJECT_ROOT}/Cpp_Optimization/algorithms/RMLF/build/RMLF:12::"
-  "MLFQ:${PROJECT_ROOT}/Cpp_Optimization/algorithms/MLFQ/build/MLFQ:13::"
-  "RFDynamic:${PROJECT_ROOT}/Cpp_Optimization/algorithms/RFDynamic/build/RFDynamic:14,15:MULTITHREAD:100 1,2,3,4,5,6"
+  "FCFS:${PROJECT_ROOT}/Cpp_Optimization/algorithms/FCFS/build/FCFS:2::"
+  "RR:${PROJECT_ROOT}/Cpp_Optimization/algorithms/RR/build/RR:3::"
+  "SETF:${PROJECT_ROOT}/Cpp_Optimization/algorithms/SETF/build/SETF:4::"
+  "SJF:${PROJECT_ROOT}/Cpp_Optimization/algorithms/SJF/build/SJF:5::"
+  "RMLF:${PROJECT_ROOT}/Cpp_Optimization/algorithms/RMLF/build/RMLF:6::"
+  "MLFQ:${PROJECT_ROOT}/Cpp_Optimization/algorithms/MLFQ/build/MLFQ:7::"
 )
+
+# Combined list for other functions (stop, status, etc.)
+ALGORITHMS=("${PRIORITY_ALGORITHMS[@]}" "${REGULAR_ALGORITHMS[@]}")
 
 LOG_DIR="${PROJECT_ROOT}/logs"
 UNIT_PREFIX="sched"
@@ -154,6 +163,26 @@ move_analysis_folders() {
     fi
     
     if mv "${PROJECT_ROOT}/Dynamic_BAL_analysis" "$dest_path" 2>/dev/null; then
+      echo "✓ → ${dest_path}"
+      ((moved_count++))
+    else
+      echo "✗ Failed"
+    fi
+  fi
+   # Move RFDynamic_analysis
+  if [[ -d "${PROJECT_ROOT}/RFDynamic_analysis" ]]; then
+    ((total_count++))
+    echo -n "Moving RFDynamic_analysis... "
+    
+    local dest_path="${analysis_dest_dir}/RFDynamic_analysis"
+    
+    if [[ -d "$dest_path" ]]; then
+      local timestamp=$(date +%Y%m%d_%H%M%S)
+      dest_path="${analysis_dest_dir}/RFDynamic_analysis_${timestamp}"
+      echo -n "(exists, adding timestamp) "
+    fi
+    
+    if mv "${PROJECT_ROOT}/RFDynamic_analysis" "$dest_path" 2>/dev/null; then
       echo "✓ → ${dest_path}"
       ((moved_count++))
     else
@@ -387,10 +416,15 @@ start_one() {
   fi
 }
 
-run_all_algorithms() {
+run_priority_algorithms() {
   echo ""
   echo "=========================================="
-  echo "Step 2: Running All Algorithms in Parallel"
+  echo "Step 2a: Running PRIORITY Algorithms First"
+  echo "=========================================="
+  echo "These algorithms use all 16 CPU cores:"
+  echo "  - Dynamic (cores 0-5)"
+  echo "  - Dynamic_BAL (cores 6-10)"
+  echo "  - RFDynamic (cores 11-15)"
   echo "=========================================="
 
   need_tools
@@ -401,7 +435,7 @@ run_all_algorithms() {
   local failed_list=()
   local started_units=()
 
-  for item in "${ALGORITHMS[@]}"; do
+  for item in "${PRIORITY_ALGORITHMS[@]}"; do
     IFS=":" read -r name cmd cpu_list extra params <<< "$item"
     ((total++))
 
@@ -415,20 +449,118 @@ run_all_algorithms() {
   done
 
   echo ""
-  echo "Started: ${succeeded}/${total} algorithms"
+  echo "Started: ${succeeded}/${total} priority algorithms"
 
   if [[ ${#failed_list[@]} -gt 0 ]]; then
     echo "Failed to start: ${failed_list[*]}"
+    echo "⚠ Warning: Some priority algorithms failed to start"
     return 1
   fi
 
   if [[ ${#started_units[@]} -eq 0 ]]; then
-    echo "No algorithms started successfully"
+    echo "✗ No priority algorithms were started successfully"
     return 1
   fi
 
   echo ""
-  echo "Waiting for ${#started_units[@]} algorithm(s) to complete (no timeout)..."
+  echo "Waiting for ${#started_units[@]} priority algorithm(s) to complete..."
+  echo "This may take a long time..."
+
+  local check_interval=10
+  local last_status_time=0
+  local status_interval=60  # Print detailed status every 60 seconds
+
+  while true; do
+    local running=0
+    local completed=0
+    local current_time=$(date +%s)
+
+    for unit in "${started_units[@]}"; do
+      if systemctl --user is-active "$unit" >/dev/null 2>&1; then
+        ((running++))
+      else
+        ((completed++))
+      fi
+    done
+
+    # Print basic status
+    echo "[$(date +%H:%M:%S)] Priority Algorithms - Running: $running, Completed: $completed / ${#started_units[@]}"
+
+    # Print detailed status periodically
+    if (( current_time - last_status_time >= status_interval )); then
+      echo ""
+      echo "  Detailed status:"
+      for item in "${PRIORITY_ALGORITHMS[@]}"; do
+        IFS=":" read -r name _ _ _ _ <<< "$item"
+        local unit="$(unit_name_for "$name")"
+        if systemctl --user is-active "$unit" >/dev/null 2>&1; then
+          local pid="$(systemctl --user show -p MainPID --value "$unit" 2>/dev/null || echo "?")"
+          echo "    ✓ $name (PID: $pid) - Still running"
+        else
+          echo "    ✓ $name - Completed"
+        fi
+      done
+      echo ""
+      last_status_time=$current_time
+    fi
+
+    if [[ $running -eq 0 ]]; then
+      echo ""
+      echo "✓ All priority algorithms completed!"
+      echo ""
+      break
+    fi
+
+    sleep $check_interval
+  done
+
+  return 0
+}
+
+run_regular_algorithms() {
+  echo ""
+  echo "=========================================="
+  echo "Step 2b: Running REGULAR Algorithms"
+  echo "=========================================="
+  echo "Running remaining algorithms in parallel..."
+  echo "=========================================="
+
+  need_tools
+
+  local total=0
+  local succeeded=0
+  local failed=0
+  local failed_list=()
+  local started_units=()
+
+  for item in "${REGULAR_ALGORITHMS[@]}"; do
+    IFS=":" read -r name cmd cpu_list extra params <<< "$item"
+    ((total++))
+
+    if start_one "$name" "$cmd" "$cpu_list" "$extra" "$params"; then
+      ((succeeded++))
+      started_units+=("$(unit_name_for "$name")")
+    else
+      ((failed++))
+      failed_list+=("$name")
+    fi
+  done
+
+  echo ""
+  echo "Started: ${succeeded}/${total} regular algorithms"
+
+  if [[ ${#failed_list[@]} -gt 0 ]]; then
+    echo "Failed to start: ${failed_list[*]}"
+    echo "⚠ Warning: Some algorithms failed to start"
+  fi
+
+  if [[ ${#started_units[@]} -eq 0 ]]; then
+    echo "✗ No regular algorithms were started successfully"
+    return 1
+  fi
+
+  echo ""
+  echo "Waiting for ${#started_units[@]} regular algorithm(s) to complete..."
 
   local check_interval=5
 
@@ -444,15 +576,41 @@ run_all_algorithms() {
       fi
     done
 
-    echo "[$(date +%H:%M:%S)] Running: $running, Completed: $completed / ${#started_units[@]}"
+    echo "[$(date +%H:%M:%S)] Regular Algorithms - Running: $running, Completed: $completed / ${#started_units[@]}"
 
     if [[ $running -eq 0 ]]; then
-      echo "✓ All started algorithms completed"
+      echo ""
+      echo "✓ All regular algorithms completed!"
       break
     fi
 
     sleep $check_interval
   done
+
+  return 0
+}
+
+# Legacy function for backwards compatibility (now runs algorithms in two phases)
+run_all_algorithms() {
+  # Phase 1: Run priority algorithms first
+  if ! run_priority_algorithms; then
+    echo "✗ Priority algorithms phase failed"
+    return 1
+  fi
+
+  echo ""
+  echo "=========================================="
+  echo "Priority Phase Complete!"
+  echo "Starting Regular Algorithms Phase..."
+  echo "=========================================="
+  echo ""
+  sleep 5
+
+  # Phase 2: Run regular algorithms
+  if ! run_regular_algorithms; then
+    echo "✗ Regular algorithms phase failed"
+    return 1
+  fi
 
   return 0
 }

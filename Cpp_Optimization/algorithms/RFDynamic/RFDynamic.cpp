@@ -484,7 +484,6 @@ DynamicRFResult DYNAMIC_RF(std::vector<Job> jobs, int nJobsPerRound, int mode,
 
 // For avg folders
 std::map<int, double> run_all_modes_for_file_normal(std::vector<Job> jobs, int nJobsPerRound,
-                                                    const std::string& input_file_path,
                                                     const std::vector<int>& modes_to_run) {
     std::map<int, double> mode_results;
     std::mutex results_mutex;
@@ -493,11 +492,12 @@ std::map<int, double> run_all_modes_for_file_normal(std::vector<Job> jobs, int n
     for (int mode : modes_to_run) {
         threads.emplace_back([&, mode]() {
             std::vector<Job> jobs_copy = jobs;
-            DynamicRFResult result = DYNAMIC_RF(jobs_copy, nJobsPerRound, mode, input_file_path);
+            DynamicRFResult result = DYNAMIC_RF(jobs_copy, nJobsPerRound, mode);
             
             {
                 std::lock_guard<std::mutex> lock(results_mutex);
                 mode_results[mode] = result.l2_norm_flow_time;
+
             }
             
             std::stringstream ss;
@@ -610,13 +610,12 @@ int main(int argc) {
         safe_cout("========================================\n");
         
         auto avg_wrapper = [](std::vector<Job> jobs, int nJobsPerRound, 
-                             const std::string& input_file_path, 
                              const std::vector<int>& modes_to_run) {
-            return run_all_modes_for_file_normal(jobs, nJobsPerRound, input_file_path, modes_to_run);
+            return run_all_modes_for_file_normal(jobs, nJobsPerRound, modes_to_run);
         };
         
         // Using _DBAL template name, but it's calling our new RF function
-        process_avg_folders_multimode_DBAL(avg_wrapper, data_dir, output_dir, 
+        process_avg_folders_multimode_RF(avg_wrapper, data_dir, output_dir, 
                                       nJobsPerRound, modes_to_run, cout_mutex);
         safe_cout("\n[Thread 1] ✓ Avg files completed!\n\n");
     });

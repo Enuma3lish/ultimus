@@ -11,6 +11,7 @@
 #include "Job.h"
 #include <iostream>
 #include <map> // <-- Added for the fix
+#include <cassert> // <-- Added for assert() support
 
 struct RMLFResult {
     double avg_flow_time;

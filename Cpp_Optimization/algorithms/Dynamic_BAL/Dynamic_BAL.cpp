@@ -611,9 +611,8 @@ int main(int argc, char* argv[]) {
         
         // Lambda that wraps our function for the template
         auto avg_wrapper = [](std::vector<Job> jobs, int nJobsPerRound, 
-                             const std::string& input_file_path, 
                              const std::vector<int>& modes_to_run) {
-            return run_all_modes_for_file_normal(jobs, nJobsPerRound, input_file_path, modes_to_run);
+            return run_all_modes_for_file_normal(jobs, nJobsPerRound, "", modes_to_run);
         };
         
         process_avg_folders_multimode_DBAL(avg_wrapper, data_dir, output_dir, 
