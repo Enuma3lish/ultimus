@@ -1,3 +1,0 @@
-/home/melowu/Work/ultimus/Cpp_Optimization/algorithms/SRPT/build/CMakeFiles/SRPT.dir
-/home/melowu/Work/ultimus/Cpp_Optimization/algorithms/SRPT/build/CMakeFiles/edit_cache.dir
-/home/melowu/Work/ultimus/Cpp_Optimization/algorithms/SRPT/build/CMakeFiles/rebuild_cache.dir

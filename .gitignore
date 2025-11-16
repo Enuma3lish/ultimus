@@ -1,7 +1,135 @@
-logs
-.venv
-__pycache__
+# ============================================================================
+# Python
+# ============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+*.egg-info/
+dist/
+build-python/
+
+# ============================================================================
+# C/C++ Build Artifacts
+# ============================================================================
+# Build directories
+**/build/
+**/cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Compiled Object files
+*.o
+*.obj
+*.ko
+*.elf
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Algorithm executables (commonly built in Cpp_Optimization)
+Cpp_Optimization/algorithms/*/SRPT
+Cpp_Optimization/algorithms/*/RR
+Cpp_Optimization/algorithms/*/MLFQ
+Cpp_Optimization/algorithms/*/RMLF
+Cpp_Optimization/algorithms/*/FCFS
+Cpp_Optimization/algorithms/*/SJF
+Cpp_Optimization/algorithms/*/BAL
+Cpp_Optimization/algorithms/*/SETF
+Cpp_Optimization/algorithms/*/Dynamic
+Cpp_Optimization/algorithms/*/RFDynamic
+
+# ============================================================================
+# Algorithm Results & Output (24.5MB of generated data)
+# ============================================================================
+# All algorithm result directories
+algorithm_result/
+
+# Generated plots directory
+distribution_based_plots/
+
+# Individual result CSV files
+*_result.csv
+*_final_*.csv
+
+# ============================================================================
+# Data Files
+# ============================================================================
+data/
+*.csv
+*.dat
+
+# Keep structure files (if you want to track specific CSVs, uncomment):
+# !structure.csv
+# !config.csv
+
+# ============================================================================
+# Logs & Temporary Files
+# ============================================================================
+logs/
+*.log
 nohup.out
-data
-.vscode
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# ============================================================================
+# IDE & Editor Files
+# ============================================================================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.vs/
+
+# ============================================================================
+# OS Files
+# ============================================================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
+
+# ============================================================================
+# Jupyter Notebook
+# ============================================================================
+.ipynb_checkpoints/
+*.ipynb
+
+# ============================================================================
+# Documentation Build
+# ============================================================================
+docs/_build/
+site/
 

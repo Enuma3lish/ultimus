@@ -1,1 +1,0 @@
-/usr/bin/c++  -Wall -O3 CMakeFiles/SRPT.dir/SRPT.cpp.o -o SRPT  -lm 

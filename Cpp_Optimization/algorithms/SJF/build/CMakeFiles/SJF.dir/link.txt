@@ -1,1 +1,0 @@
-/usr/bin/c++  -Wall -O3 CMakeFiles/SJF.dir/SJF.cpp.o -o SJF  -lm 

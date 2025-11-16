@@ -1,3 +1,0 @@
-/home/melowu/Work/ultimus/Cpp_Optimization/algorithms/Dynamic/build/CMakeFiles/Dynamic.dir
-/home/melowu/Work/ultimus/Cpp_Optimization/algorithms/Dynamic/build/CMakeFiles/edit_cache.dir
-/home/melowu/Work/ultimus/Cpp_Optimization/algorithms/Dynamic/build/CMakeFiles/rebuild_cache.dir

@@ -1,1 +1,0 @@
-/usr/bin/c++  -Wall -O3 CMakeFiles/RMLF.dir/RMLF.cpp.o -o RMLF  -lm 

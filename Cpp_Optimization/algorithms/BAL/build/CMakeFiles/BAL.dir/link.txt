@@ -1,1 +1,0 @@
-/usr/bin/c++  -Wall -O3 CMakeFiles/BAL.dir/BAL.cpp.o -o BAL  -lm 

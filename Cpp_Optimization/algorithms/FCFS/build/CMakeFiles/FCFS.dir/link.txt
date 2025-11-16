@@ -1,1 +1,0 @@
-/usr/bin/c++  -Wall -O3 CMakeFiles/FCFS.dir/FCFS.cpp.o -o FCFS  -lm 

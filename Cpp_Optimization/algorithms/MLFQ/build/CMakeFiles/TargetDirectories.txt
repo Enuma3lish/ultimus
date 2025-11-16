@@ -1,3 +1,0 @@
-/home/melowu/Work/ultimus/Cpp_Optimization/algorithms/MLFQ/build/CMakeFiles/MLFQ.dir
-/home/melowu/Work/ultimus/Cpp_Optimization/algorithms/MLFQ/build/CMakeFiles/edit_cache.dir
-/home/melowu/Work/ultimus/Cpp_Optimization/algorithms/MLFQ/build/CMakeFiles/rebuild_cache.dir

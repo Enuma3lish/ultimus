@@ -1,3 +1,0 @@
-/home/melowu/Work/ultimus/Cpp_Optimization/algorithms/SETF/build/CMakeFiles/SETF.dir
-/home/melowu/Work/ultimus/Cpp_Optimization/algorithms/SETF/build/CMakeFiles/edit_cache.dir
-/home/melowu/Work/ultimus/Cpp_Optimization/algorithms/SETF/build/CMakeFiles/rebuild_cache.dir

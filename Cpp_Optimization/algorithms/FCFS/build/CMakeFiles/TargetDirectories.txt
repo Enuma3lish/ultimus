@@ -1,3 +1,0 @@
-/home/melowu/Work/ultimus/Cpp_Optimization/algorithms/FCFS/build/CMakeFiles/FCFS.dir
-/home/melowu/Work/ultimus/Cpp_Optimization/algorithms/FCFS/build/CMakeFiles/edit_cache.dir
-/home/melowu/Work/ultimus/Cpp_Optimization/algorithms/FCFS/build/CMakeFiles/rebuild_cache.dir
