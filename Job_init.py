@@ -40,7 +40,9 @@ bp_parameter_30 = [
 normal_parameter_30 = [
     {"mean": 30, "std": 6, "type": "Normal"},      # Tight: 18-42 (95% range)
     {"mean": 30, "std": 9, "type": "Normal"},      # Medium: 12-48
-    {"mean": 30, "std": 12, "type": "Normal"}      # Wider: 6-54
+    {"mean": 30, "std": 12, "type": "Normal"},     # Wider: 6-54
+    {"mean": 30, "std": 15, "type": "Normal"},     # Extra-wide: 0-60
+    {"mean": 30, "std": 18, "type": "Normal"}      # Very wide: 0-66
 ]
 
 # Average 60: Very even distribution around 60
@@ -69,6 +71,13 @@ normal_parameter_sets = {
     "avg_30": normal_parameter_30,
     "avg_60": normal_parameter_60,
     "avg_90": normal_parameter_90
+}
+
+# For Bounded Pareto only cases
+bp_parameter_sets = {
+    "avg_30": bp_parameter_30,
+    "avg_60": bp_parameter_60,
+    "avg_90": bp_parameter_90
 }
 
 def generate_bounded_pareto(alpha, xmin, xmax, size=1):
@@ -240,6 +249,230 @@ def soft_random_job_init(num_jobs, coherence_time=1):
     
     return samples
 
+def bounded_pareto_random_job_init(num_jobs, coherence_time=1):
+    """
+    Create jobs with randomly selected Bounded Pareto parameters only.
+
+    Parameters:
+    num_jobs (int): Number of jobs to generate
+    coherence_time (int): CPU time units after which parameters may change
+    """
+    samples = []
+
+    # Collect all BP parameters from all families
+    all_bp_parameters = []
+    for param_set in bp_parameter_sets.values():
+        all_bp_parameters.extend(param_set)
+
+    # Initialize with random parameter and inter-arrival time
+    current_param = random.choice(all_bp_parameters)
+    current_avg_inter_arrival = random.choice(inter_arrival_time)
+    current_time = 0
+    last_change_time = 0
+
+    # Generate jobs one by one
+    for _ in range(num_jobs):
+        # Check if coherence_time has passed (based on CPU time, not job count)
+        if current_time - last_change_time >= coherence_time:
+            current_param = random.choice(all_bp_parameters)
+            current_avg_inter_arrival = random.choice(inter_arrival_time)
+            last_change_time = current_time
+
+        # Generate job size using Bounded Pareto
+        job_size = math.ceil(generate_job_size(current_param, size=1)[0])
+
+        # Generate arrival time
+        inter_arrival = round(np.random.exponential(scale=current_avg_inter_arrival))
+        inter_arrival = max(1, inter_arrival)
+        current_time += inter_arrival
+
+        samples.append({"arrival_time": current_time, "job_size": job_size})
+
+    return samples
+
+def normal_random_job_init(num_jobs, coherence_time=1):
+    """
+    Create jobs with randomly selected Normal distribution parameters only.
+    H is set to 'std' for normal distribution.
+
+    Parameters:
+    num_jobs (int): Number of jobs to generate
+    coherence_time (int): CPU time units after which parameters may change
+    """
+    samples = []
+
+    # Collect all Normal parameters from all families
+    all_normal_parameters = []
+    for param_set in normal_parameter_sets.values():
+        all_normal_parameters.extend(param_set)
+
+    # Initialize with random parameter and inter-arrival time
+    current_param = random.choice(all_normal_parameters)
+    current_avg_inter_arrival = random.choice(inter_arrival_time)
+    current_time = 0
+    last_change_time = 0
+
+    # Generate jobs one by one
+    for _ in range(num_jobs):
+        # Check if coherence_time has passed (based on CPU time, not job count)
+        if current_time - last_change_time >= coherence_time:
+            current_param = random.choice(all_normal_parameters)
+            current_avg_inter_arrival = random.choice(inter_arrival_time)
+            last_change_time = current_time
+
+        # Generate job size using Normal distribution
+        job_size = math.ceil(generate_job_size(current_param, size=1)[0])
+
+        # Generate arrival time
+        inter_arrival = round(np.random.exponential(scale=current_avg_inter_arrival))
+        inter_arrival = max(1, inter_arrival)
+        current_time += inter_arrival
+
+        samples.append({"arrival_time": current_time, "job_size": job_size})
+
+    return samples
+
+def bounded_pareto_soft_random_job_init(num_jobs, coherence_time=1):
+    """
+    Create jobs with soft randomness for Bounded Pareto parameters only.
+    Modified transition rules:
+    - If at lowest H: 1/2 stay, 1/2 move up
+    - If at highest H: 1/2 stay, 1/2 move down
+    - Otherwise: 1/3 stay, 1/3 move up, 1/3 move down
+
+    Parameters:
+    num_jobs (int): Number of jobs to generate
+    coherence_time (int): CPU time units after which parameters may change
+    """
+    samples = []
+    bp_set_keys = list(bp_parameter_sets.keys())
+
+    # Step 1: Choose family (BP only)
+    current_param_set_key = random.choice(bp_set_keys)
+    current_param_set = bp_parameter_sets[current_param_set_key]
+
+    # Step 2: Start with random parameter within the family
+    current_param_index = random.randint(0, len(current_param_set) - 1)
+
+    # Step 3: Initialize inter-arrival time
+    current_avg_inter_arrival = random.choice(inter_arrival_time)
+
+    current_time = 0
+    last_change_time = 0
+
+    # Generate jobs
+    for _ in range(num_jobs):
+        # Check if coherence_time has passed (based on CPU time)
+        if current_time - last_change_time >= coherence_time:
+            num_params = len(current_param_set)
+
+            # Apply modified transition rules based on H position
+            if current_param_index == 0:  # Lowest H
+                if random.random() < 0.5:
+                    current_param_index = min(1, num_params - 1)  # Move up
+                # else: stay
+            elif current_param_index == num_params - 1:  # Highest H
+                if random.random() < 0.5:
+                    current_param_index = max(0, num_params - 2)  # Move down
+                # else: stay
+            else:  # Middle positions
+                choice = random.random()
+                if choice < 1/3:
+                    pass  # Stay
+                elif choice < 2/3:
+                    current_param_index -= 1  # Move down
+                else:
+                    current_param_index += 1  # Move up
+
+            current_avg_inter_arrival = random.choice(inter_arrival_time)
+            last_change_time = current_time
+
+        # Get current parameter (BP only)
+        current_param = current_param_set[current_param_index]
+
+        # Generate job size
+        job_size = math.ceil(generate_job_size(current_param, size=1)[0])
+
+        # Generate arrival time
+        inter_arrival = round(np.random.exponential(scale=current_avg_inter_arrival))
+        inter_arrival = max(1, inter_arrival)
+        current_time += inter_arrival
+
+        samples.append({"arrival_time": current_time, "job_size": job_size})
+
+    return samples
+
+def normal_soft_random_job_init(num_jobs, coherence_time=1):
+    """
+    Create jobs with soft randomness for Normal distribution parameters only.
+    H is represented by 'std' (standard deviation).
+    Modified transition rules:
+    - If at lowest std: 1/2 stay, 1/2 move up
+    - If at highest std: 1/2 stay, 1/2 move down
+    - Otherwise: 1/3 stay, 1/3 move up, 1/3 move down
+
+    Parameters:
+    num_jobs (int): Number of jobs to generate
+    coherence_time (int): CPU time units after which parameters may change
+    """
+    samples = []
+    normal_set_keys = list(normal_parameter_sets.keys())
+
+    # Step 1: Choose family (Normal only)
+    current_param_set_key = random.choice(normal_set_keys)
+    current_param_set = normal_parameter_sets[current_param_set_key]
+
+    # Step 2: Start with random parameter within the family
+    current_param_index = random.randint(0, len(current_param_set) - 1)
+
+    # Step 3: Initialize inter-arrival time
+    current_avg_inter_arrival = random.choice(inter_arrival_time)
+
+    current_time = 0
+    last_change_time = 0
+
+    # Generate jobs
+    for _ in range(num_jobs):
+        # Check if coherence_time has passed (based on CPU time)
+        if current_time - last_change_time >= coherence_time:
+            num_params = len(current_param_set)
+
+            # Apply modified transition rules based on std position
+            if current_param_index == 0:  # Lowest std
+                if random.random() < 0.5:
+                    current_param_index = min(1, num_params - 1)  # Move up
+                # else: stay
+            elif current_param_index == num_params - 1:  # Highest std
+                if random.random() < 0.5:
+                    current_param_index = max(0, num_params - 2)  # Move down
+                # else: stay
+            else:  # Middle positions
+                choice = random.random()
+                if choice < 1/3:
+                    pass  # Stay
+                elif choice < 2/3:
+                    current_param_index -= 1  # Move down
+                else:
+                    current_param_index += 1  # Move up
+
+            current_avg_inter_arrival = random.choice(inter_arrival_time)
+            last_change_time = current_time
+
+        # Get current parameter (Normal only)
+        current_param = current_param_set[current_param_index]
+
+        # Generate job size
+        job_size = math.ceil(generate_job_size(current_param, size=1)[0])
+
+        # Generate arrival time
+        inter_arrival = round(np.random.exponential(scale=current_avg_inter_arrival))
+        inter_arrival = max(1, inter_arrival)
+        current_time += inter_arrival
+
+        samples.append({"arrival_time": current_time, "job_size": job_size})
+
+    return samples
+
 def Save_file(num_jobs, i):
     """Save all job files including normal distribution cases."""
     os.makedirs("data", exist_ok=True)
@@ -279,13 +512,55 @@ def Save_file(num_jobs, i):
     # Generate soft random jobs (with both BP and Normal)
     softrandom_base = f"data/softrandom_{i}"
     os.makedirs(softrandom_base, exist_ok=True)
-    
+
     for ct in tqdm.tqdm(coherence_times, desc=f"Processing soft random jobs _{i}"):
         softrandom_folder = f"{softrandom_base}/freq_{ct}_{i}"
         os.makedirs(softrandom_folder, exist_ok=True)
-        
+
         job_list = soft_random_job_init(num_jobs, coherence_time=ct)
         filename = f"{softrandom_folder}/softrandom_freq_{ct}.csv"
+        Write_csv.Write_raw(filename, job_list)
+
+    # Generate Bounded_Pareto random jobs
+    for ct in tqdm.tqdm(coherence_times, desc=f"Processing Bounded_Pareto random jobs _{i}"):
+        bp_random_folder = f"data/Bounded_Pareto_random_{i}/freq_{ct}_{i}"
+        os.makedirs(bp_random_folder, exist_ok=True)
+
+        job_list = bounded_pareto_random_job_init(num_jobs, coherence_time=ct)
+        filename = f"{bp_random_folder}/Bounded_Pareto_random_freq_{ct}.csv"
+        Write_csv.Write_raw(filename, job_list)
+
+    # Generate normal random jobs
+    for ct in tqdm.tqdm(coherence_times, desc=f"Processing normal random jobs _{i}"):
+        normal_random_folder = f"data/normal_random_{i}/freq_{ct}_{i}"
+        os.makedirs(normal_random_folder, exist_ok=True)
+
+        job_list = normal_random_job_init(num_jobs, coherence_time=ct)
+        filename = f"{normal_random_folder}/normal_random_freq_{ct}.csv"
+        Write_csv.Write_raw(filename, job_list)
+
+    # Generate Bounded_Pareto soft random jobs
+    bp_softrandom_base = f"data/Bounded_Pareto_softrandom_{i}"
+    os.makedirs(bp_softrandom_base, exist_ok=True)
+
+    for ct in tqdm.tqdm(coherence_times, desc=f"Processing Bounded_Pareto soft random jobs _{i}"):
+        bp_softrandom_folder = f"{bp_softrandom_base}/freq_{ct}_{i}"
+        os.makedirs(bp_softrandom_folder, exist_ok=True)
+
+        job_list = bounded_pareto_soft_random_job_init(num_jobs, coherence_time=ct)
+        filename = f"{bp_softrandom_folder}/Bounded_Pareto_softrandom_freq_{ct}.csv"
+        Write_csv.Write_raw(filename, job_list)
+
+    # Generate normal soft random jobs
+    normal_softrandom_base = f"data/normal_softrandom_{i}"
+    os.makedirs(normal_softrandom_base, exist_ok=True)
+
+    for ct in tqdm.tqdm(coherence_times, desc=f"Processing normal soft random jobs _{i}"):
+        normal_softrandom_folder = f"{normal_softrandom_base}/freq_{ct}_{i}"
+        os.makedirs(normal_softrandom_folder, exist_ok=True)
+
+        job_list = normal_soft_random_job_init(num_jobs, coherence_time=ct)
+        filename = f"{normal_softrandom_folder}/normal_softrandom_freq_{ct}.csv"
         Write_csv.Write_raw(filename, job_list)
 
 if __name__ == "__main__":
