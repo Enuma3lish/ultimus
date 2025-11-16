@@ -278,7 +278,7 @@ def load_algorithm_data(algorithm, avg_type='avg30'):
             return None
 
         # Average across trials for the best mode
-        grouped = combined_df.groupby(['arrival_rate', 'bp_parameter_L', 'bp_parameter_H'])[best_mode_col].mean().reset_index()
+        grouped = combined_df.groupby(['Mean_inter_arrival_time', 'bp_parameter_L', 'bp_parameter_H'])[best_mode_col].mean().reset_index()
 
         # Rename the column to standard format for plotting
         grouped.rename(columns={best_mode_col: f'{algorithm}_L2_norm_flow_time'}, inplace=True)
@@ -295,7 +295,7 @@ def load_algorithm_data(algorithm, avg_type='avg30'):
             return None
 
         # Average across trials
-        grouped = combined_df.groupby(['arrival_rate', 'bp_parameter_L', 'bp_parameter_H'])[l2_col_name].mean().reset_index()
+        grouped = combined_df.groupby(['Mean_inter_arrival_time', 'bp_parameter_L', 'bp_parameter_H'])[l2_col_name].mean().reset_index()
 
     return grouped
 
@@ -389,7 +389,7 @@ def plot_normal_distribution_by_variance(data_dict, group_name, avg_type='avg30'
                 continue
 
             # Sort by arrival rate
-            variance_df = variance_df.sort_values('arrival_rate')
+            variance_df = variance_df.sort_values('Mean_inter_arrival_time')
 
             # Get the L2 norm column name
             l2_col = f'{algorithm}_L2_norm_flow_time'
@@ -422,7 +422,7 @@ def plot_normal_distribution_by_variance(data_dict, group_name, avg_type='avg30'
                 dashes = [15, 8]  # Wide dashes: 15 points on, 8 points off - VERY VISIBLE
 
             # Plot
-            line = ax.plot(variance_df['arrival_rate'], variance_df[l2_col],
+            line = ax.plot(variance_df['Mean_inter_arrival_time'], variance_df[l2_col],
                    marker=ALGORITHM_MARKERS.get(algorithm, 'o'),
                    color=ALGORITHM_COLORS.get(algorithm, 'black'),
                    linestyle=linestyle,
@@ -498,7 +498,7 @@ def plot_normal_distribution_by_variance(data_dict, group_name, avg_type='avg30'
             if variance_df.empty:
                 continue
 
-            variance_df = variance_df.sort_values('arrival_rate')
+            variance_df = variance_df.sort_values('Mean_inter_arrival_time')
             l2_col = f'{algorithm}_L2_norm_flow_time'
 
             if l2_col in variance_df.columns:
@@ -508,7 +508,7 @@ def plot_normal_distribution_by_variance(data_dict, group_name, avg_type='avg30'
                 else:
                     col_name = algorithm
 
-                data_for_csv['arrival_rate'] = variance_df['arrival_rate'].values
+                data_for_csv['Mean_inter_arrival_time'] = variance_df['Mean_inter_arrival_time'].values
                 data_for_csv[col_name] = variance_df[l2_col].values
 
         if data_for_csv:
@@ -569,7 +569,7 @@ def plot_bounded_pareto_by_params(data_dict, group_name, avg_type='avg30'):
                 continue
 
             # Sort by arrival rate
-            param_df = param_df.sort_values('arrival_rate')
+            param_df = param_df.sort_values('Mean_inter_arrival_time')
 
             # Get the L2 norm column name
             l2_col = f'{algorithm}_L2_norm_flow_time'
@@ -602,7 +602,7 @@ def plot_bounded_pareto_by_params(data_dict, group_name, avg_type='avg30'):
                 dashes = [15, 8]  # Wide dashes: 15 points on, 8 points off - VERY VISIBLE
 
             # Plot
-            line = ax.plot(param_df['arrival_rate'], param_df[l2_col],
+            line = ax.plot(param_df['Mean_inter_arrival_time'], param_df[l2_col],
                    marker=ALGORITHM_MARKERS.get(algorithm, 'o'),
                    color=ALGORITHM_COLORS.get(algorithm, 'black'),
                    linestyle=linestyle,

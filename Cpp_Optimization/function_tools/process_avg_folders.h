@@ -268,7 +268,7 @@ void process_avg_folders_multimode(MultiModeFunc multi_mode_algo,
                     std::to_string(version) + ".csv";
                 
                 std::ofstream out(output_file);
-                out << "arrival_rate,bp_parameter_L,bp_parameter_H";
+                out << "Mean_inter_arrival_time,bp_parameter_L,bp_parameter_H";
                 for (int mode : modes_to_run) {
                     out << ",Dynamic_njobs" << nJobsPerRound << "_mode" << mode << "_L2_norm_flow_time";
                 }
@@ -386,7 +386,7 @@ void process_avg_folders_multimode_DBAL(MultiModeFunc multi_mode_algo,
                     std::to_string(version) + ".csv";
                 
                 std::ofstream out(output_file);
-                out << "arrival_rate,bp_parameter_L,bp_parameter_H";
+                out << "Mean_inter_arrival_time,bp_parameter_L,bp_parameter_H";
                 for (int mode : modes_to_run) {
                     out << ",Dynamic_BAL_njobs" << nJobsPerRound << "_mode" << mode << "_L2_norm_flow_time";
                 }
@@ -504,7 +504,7 @@ void process_avg_folders_multimode_RF(MultiModeFunc multi_mode_algo,
                     std::to_string(version) + ".csv";
                 
                 std::ofstream out(output_file);
-                out << "arrival_rate,bp_parameter_L,bp_parameter_H";
+                out << "Mean_inter_arrival_time,bp_parameter_L,bp_parameter_H";
                 for (int mode : modes_to_run) {
                     out << ",RFDynamic_njobs" << nJobsPerRound << "_mode" << mode << "_L2_norm_flow_time";
                 }
