@@ -620,36 +620,68 @@ int main(int argc) {
         safe_cout("\n[Thread 1] ✓ Avg files completed!\n\n");
     });
     
-    // Thread 2: Process random files
+    // Thread 2: Process Bounded Pareto random files using multimode function
     main_threads.emplace_back([&]() {
         safe_cout("========================================\n");
-        safe_cout("[Thread 2] Processing random files...\n");
+        safe_cout("[Thread 2] Processing Bounded Pareto random files...\n");
         safe_cout("========================================\n");
-        
-        auto random_wrapper = [](std::vector<Job> jobs, int nJobsPerRound, 
+
+        auto random_wrapper = [](std::vector<Job> jobs, int nJobsPerRound,
                                 const std::vector<int>& modes_to_run) {
             return run_all_modes_for_file_frequency(jobs, nJobsPerRound, modes_to_run);
         };
-        
-        process_random_folders_multimode_RF(random_wrapper, data_dir, output_dir, 
+
+        process_bounded_pareto_random_folders_multimode_RF(random_wrapper, data_dir, output_dir,
                                         nJobsPerRound, modes_to_run, cout_mutex);
-        safe_cout("\n[Thread 2] ✓ Random files completed!\n\n");
+        safe_cout("\n[Thread 2] ✓ Bounded Pareto random files completed!\n\n");
     });
-    
-    // Thread 3: Process softrandom files
+
+    // Thread 3: Process Normal random files using multimode function
     main_threads.emplace_back([&]() {
         safe_cout("========================================\n");
-        safe_cout("[Thread 3] Processing softrandom files...\n");
+        safe_cout("[Thread 3] Processing Normal random files...\n");
         safe_cout("========================================\n");
-        
-        auto softrandom_wrapper = [](std::vector<Job> jobs, int nJobsPerRound, 
+
+        auto random_wrapper = [](std::vector<Job> jobs, int nJobsPerRound,
+                                const std::vector<int>& modes_to_run) {
+            return run_all_modes_for_file_frequency(jobs, nJobsPerRound, modes_to_run);
+        };
+
+        process_normal_random_folders_multimode_RF(random_wrapper, data_dir, output_dir,
+                                        nJobsPerRound, modes_to_run, cout_mutex);
+        safe_cout("\n[Thread 3] ✓ Normal random files completed!\n\n");
+    });
+
+    // Thread 4: Process Bounded Pareto softrandom files using multimode function
+    main_threads.emplace_back([&]() {
+        safe_cout("========================================\n");
+        safe_cout("[Thread 4] Processing Bounded Pareto softrandom files...\n");
+        safe_cout("========================================\n");
+
+        auto softrandom_wrapper = [](std::vector<Job> jobs, int nJobsPerRound,
                                     const std::vector<int>& modes_to_run) {
             return run_all_modes_for_file_frequency(jobs, nJobsPerRound, modes_to_run);
         };
-        
-        process_softrandom_folders_multimode_RF(softrandom_wrapper, data_dir, output_dir, 
+
+        process_bounded_pareto_softrandom_folders_multimode_RF(softrandom_wrapper, data_dir, output_dir,
                                             nJobsPerRound, modes_to_run, cout_mutex);
-        safe_cout("\n[Thread 3] ✓ Softrandom files completed!\n\n");
+        safe_cout("\n[Thread 4] ✓ Bounded Pareto softrandom files completed!\n\n");
+    });
+
+    // Thread 5: Process Normal softrandom files using multimode function
+    main_threads.emplace_back([&]() {
+        safe_cout("========================================\n");
+        safe_cout("[Thread 5] Processing Normal softrandom files...\n");
+        safe_cout("========================================\n");
+
+        auto softrandom_wrapper = [](std::vector<Job> jobs, int nJobsPerRound,
+                                    const std::vector<int>& modes_to_run) {
+            return run_all_modes_for_file_frequency(jobs, nJobsPerRound, modes_to_run);
+        };
+
+        process_normal_softrandom_folders_multimode_RF(softrandom_wrapper, data_dir, output_dir,
+                                            nJobsPerRound, modes_to_run, cout_mutex);
+        safe_cout("\n[Thread 5] ✓ Normal softrandom files completed!\n\n");
     });
     
     for (auto& thread : main_threads) {

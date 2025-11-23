@@ -60,8 +60,6 @@ Cpp_Optimization/algorithms/*/RFDynamic
 # ============================================================================
 # Algorithm Results & Output (24.5MB of generated data)
 # ============================================================================
-# All algorithm result directories
-algorithm_result/
 
 # Generated plots directory
 distribution_based_plots/

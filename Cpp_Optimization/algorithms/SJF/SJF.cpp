@@ -42,17 +42,29 @@ int main(int argc, char* argv[]) {
     std::cout << "========================================" << std::endl;
     process_avg_folders(sjf_lambda, "SJF", data_dir, output_dir);
     
-    // Process random files
+    // Process Bounded Pareto random files
     std::cout << "\n========================================" << std::endl;
-    std::cout << "Processing random files..." << std::endl;
+    std::cout << "Processing Bounded Pareto random files..." << std::endl;
     std::cout << "========================================" << std::endl;
-    process_random_folders(sjf_lambda, "SJF", data_dir, output_dir);
-    
-    // Process softrandom files
+    process_bounded_pareto_random_folders(sjf_lambda, "SJF", data_dir, output_dir);
+
+    // Process Normal random files
     std::cout << "\n========================================" << std::endl;
-    std::cout << "Processing softrandom files..." << std::endl;
+    std::cout << "Processing Normal random files..." << std::endl;
     std::cout << "========================================" << std::endl;
-    process_softrandom_folders(sjf_lambda, "SJF", data_dir, output_dir);
+    process_normal_random_folders(sjf_lambda, "SJF", data_dir, output_dir);
+
+    // Process Bounded Pareto softrandom files
+    std::cout << "\n========================================" << std::endl;
+    std::cout << "Processing Bounded Pareto softrandom files..." << std::endl;
+    std::cout << "========================================" << std::endl;
+    process_bounded_pareto_softrandom_folders(sjf_lambda, "SJF", data_dir, output_dir);
+
+    // Process Normal softrandom files
+    std::cout << "\n========================================" << std::endl;
+    std::cout << "Processing Normal softrandom files..." << std::endl;
+    std::cout << "========================================" << std::endl;
+    process_normal_softrandom_folders(sjf_lambda, "SJF", data_dir, output_dir);
     
     std::cout << "\n============================================================" << std::endl;
     std::cout << "SJF batch processing completed successfully!" << std::endl;

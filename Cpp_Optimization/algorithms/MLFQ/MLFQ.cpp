@@ -57,22 +57,40 @@ int main(int argc, char* argv[]) {
         std::cerr << "✗ Error processing AVG folders: " << e.what() << std::endl;
     }
     
-    std::cout << "\n[2/3] Processing RANDOM folders..." << std::endl;
+    std::cout << "\n[2/5] Processing Bounded Pareto RANDOM folders..." << std::endl;
     std::cout << "----------------------------------------" << std::endl;
     try {
-        process_random_folders(mlfq_algo, "MLFQ", data_dir, output_dir);
-        std::cout << "✓ RANDOM folder processing completed successfully" << std::endl;
+        process_bounded_pareto_random_folders(mlfq_algo, "MLFQ", data_dir, output_dir);
+        std::cout << "✓ Bounded Pareto RANDOM folder processing completed successfully" << std::endl;
     } catch (const std::exception& e) {
-        std::cerr << "✗ Error processing RANDOM folders: " << e.what() << std::endl;
+        std::cerr << "✗ Error processing Bounded Pareto RANDOM folders: " << e.what() << std::endl;
     }
-    
-    std::cout << "\n[3/3] Processing SOFTRANDOM folders..." << std::endl;
+
+    std::cout << "\n[3/5] Processing Normal RANDOM folders..." << std::endl;
     std::cout << "----------------------------------------" << std::endl;
     try {
-        process_softrandom_folders(mlfq_algo, "MLFQ", data_dir, output_dir);
-        std::cout << "✓ SOFTRANDOM folder processing completed successfully" << std::endl;
+        process_normal_random_folders(mlfq_algo, "MLFQ", data_dir, output_dir);
+        std::cout << "✓ Normal RANDOM folder processing completed successfully" << std::endl;
     } catch (const std::exception& e) {
-        std::cerr << "✗ Error processing SOFTRANDOM folders: " << e.what() << std::endl;
+        std::cerr << "✗ Error processing Normal RANDOM folders: " << e.what() << std::endl;
+    }
+
+    std::cout << "\n[4/5] Processing Bounded Pareto SOFTRANDOM folders..." << std::endl;
+    std::cout << "----------------------------------------" << std::endl;
+    try {
+        process_bounded_pareto_softrandom_folders(mlfq_algo, "MLFQ", data_dir, output_dir);
+        std::cout << "✓ Bounded Pareto SOFTRANDOM folder processing completed successfully" << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "✗ Error processing Bounded Pareto SOFTRANDOM folders: " << e.what() << std::endl;
+    }
+
+    std::cout << "\n[5/5] Processing Normal SOFTRANDOM folders..." << std::endl;
+    std::cout << "----------------------------------------" << std::endl;
+    try {
+        process_normal_softrandom_folders(mlfq_algo, "MLFQ", data_dir, output_dir);
+        std::cout << "✓ Normal SOFTRANDOM folder processing completed successfully" << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "✗ Error processing Normal SOFTRANDOM folders: " << e.what() << std::endl;
     }
     
     std::cout << "\n==================================================" << std::endl;

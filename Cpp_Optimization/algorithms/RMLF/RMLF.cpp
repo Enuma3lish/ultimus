@@ -52,11 +52,12 @@ int main(int argc, char* argv[]) {
         if (basename.find("avg_") != std::string::npos) {
             has_avg = true;
         }
-        if (basename.find("freq_") != std::string::npos && 
-            basename.find("softrandom_") == std::string::npos) {
+        if ((basename.find("Bounded_Pareto_random_") != std::string::npos ||
+             basename.find("normal_random_") != std::string::npos)) {
             has_random = true;
         }
-        if (basename.find("softrandom_") != std::string::npos) {
+        if ((basename.find("Bounded_Pareto_softrandom_") != std::string::npos ||
+             basename.find("normal_softrandom_") != std::string::npos)) {
             has_softrandom = true;
         }
     }
@@ -75,31 +76,49 @@ int main(int argc, char* argv[]) {
     
     // Process random data if exists
     if (has_random) {
-        std::cout << ">>> Processing random data folders..." << std::endl;
+        std::cout << ">>> Processing Bounded Pareto random data folders..." << std::endl;
         try {
-            process_random_folders(RMLF_wrapper, "RMLF", data_dir, output_dir);
-            std::cout << "Random data processing completed." << std::endl;
+            process_bounded_pareto_random_folders(RMLF_wrapper, "RMLF", data_dir, output_dir);
+            std::cout << "Bounded Pareto random data processing completed." << std::endl;
         } catch (const std::exception& e) {
-            std::cerr << "Error processing random data: " << e.what() << std::endl;
+            std::cerr << "Error processing Bounded Pareto random data: " << e.what() << std::endl;
+        }
+        std::cout << std::endl;
+
+        std::cout << ">>> Processing Normal random data folders..." << std::endl;
+        try {
+            process_normal_random_folders(RMLF_wrapper, "RMLF", data_dir, output_dir);
+            std::cout << "Normal random data processing completed." << std::endl;
+        } catch (const std::exception& e) {
+            std::cerr << "Error processing Normal random data: " << e.what() << std::endl;
         }
         std::cout << std::endl;
     }
-    
+
     // Process softrandom data if exists
     if (has_softrandom) {
-        std::cout << ">>> Processing softrandom data folders..." << std::endl;
+        std::cout << ">>> Processing Bounded Pareto softrandom data folders..." << std::endl;
         try {
-            process_softrandom_folders(RMLF_wrapper, "RMLF", data_dir, output_dir);
-            std::cout << "Softrandom data processing completed." << std::endl;
+            process_bounded_pareto_softrandom_folders(RMLF_wrapper, "RMLF", data_dir, output_dir);
+            std::cout << "Bounded Pareto softrandom data processing completed." << std::endl;
         } catch (const std::exception& e) {
-            std::cerr << "Error processing softrandom data: " << e.what() << std::endl;
+            std::cerr << "Error processing Bounded Pareto softrandom data: " << e.what() << std::endl;
+        }
+        std::cout << std::endl;
+
+        std::cout << ">>> Processing Normal softrandom data folders..." << std::endl;
+        try {
+            process_normal_softrandom_folders(RMLF_wrapper, "RMLF", data_dir, output_dir);
+            std::cout << "Normal softrandom data processing completed." << std::endl;
+        } catch (const std::exception& e) {
+            std::cerr << "Error processing Normal softrandom data: " << e.what() << std::endl;
         }
         std::cout << std::endl;
     }
     
     if (!has_avg && !has_random && !has_softrandom) {
         std::cout << "No valid data folders found in " << data_dir << std::endl;
-        std::cout << "Looking for folders starting with 'avg_', 'freq_', or 'softrandom_'" << std::endl;
+        std::cout << "Looking for folders starting with 'avg_', 'Bounded_Pareto_random_', 'normal_random_', 'Bounded_Pareto_softrandom_', or 'normal_softrandom_'" << std::endl;
         return 1;
     }
     

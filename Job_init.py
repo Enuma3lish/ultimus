@@ -476,21 +476,18 @@ def normal_soft_random_job_init(num_jobs, coherence_time=1):
 def Save_file(num_jobs, i):
     """Save all job files including normal distribution cases."""
     os.makedirs("data", exist_ok=True)
-    
+
     coherence_times = [pow(2, j) for j in range(1, 17, 1)]
-    for ct in coherence_times:
-        freq_folder = f"data/freq_{ct}_{i}"
-        os.makedirs(freq_folder, exist_ok=True)
-    
+
     # Process parameter sets (now including both BP and Normal)
     for param_name, param_set in parameter_sets.items():
         param_folder = f"data/{param_name}_{i}"
         os.makedirs(param_folder, exist_ok=True)
-        
+
         for avg_inter_arrival in inter_arrival_time:
             for param in tqdm.tqdm(param_set, desc=f"Processing {param_name}_{i}, inter_arrival={avg_inter_arrival}"):
                 job_list = job_init(num_jobs, avg_inter_arrival, param)
-                
+
                 # Create filename based on parameter type
                 if param["type"] == "BP":
                     bl = param["L"]
@@ -500,26 +497,8 @@ def Save_file(num_jobs, i):
                     mean = param["mean"]
                     std = param["std"]
                     filename = f"{param_folder}/({avg_inter_arrival}, Normal_{mean}_{std}).csv"
-                
+
                 Write_csv.Write_raw(filename, job_list)
-    
-    # Generate random jobs (with both BP and Normal)
-    for ct in tqdm.tqdm(coherence_times, desc=f"Processing random jobs _{i}"):
-        job_list = random_job_init(num_jobs, coherence_time=ct)
-        filename = f"data/freq_{ct}_{i}/random_freq_{ct}.csv"
-        Write_csv.Write_raw(filename, job_list)
-    
-    # Generate soft random jobs (with both BP and Normal)
-    softrandom_base = f"data/softrandom_{i}"
-    os.makedirs(softrandom_base, exist_ok=True)
-
-    for ct in tqdm.tqdm(coherence_times, desc=f"Processing soft random jobs _{i}"):
-        softrandom_folder = f"{softrandom_base}/freq_{ct}_{i}"
-        os.makedirs(softrandom_folder, exist_ok=True)
-
-        job_list = soft_random_job_init(num_jobs, coherence_time=ct)
-        filename = f"{softrandom_folder}/softrandom_freq_{ct}.csv"
-        Write_csv.Write_raw(filename, job_list)
 
     # Generate Bounded_Pareto random jobs
     for ct in tqdm.tqdm(coherence_times, desc=f"Processing Bounded_Pareto random jobs _{i}"):
@@ -565,4 +544,4 @@ def Save_file(num_jobs, i):
 
 if __name__ == "__main__":
     for i in range(1, 11):
-        Save_file(40000, i)
+        Save_file(50000, i)

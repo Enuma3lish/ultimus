@@ -59,7 +59,7 @@ inline NewAvgParams parse_new_avg_filename(const std::string& filename) {
 template<typename AlgoFunc>
 void process_avg_folders(AlgoFunc algo, const std::string& algo_name, 
                         const std::string& data_dir, const std::string& output_dir) {
-    std::vector<std::string> patterns = {"avg_30_", "avg_60_", "avg_90_"};
+    std::vector<std::string> patterns = {"avg_30_"};
     
     for (const auto& pattern : patterns) {
         auto folders = list_directory(data_dir);
@@ -178,7 +178,7 @@ void process_avg_folders_multimode(MultiModeFunc multi_mode_algo,
                                    int nJobsPerRound,
                                    const std::vector<int>& modes_to_run,
                                    std::mutex& cout_mutex) {
-    std::vector<std::string> patterns = {"avg_30_", "avg_60_", "avg_90_"};
+    std::vector<std::string> patterns = {"avg_30_"};
     
     auto safe_cout = [&](const std::string& msg) {
         std::lock_guard<std::mutex> lock(cout_mutex);
@@ -296,7 +296,7 @@ void process_avg_folders_multimode_DBAL(MultiModeFunc multi_mode_algo,
                                    int nJobsPerRound,
                                    const std::vector<int>& modes_to_run,
                                    std::mutex& cout_mutex) {
-    std::vector<std::string> patterns = {"avg_30_", "avg_60_", "avg_90_"};
+    std::vector<std::string> patterns = {"avg_30_"};
     
     auto safe_cout = [&](const std::string& msg) {
         std::lock_guard<std::mutex> lock(cout_mutex);
@@ -414,7 +414,7 @@ void process_avg_folders_multimode_RF(MultiModeFunc multi_mode_algo,
                                    int nJobsPerRound,
                                    const std::vector<int>& modes_to_run,
                                    std::mutex& cout_mutex) {
-    std::vector<std::string> patterns = {"avg_30_", "avg_60_", "avg_90_"};
+    std::vector<std::string> patterns = {"avg_30_"};
     
     auto safe_cout = [&](const std::string& msg) {
         std::lock_guard<std::mutex> lock(cout_mutex);

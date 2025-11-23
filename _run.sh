@@ -313,6 +313,24 @@ run_job_init() {
   fi
 }
 
+update_cpu_affinity() {
+  local name="$1"
+  local new_cpu_list="$2"
+  local unit; unit="$(unit_name_for "$name")"
+
+  if ! systemctl --user is-active "$unit" >/dev/null 2>&1; then
+    return 1
+  fi
+
+  echo "  Updating $name to use CPUs: $new_cpu_list"
+  if systemctl --user set-property "$unit" CPUAffinity="$new_cpu_list" 2>/dev/null; then
+    return 0
+  else
+    echo "  ⚠ Warning: Failed to update CPU affinity for $name"
+    return 1
+  fi
+}
+
 start_one() {
   local name="$1" cmd="$2" cpu_list="$3" extra="${4:-}" params="${5:-}"
   local unit; unit="$(unit_name_for "$name")"
@@ -320,22 +338,22 @@ start_one() {
 
   # Ensure log directory exists
   mkdir -p "$LOG_DIR"
-  
+
   # Check if already running
   if systemctl --user is-active "$unit" >/dev/null 2>&1; then
     local pid
     pid="$(systemctl --user show -p MainPID --value "$unit" 2>/dev/null || echo "?")"
-    
+
     # Create log file if it doesn't exist
     if [[ ! -f "$logf" ]]; then
       touch "$logf"
       echo "[$(date)] Log file created for already-running process" > "$logf"
     fi
-    
+
     # Get actual CPU affinity
     local actual_cpu_affinity
     actual_cpu_affinity="$(systemctl --user show -p CPUAffinity --value "$unit" 2>/dev/null || echo "")"
-    
+
     if [[ "$extra" == "MULTITHREAD" ]]; then
       echo -n "[already running] ${name} (unit=${unit}, PID=${pid})"
       if [[ -n "$actual_cpu_affinity" ]]; then
@@ -425,6 +443,7 @@ run_priority_algorithms() {
   echo "  - Dynamic (cores 0-5)"
   echo "  - Dynamic_BAL (cores 6-10)"
   echo "  - RFDynamic (cores 11-15)"
+  echo "CPU resources will be redistributed as algorithms complete"
   echo "=========================================="
 
   need_tools
@@ -435,13 +454,18 @@ run_priority_algorithms() {
   local failed_list=()
   local started_units=()
 
+  # Track algorithm names for dynamic CPU reallocation
+  declare -A algo_names
+
   for item in "${PRIORITY_ALGORITHMS[@]}"; do
     IFS=":" read -r name cmd cpu_list extra params <<< "$item"
     ((total++))
 
     if start_one "$name" "$cmd" "$cpu_list" "$extra" "$params"; then
       ((succeeded++))
-      started_units+=("$(unit_name_for "$name")")
+      local unit="$(unit_name_for "$name")"
+      started_units+=("$unit")
+      algo_names["$unit"]="$name"
     else
       ((failed++))
       failed_list+=("$name")
@@ -469,19 +493,58 @@ run_priority_algorithms() {
   local check_interval=10
   local last_status_time=0
   local status_interval=60  # Print detailed status every 60 seconds
+  local last_running_count=${#started_units[@]}
 
   while true; do
     local running=0
     local completed=0
     local current_time=$(date +%s)
+    local running_units=()
 
+    # Count running units and track which ones are still running
     for unit in "${started_units[@]}"; do
       if systemctl --user is-active "$unit" >/dev/null 2>&1; then
         ((running++))
+        running_units+=("$unit")
       else
         ((completed++))
       fi
     done
+
+    # Check if number of running algorithms changed - need to redistribute CPUs
+    if [[ $running -ne $last_running_count ]] && [[ $running -gt 0 ]]; then
+      echo ""
+      echo "=========================================="
+      echo "⚡ Algorithm completed! Redistributing CPU resources..."
+      echo "Running algorithms: $running, Completed: $completed"
+      echo "=========================================="
+
+      # Redistribute CPUs based on number of running algorithms
+      if [[ $running -eq 3 ]]; then
+        # All 3 running - original allocation
+        # Dynamic: 0-5, Dynamic_BAL: 6-10, RFDynamic: 11-15
+        :  # Do nothing, already set correctly
+      elif [[ $running -eq 2 ]]; then
+        # 2 algorithms running - split 16 cores evenly (8 cores each)
+        local cpu_sets=("0,1,2,3,4,5,6,7" "8,9,10,11,12,13,14,15")
+        local idx=0
+        for unit in "${running_units[@]}"; do
+          update_cpu_affinity "${algo_names[$unit]}" "${cpu_sets[$idx]}"
+          ((idx++))
+        done
+        echo "✓ Redistributed: Each algorithm now uses 8 cores"
+      elif [[ $running -eq 1 ]]; then
+        # 1 algorithm running - use all 16 cores
+        for unit in "${running_units[@]}"; do
+          update_cpu_affinity "${algo_names[$unit]}" "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15"
+        done
+        echo "✓ Redistributed: Remaining algorithm now uses all 16 cores"
+      fi
+      echo "=========================================="
+      echo ""
+
+      last_running_count=$running
+    fi
 
     # Print basic status
     echo "[$(date +%H:%M:%S)] Priority Algorithms - Running: $running, Completed: $completed / ${#started_units[@]}"
@@ -490,12 +553,12 @@ run_priority_algorithms() {
     if (( current_time - last_status_time >= status_interval )); then
       echo ""
       echo "  Detailed status:"
-      for item in "${PRIORITY_ALGORITHMS[@]}"; do
-        IFS=":" read -r name _ _ _ _ <<< "$item"
-        local unit="$(unit_name_for "$name")"
+      for unit in "${started_units[@]}"; do
+        local name="${algo_names[$unit]}"
         if systemctl --user is-active "$unit" >/dev/null 2>&1; then
           local pid="$(systemctl --user show -p MainPID --value "$unit" 2>/dev/null || echo "?")"
-          echo "    ✓ $name (PID: $pid) - Still running"
+          local cpu_affinity="$(systemctl --user show -p CPUAffinity --value "$unit" 2>/dev/null || echo "?")"
+          echo "    ✓ $name (PID: $pid, CPUs: $cpu_affinity) - Still running"
         else
           echo "    ✓ $name - Completed"
         fi
