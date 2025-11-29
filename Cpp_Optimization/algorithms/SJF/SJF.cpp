@@ -37,10 +37,10 @@ int main(int argc, char* argv[]) {
     };
     
     // Process avg30 files
-    std::cout << "\n========================================" << std::endl;
-    std::cout << "Processing avg files..." << std::endl;
-    std::cout << "========================================" << std::endl;
-    process_avg_folders(sjf_lambda, "SJF", data_dir, output_dir);
+    // std::cout << "\n========================================" << std::endl;
+    // std::cout << "Processing avg files..." << std::endl;
+    // std::cout << "========================================" << std::endl;
+    // process_avg_folders(sjf_lambda, "SJF", data_dir, output_dir);
     
     // Process Bounded Pareto random files
     std::cout << "\n========================================" << std::endl;
@@ -65,7 +65,31 @@ int main(int argc, char* argv[]) {
     std::cout << "Processing Normal softrandom files..." << std::endl;
     std::cout << "========================================" << std::endl;
     process_normal_softrandom_folders(sjf_lambda, "SJF", data_dir, output_dir);
-    
+
+    // Process Bounded Pareto combination random files
+    std::cout << "\n========================================" << std::endl;
+    std::cout << "Processing Bounded Pareto combination random files..." << std::endl;
+    std::cout << "========================================" << std::endl;
+    process_bounded_pareto_combination_random_folders(sjf_lambda, "SJF", data_dir, output_dir);
+
+    // Process Normal combination random files
+    std::cout << "\n========================================" << std::endl;
+    std::cout << "Processing Normal combination random files..." << std::endl;
+    std::cout << "========================================" << std::endl;
+    process_normal_combination_random_folders(sjf_lambda, "SJF", data_dir, output_dir);
+
+    // Process Bounded Pareto combination softrandom files
+    std::cout << "\n========================================" << std::endl;
+    std::cout << "Processing Bounded Pareto combination softrandom files..." << std::endl;
+    std::cout << "========================================" << std::endl;
+    process_bounded_pareto_combination_softrandom_folders(sjf_lambda, "SJF", data_dir, output_dir);
+
+    // Process Normal combination softrandom files
+    std::cout << "\n========================================" << std::endl;
+    std::cout << "Processing Normal combination softrandom files..." << std::endl;
+    std::cout << "========================================" << std::endl;
+    process_normal_combination_softrandom_folders(sjf_lambda, "SJF", data_dir, output_dir);
+
     std::cout << "\n============================================================" << std::endl;
     std::cout << "SJF batch processing completed successfully!" << std::endl;
     std::cout << "============================================================" << std::endl;

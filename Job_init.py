@@ -251,7 +251,7 @@ def soft_random_job_init(num_jobs, coherence_time=1):
 
 def bounded_pareto_random_job_init(num_jobs, coherence_time=1):
     """
-    Create jobs with randomly selected Bounded Pareto parameters only.
+    Create jobs with randomly selected Bounded Pareto parameters only from avg_30.
 
     Parameters:
     num_jobs (int): Number of jobs to generate
@@ -259,10 +259,8 @@ def bounded_pareto_random_job_init(num_jobs, coherence_time=1):
     """
     samples = []
 
-    # Collect all BP parameters from all families
-    all_bp_parameters = []
-    for param_set in bp_parameter_sets.values():
-        all_bp_parameters.extend(param_set)
+    # Only use BP parameters from avg_30
+    all_bp_parameters = bp_parameter_30
 
     # Initialize with random parameter and inter-arrival time
     current_param = random.choice(all_bp_parameters)
@@ -334,7 +332,7 @@ def normal_random_job_init(num_jobs, coherence_time=1):
 
 def bounded_pareto_soft_random_job_init(num_jobs, coherence_time=1):
     """
-    Create jobs with soft randomness for Bounded Pareto parameters only.
+    Create jobs with soft randomness for Bounded Pareto parameters only from avg_30.
     Modified transition rules:
     - If at lowest H: 1/2 stay, 1/2 move up
     - If at highest H: 1/2 stay, 1/2 move down
@@ -345,11 +343,9 @@ def bounded_pareto_soft_random_job_init(num_jobs, coherence_time=1):
     coherence_time (int): CPU time units after which parameters may change
     """
     samples = []
-    bp_set_keys = list(bp_parameter_sets.keys())
 
-    # Step 1: Choose family (BP only)
-    current_param_set_key = random.choice(bp_set_keys)
-    current_param_set = bp_parameter_sets[current_param_set_key]
+    # Only use BP parameters from avg_30
+    current_param_set = bp_parameter_30
 
     # Step 2: Start with random parameter within the family
     current_param_index = random.randint(0, len(current_param_set) - 1)
@@ -473,32 +469,139 @@ def normal_soft_random_job_init(num_jobs, coherence_time=1):
 
     return samples
 
+def combination_random_job_init(num_jobs, param_set, coherence_time=1):
+    """
+    Create jobs with random selection from a specific parameter set (2, 3, or 4 combinations).
+    Each parameter in the set has equal probability of selection.
+    
+    Parameters:
+    num_jobs (int): Number of jobs to generate
+    param_set (list): List of BP parameters to choose from (2, 3, or 4 parameters)
+    coherence_time (int): CPU time units after which parameters may change
+    """
+    samples = []
+    
+    # Initialize with random parameter from the set and inter-arrival time
+    current_param = random.choice(param_set)
+    current_avg_inter_arrival = random.choice(inter_arrival_time)
+    current_time = 0
+    last_change_time = 0
+    
+    # Generate jobs one by one
+    for _ in range(num_jobs):
+        # Check if coherence_time has passed (based on CPU time)
+        if current_time - last_change_time >= coherence_time:
+            current_param = random.choice(param_set)
+            current_avg_inter_arrival = random.choice(inter_arrival_time)
+            last_change_time = current_time
+        
+        # Generate job size using Bounded Pareto
+        job_size = math.ceil(generate_job_size(current_param, size=1)[0])
+        
+        # Generate arrival time
+        inter_arrival = round(np.random.exponential(scale=current_avg_inter_arrival))
+        inter_arrival = max(1, inter_arrival)
+        current_time += inter_arrival
+        
+        samples.append({"arrival_time": current_time, "job_size": job_size})
+    
+    return samples
+
+def combination_softrandom_job_init(num_jobs, param_set, coherence_time=1):
+    """
+    Create jobs with soft randomness within a specific parameter set (2, 3, or 4 combinations).
+    Transitions follow soft random rules within the given set.
+    
+    Parameters:
+    num_jobs (int): Number of jobs to generate
+    param_set (list): List of BP parameters to choose from (2, 3, or 4 parameters)
+    coherence_time (int): CPU time units after which parameters may change
+    """
+    samples = []
+    
+    # Start with random parameter within the set
+    current_param_index = random.randint(0, len(param_set) - 1)
+    
+    # Initialize inter-arrival time
+    current_avg_inter_arrival = random.choice(inter_arrival_time)
+    
+    current_time = 0
+    last_change_time = 0
+    
+    # Generate jobs
+    for _ in range(num_jobs):
+        # Check if coherence_time has passed (based on CPU time)
+        if current_time - last_change_time >= coherence_time:
+            num_params = len(param_set)
+            
+            # Apply transition rules based on position
+            if num_params == 2:
+                # For 2 combinations: 1/2 probability to switch
+                if random.random() < 0.5:
+                    current_param_index = 1 - current_param_index  # Switch between 0 and 1
+            else:
+                # For 3 or 4 combinations: use standard soft random rules
+                if current_param_index == 0:  # Lowest H
+                    if random.random() < 0.5:
+                        current_param_index = min(1, num_params - 1)  # Move up
+                    # else: stay
+                elif current_param_index == num_params - 1:  # Highest H
+                    if random.random() < 0.5:
+                        current_param_index = max(0, num_params - 2)  # Move down
+                    # else: stay
+                else:  # Middle positions
+                    choice = random.random()
+                    if choice < 1/3:
+                        pass  # Stay
+                    elif choice < 2/3:
+                        current_param_index -= 1  # Move down
+                    else:
+                        current_param_index += 1  # Move up
+            
+            current_avg_inter_arrival = random.choice(inter_arrival_time)
+            last_change_time = current_time
+        
+        # Get current parameter
+        current_param = param_set[current_param_index]
+        
+        # Generate job size
+        job_size = math.ceil(generate_job_size(current_param, size=1)[0])
+        
+        # Generate arrival time
+        inter_arrival = round(np.random.exponential(scale=current_avg_inter_arrival))
+        inter_arrival = max(1, inter_arrival)
+        current_time += inter_arrival
+        
+        samples.append({"arrival_time": current_time, "job_size": job_size})
+    
+    return samples
+
 def Save_file(num_jobs, i):
     """Save all job files including normal distribution cases."""
     os.makedirs("data", exist_ok=True)
 
     coherence_times = [pow(2, j) for j in range(1, 17, 1)]
 
-    # Process parameter sets (now including both BP and Normal)
-    for param_name, param_set in parameter_sets.items():
-        param_folder = f"data/{param_name}_{i}"
-        os.makedirs(param_folder, exist_ok=True)
+    # # Process parameter sets (now including both BP and Normal)
+    # for param_name, param_set in parameter_sets.items():
+    #     param_folder = f"data/{param_name}_{i}"
+    #     os.makedirs(param_folder, exist_ok=True)
 
-        for avg_inter_arrival in inter_arrival_time:
-            for param in tqdm.tqdm(param_set, desc=f"Processing {param_name}_{i}, inter_arrival={avg_inter_arrival}"):
-                job_list = job_init(num_jobs, avg_inter_arrival, param)
+    #     for avg_inter_arrival in inter_arrival_time:
+    #         for param in tqdm.tqdm(param_set, desc=f"Processing {param_name}_{i}, inter_arrival={avg_inter_arrival}"):
+    #             job_list = job_init(num_jobs, avg_inter_arrival, param)
 
-                # Create filename based on parameter type
-                if param["type"] == "BP":
-                    bl = param["L"]
-                    bh = param["H"]
-                    filename = f"{param_folder}/({avg_inter_arrival}, {bl}_{bh}).csv"
-                elif param["type"] == "Normal":
-                    mean = param["mean"]
-                    std = param["std"]
-                    filename = f"{param_folder}/({avg_inter_arrival}, Normal_{mean}_{std}).csv"
+    #             # Create filename based on parameter type
+    #             if param["type"] == "BP":
+    #                 bl = param["L"]
+    #                 bh = param["H"]
+    #                 filename = f"{param_folder}/({avg_inter_arrival}, {bl}_{bh}).csv"
+    #             elif param["type"] == "Normal":
+    #                 mean = param["mean"]
+    #                 std = param["std"]
+    #                 filename = f"{param_folder}/({avg_inter_arrival}, Normal_{mean}_{std}).csv"
 
-                Write_csv.Write_raw(filename, job_list)
+    #             Write_csv.Write_raw(filename, job_list)
 
     # Generate Bounded_Pareto random jobs
     for ct in tqdm.tqdm(coherence_times, desc=f"Processing Bounded_Pareto random jobs _{i}"):
@@ -542,6 +645,205 @@ def Save_file(num_jobs, i):
         filename = f"{normal_softrandom_folder}/normal_softrandom_freq_{ct}.csv"
         Write_csv.Write_raw(filename, job_list)
 
+    # Define combination sets from avg_30 BP parameters (sequential pairs, triplets, quadruplets)
+    # Bounded Pareto combinations
+    bp_two_combinations = [
+        [bp_parameter_30[0], bp_parameter_30[1]],  # L=16.772 H=2^6, L=7.918 H=2^9
+        [bp_parameter_30[1], bp_parameter_30[2]],  # L=7.918 H=2^9, L=5.649 H=2^12
+        [bp_parameter_30[2], bp_parameter_30[3]],  # L=5.649 H=2^12, L=4.639 H=2^15
+        [bp_parameter_30[3], bp_parameter_30[4]]   # L=4.639 H=2^15, L=4.073 H=2^18
+    ]
+    
+    bp_three_combinations = [
+        [bp_parameter_30[0], bp_parameter_30[1], bp_parameter_30[2]],  # indices 0,1,2
+        [bp_parameter_30[1], bp_parameter_30[2], bp_parameter_30[3]],  # indices 1,2,3
+        [bp_parameter_30[2], bp_parameter_30[3], bp_parameter_30[4]]   # indices 2,3,4
+    ]
+    
+    bp_four_combinations = [
+        [bp_parameter_30[0], bp_parameter_30[1], bp_parameter_30[2], bp_parameter_30[3]],  # indices 0,1,2,3
+        [bp_parameter_30[1], bp_parameter_30[2], bp_parameter_30[3], bp_parameter_30[4]]   # indices 1,2,3,4
+    ]
+    
+    # Normal distribution combinations from avg_30
+    normal_two_combinations = [
+        [normal_parameter_30[0], normal_parameter_30[1]],  # std=6, std=9
+        [normal_parameter_30[1], normal_parameter_30[2]],  # std=9, std=12
+        [normal_parameter_30[2], normal_parameter_30[3]],  # std=12, std=15
+        [normal_parameter_30[3], normal_parameter_30[4]]   # std=15, std=18
+    ]
+    
+    normal_three_combinations = [
+        [normal_parameter_30[0], normal_parameter_30[1], normal_parameter_30[2]],  # indices 0,1,2
+        [normal_parameter_30[1], normal_parameter_30[2], normal_parameter_30[3]],  # indices 1,2,3
+        [normal_parameter_30[2], normal_parameter_30[3], normal_parameter_30[4]]   # indices 2,3,4
+    ]
+    
+    normal_four_combinations = [
+        [normal_parameter_30[0], normal_parameter_30[1], normal_parameter_30[2], normal_parameter_30[3]],  # indices 0,1,2,3
+        [normal_parameter_30[1], normal_parameter_30[2], normal_parameter_30[3], normal_parameter_30[4]]   # indices 1,2,3,4
+    ]
+    
+    # Generate Bounded Pareto combination_random jobs
+    bp_combination_random_base = f"data/Bounded_Pareto_combination_random_{i}"
+    os.makedirs(bp_combination_random_base, exist_ok=True)
+    
+    # BP Two-combination random
+    bp_two_comb_random_folder = f"{bp_combination_random_base}/two_combination"
+    os.makedirs(bp_two_comb_random_folder, exist_ok=True)
+    for idx, param_set in enumerate(bp_two_combinations):
+        for ct in tqdm.tqdm(coherence_times, desc=f"Processing BP two_combination_random pair_{idx+1} _{i}"):
+            freq_folder = f"{bp_two_comb_random_folder}/freq_{ct}_{i}"
+            os.makedirs(freq_folder, exist_ok=True)
+            
+            job_list = combination_random_job_init(num_jobs, param_set, coherence_time=ct)
+            filename = f"{freq_folder}/pair_{idx+1}_freq_{ct}.csv"
+            Write_csv.Write_raw(filename, job_list)
+    
+    # BP Three-combination random
+    bp_three_comb_random_folder = f"{bp_combination_random_base}/three_combination"
+    os.makedirs(bp_three_comb_random_folder, exist_ok=True)
+    for idx, param_set in enumerate(bp_three_combinations):
+        for ct in tqdm.tqdm(coherence_times, desc=f"Processing BP three_combination_random triplet_{idx+1} _{i}"):
+            freq_folder = f"{bp_three_comb_random_folder}/freq_{ct}_{i}"
+            os.makedirs(freq_folder, exist_ok=True)
+            
+            job_list = combination_random_job_init(num_jobs, param_set, coherence_time=ct)
+            filename = f"{freq_folder}/triplet_{idx+1}_freq_{ct}.csv"
+            Write_csv.Write_raw(filename, job_list)
+    
+    # BP Four-combination random
+    bp_four_comb_random_folder = f"{bp_combination_random_base}/four_combination"
+    os.makedirs(bp_four_comb_random_folder, exist_ok=True)
+    for idx, param_set in enumerate(bp_four_combinations):
+        for ct in tqdm.tqdm(coherence_times, desc=f"Processing BP four_combination_random quadruplet_{idx+1} _{i}"):
+            freq_folder = f"{bp_four_comb_random_folder}/freq_{ct}_{i}"
+            os.makedirs(freq_folder, exist_ok=True)
+            
+            job_list = combination_random_job_init(num_jobs, param_set, coherence_time=ct)
+            filename = f"{freq_folder}/quadruplet_{idx+1}_freq_{ct}.csv"
+            Write_csv.Write_raw(filename, job_list)
+    
+    # Generate Normal combination_random jobs
+    normal_combination_random_base = f"data/normal_combination_random_{i}"
+    os.makedirs(normal_combination_random_base, exist_ok=True)
+    
+    # Normal Two-combination random
+    normal_two_comb_random_folder = f"{normal_combination_random_base}/two_combination"
+    os.makedirs(normal_two_comb_random_folder, exist_ok=True)
+    for idx, param_set in enumerate(normal_two_combinations):
+        for ct in tqdm.tqdm(coherence_times, desc=f"Processing Normal two_combination_random pair_{idx+1} _{i}"):
+            freq_folder = f"{normal_two_comb_random_folder}/freq_{ct}_{i}"
+            os.makedirs(freq_folder, exist_ok=True)
+            
+            job_list = combination_random_job_init(num_jobs, param_set, coherence_time=ct)
+            filename = f"{freq_folder}/pair_{idx+1}_freq_{ct}.csv"
+            Write_csv.Write_raw(filename, job_list)
+    
+    # Normal Three-combination random
+    normal_three_comb_random_folder = f"{normal_combination_random_base}/three_combination"
+    os.makedirs(normal_three_comb_random_folder, exist_ok=True)
+    for idx, param_set in enumerate(normal_three_combinations):
+        for ct in tqdm.tqdm(coherence_times, desc=f"Processing Normal three_combination_random triplet_{idx+1} _{i}"):
+            freq_folder = f"{normal_three_comb_random_folder}/freq_{ct}_{i}"
+            os.makedirs(freq_folder, exist_ok=True)
+            
+            job_list = combination_random_job_init(num_jobs, param_set, coherence_time=ct)
+            filename = f"{freq_folder}/triplet_{idx+1}_freq_{ct}.csv"
+            Write_csv.Write_raw(filename, job_list)
+    
+    # Normal Four-combination random
+    normal_four_comb_random_folder = f"{normal_combination_random_base}/four_combination"
+    os.makedirs(normal_four_comb_random_folder, exist_ok=True)
+    for idx, param_set in enumerate(normal_four_combinations):
+        for ct in tqdm.tqdm(coherence_times, desc=f"Processing Normal four_combination_random quadruplet_{idx+1} _{i}"):
+            freq_folder = f"{normal_four_comb_random_folder}/freq_{ct}_{i}"
+            os.makedirs(freq_folder, exist_ok=True)
+            
+            job_list = combination_random_job_init(num_jobs, param_set, coherence_time=ct)
+            filename = f"{freq_folder}/quadruplet_{idx+1}_freq_{ct}.csv"
+            Write_csv.Write_raw(filename, job_list)
+    
+    # Generate Bounded Pareto combination_softrandom jobs
+    bp_combination_softrandom_base = f"data/Bounded_Pareto_combination_softrandom_{i}"
+    os.makedirs(bp_combination_softrandom_base, exist_ok=True)
+    
+    # BP Two-combination softrandom
+    bp_two_comb_softrandom_folder = f"{bp_combination_softrandom_base}/two_combination"
+    os.makedirs(bp_two_comb_softrandom_folder, exist_ok=True)
+    for idx, param_set in enumerate(bp_two_combinations):
+        for ct in tqdm.tqdm(coherence_times, desc=f"Processing BP two_combination_softrandom pair_{idx+1} _{i}"):
+            freq_folder = f"{bp_two_comb_softrandom_folder}/freq_{ct}_{i}"
+            os.makedirs(freq_folder, exist_ok=True)
+            
+            job_list = combination_softrandom_job_init(num_jobs, param_set, coherence_time=ct)
+            filename = f"{freq_folder}/pair_{idx+1}_freq_{ct}.csv"
+            Write_csv.Write_raw(filename, job_list)
+    
+    # BP Three-combination softrandom
+    bp_three_comb_softrandom_folder = f"{bp_combination_softrandom_base}/three_combination"
+    os.makedirs(bp_three_comb_softrandom_folder, exist_ok=True)
+    for idx, param_set in enumerate(bp_three_combinations):
+        for ct in tqdm.tqdm(coherence_times, desc=f"Processing BP three_combination_softrandom triplet_{idx+1} _{i}"):
+            freq_folder = f"{bp_three_comb_softrandom_folder}/freq_{ct}_{i}"
+            os.makedirs(freq_folder, exist_ok=True)
+            
+            job_list = combination_softrandom_job_init(num_jobs, param_set, coherence_time=ct)
+            filename = f"{freq_folder}/triplet_{idx+1}_freq_{ct}.csv"
+            Write_csv.Write_raw(filename, job_list)
+    
+    # BP Four-combination softrandom
+    bp_four_comb_softrandom_folder = f"{bp_combination_softrandom_base}/four_combination"
+    os.makedirs(bp_four_comb_softrandom_folder, exist_ok=True)
+    for idx, param_set in enumerate(bp_four_combinations):
+        for ct in tqdm.tqdm(coherence_times, desc=f"Processing BP four_combination_softrandom quadruplet_{idx+1} _{i}"):
+            freq_folder = f"{bp_four_comb_softrandom_folder}/freq_{ct}_{i}"
+            os.makedirs(freq_folder, exist_ok=True)
+            
+            job_list = combination_softrandom_job_init(num_jobs, param_set, coherence_time=ct)
+            filename = f"{freq_folder}/quadruplet_{idx+1}_freq_{ct}.csv"
+            Write_csv.Write_raw(filename, job_list)
+    
+    # Generate Normal combination_softrandom jobs
+    normal_combination_softrandom_base = f"data/normal_combination_softrandom_{i}"
+    os.makedirs(normal_combination_softrandom_base, exist_ok=True)
+    
+    # Normal Two-combination softrandom
+    normal_two_comb_softrandom_folder = f"{normal_combination_softrandom_base}/two_combination"
+    os.makedirs(normal_two_comb_softrandom_folder, exist_ok=True)
+    for idx, param_set in enumerate(normal_two_combinations):
+        for ct in tqdm.tqdm(coherence_times, desc=f"Processing Normal two_combination_softrandom pair_{idx+1} _{i}"):
+            freq_folder = f"{normal_two_comb_softrandom_folder}/freq_{ct}_{i}"
+            os.makedirs(freq_folder, exist_ok=True)
+            
+            job_list = combination_softrandom_job_init(num_jobs, param_set, coherence_time=ct)
+            filename = f"{freq_folder}/pair_{idx+1}_freq_{ct}.csv"
+            Write_csv.Write_raw(filename, job_list)
+    
+    # Normal Three-combination softrandom
+    normal_three_comb_softrandom_folder = f"{normal_combination_softrandom_base}/three_combination"
+    os.makedirs(normal_three_comb_softrandom_folder, exist_ok=True)
+    for idx, param_set in enumerate(normal_three_combinations):
+        for ct in tqdm.tqdm(coherence_times, desc=f"Processing Normal three_combination_softrandom triplet_{idx+1} _{i}"):
+            freq_folder = f"{normal_three_comb_softrandom_folder}/freq_{ct}_{i}"
+            os.makedirs(freq_folder, exist_ok=True)
+            
+            job_list = combination_softrandom_job_init(num_jobs, param_set, coherence_time=ct)
+            filename = f"{freq_folder}/triplet_{idx+1}_freq_{ct}.csv"
+            Write_csv.Write_raw(filename, job_list)
+    
+    # Normal Four-combination softrandom
+    normal_four_comb_softrandom_folder = f"{normal_combination_softrandom_base}/four_combination"
+    os.makedirs(normal_four_comb_softrandom_folder, exist_ok=True)
+    for idx, param_set in enumerate(normal_four_combinations):
+        for ct in tqdm.tqdm(coherence_times, desc=f"Processing Normal four_combination_softrandom quadruplet_{idx+1} _{i}"):
+            freq_folder = f"{normal_four_comb_softrandom_folder}/freq_{ct}_{i}"
+            os.makedirs(freq_folder, exist_ok=True)
+            
+            job_list = combination_softrandom_job_init(num_jobs, param_set, coherence_time=ct)
+            filename = f"{freq_folder}/quadruplet_{idx+1}_freq_{ct}.csv"
+            Write_csv.Write_raw(filename, job_list)
+
 if __name__ == "__main__":
     for i in range(1, 11):
-        Save_file(50000, i)
+        Save_file(40000, i)

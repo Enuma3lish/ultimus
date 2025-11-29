@@ -63,16 +63,16 @@ int main(int argc, char* argv[]) {
     }
     
     // Process average data if exists
-    if (has_avg) {
-        std::cout << ">>> Processing average data folders..." << std::endl;
-        try {
-            process_avg_folders(RMLF_wrapper, "RMLF", data_dir, output_dir);
-            std::cout << "Average data processing completed." << std::endl;
-        } catch (const std::exception& e) {
-            std::cerr << "Error processing average data: " << e.what() << std::endl;
-        }
-        std::cout << std::endl;
-    }
+    // if (has_avg) {
+    //     std::cout << ">>> Processing average data folders..." << std::endl;
+    //     try {
+    //         process_avg_folders(RMLF_wrapper, "RMLF", data_dir, output_dir);
+    //         std::cout << "Average data processing completed." << std::endl;
+    //     } catch (const std::exception& e) {
+    //         std::cerr << "Error processing average data: " << e.what() << std::endl;
+    //     }
+    //     std::cout << std::endl;
+    // }
     
     // Process random data if exists
     if (has_random) {
@@ -115,7 +115,47 @@ int main(int argc, char* argv[]) {
         }
         std::cout << std::endl;
     }
-    
+
+    // Process Bounded Pareto combination random files
+    std::cout << ">>> Processing Bounded Pareto combination random data folders..." << std::endl;
+    try {
+        process_bounded_pareto_combination_random_folders(RMLF_wrapper, "RMLF", data_dir, output_dir);
+        std::cout << "Bounded Pareto combination random data processing completed." << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "Error processing Bounded Pareto combination random data: " << e.what() << std::endl;
+    }
+    std::cout << std::endl;
+
+    // Process Normal combination random files
+    std::cout << ">>> Processing Normal combination random data folders..." << std::endl;
+    try {
+        process_normal_combination_random_folders(RMLF_wrapper, "RMLF", data_dir, output_dir);
+        std::cout << "Normal combination random data processing completed." << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "Error processing Normal combination random data: " << e.what() << std::endl;
+    }
+    std::cout << std::endl;
+
+    // Process Bounded Pareto combination softrandom files
+    std::cout << ">>> Processing Bounded Pareto combination softrandom data folders..." << std::endl;
+    try {
+        process_bounded_pareto_combination_softrandom_folders(RMLF_wrapper, "RMLF", data_dir, output_dir);
+        std::cout << "Bounded Pareto combination softrandom data processing completed." << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "Error processing Bounded Pareto combination softrandom data: " << e.what() << std::endl;
+    }
+    std::cout << std::endl;
+
+    // Process Normal combination softrandom files
+    std::cout << ">>> Processing Normal combination softrandom data folders..." << std::endl;
+    try {
+        process_normal_combination_softrandom_folders(RMLF_wrapper, "RMLF", data_dir, output_dir);
+        std::cout << "Normal combination softrandom data processing completed." << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "Error processing Normal combination softrandom data: " << e.what() << std::endl;
+    }
+    std::cout << std::endl;
+
     if (!has_avg && !has_random && !has_softrandom) {
         std::cout << "No valid data folders found in " << data_dir << std::endl;
         std::cout << "Looking for folders starting with 'avg_', 'Bounded_Pareto_random_', 'normal_random_', 'Bounded_Pareto_softrandom_', or 'normal_softrandom_'" << std::endl;

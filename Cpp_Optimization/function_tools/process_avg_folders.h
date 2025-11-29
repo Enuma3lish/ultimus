@@ -112,7 +112,7 @@ void process_avg_folders(AlgoFunc algo, const std::string& algo_name,
                     params.bp_H = old_params.bp_H;
                 }
                 
-                std::cout << "  Processing " << filename << ": arrival_rate=" 
+                std::cout << "  Processing " << filename << ": Mean_inter_arrival_time=" 
                          << params.arrival_rate << ", bp_L=" << params.bp_L 
                          << ", bp_H=" << params.bp_H << std::endl;
                 
@@ -143,7 +143,7 @@ void process_avg_folders(AlgoFunc algo, const std::string& algo_name,
                 }
                 
                 std::ofstream out(output_file);
-                out << "arrival_rate,bp_parameter_L,bp_parameter_H," 
+                out << "Mean_inter_arrival_time,bp_parameter_L,bp_parameter_H," 
                     << algo_name << "_L2_norm_flow_time\n";
                 
                 // Sort results by bp_L and bp_H for consistency
@@ -163,7 +163,7 @@ void process_avg_folders(AlgoFunc algo, const std::string& algo_name,
                         << result.at("results") << "\n";
                 }
                 
-                std::cout << "  Saved results for arrival_rate=" << pair.first 
+                std::cout << "  Saved results for Mean_inter_arrival_time=" << pair.first 
                          << " to " << output_file << std::endl;
             }
         }

@@ -604,21 +604,21 @@ int main(int argc) {
     std::cout << "\nLaunching parallel processing threads...\n\n";
     
     // Thread 1: Process avg files
-    main_threads.emplace_back([&]() {
-        safe_cout("========================================\n");
-        safe_cout("[Thread 1] Processing avg files...\n");
-        safe_cout("========================================\n");
-        
-        auto avg_wrapper = [](std::vector<Job> jobs, int nJobsPerRound, 
-                             const std::vector<int>& modes_to_run) {
-            return run_all_modes_for_file_normal(jobs, nJobsPerRound, modes_to_run);
-        };
-        
-        // Using _DBAL template name, but it's calling our new RF function
-        process_avg_folders_multimode_RF(avg_wrapper, data_dir, output_dir, 
-                                      nJobsPerRound, modes_to_run, cout_mutex);
-        safe_cout("\n[Thread 1] ✓ Avg files completed!\n\n");
-    });
+    // main_threads.emplace_back([&]() {
+    //     safe_cout("========================================\n");
+    //     safe_cout("[Thread 1] Processing avg files...\n");
+    //     safe_cout("========================================\n");
+    //
+    //     auto avg_wrapper = [](std::vector<Job> jobs, int nJobsPerRound,
+    //                          const std::vector<int>& modes_to_run) {
+    //         return run_all_modes_for_file_normal(jobs, nJobsPerRound, modes_to_run);
+    //     };
+    //
+    //     // Using _DBAL template name, but it's calling our new RF function
+    //     process_avg_folders_multimode_RF(avg_wrapper, data_dir, output_dir,
+    //                                   nJobsPerRound, modes_to_run, cout_mutex);
+    //     safe_cout("\n[Thread 1] ✓ Avg files completed!\n\n");
+    // });
     
     // Thread 2: Process Bounded Pareto random files using multimode function
     main_threads.emplace_back([&]() {
@@ -683,7 +683,71 @@ int main(int argc) {
                                             nJobsPerRound, modes_to_run, cout_mutex);
         safe_cout("\n[Thread 5] ✓ Normal softrandom files completed!\n\n");
     });
-    
+
+    // Thread 6: Process Bounded Pareto combination random files
+    main_threads.emplace_back([&]() {
+        safe_cout("========================================\n");
+        safe_cout("[Thread 6] Processing Bounded Pareto combination random files...\n");
+        safe_cout("========================================\n");
+
+        auto combination_random_wrapper = [](std::vector<Job> jobs, int nJobsPerRound,
+                                            const std::vector<int>& modes_to_run) {
+            return run_all_modes_for_file_normal(jobs, nJobsPerRound, modes_to_run);
+        };
+
+        process_bounded_pareto_combination_random_folders_multimode_RF(combination_random_wrapper, data_dir, output_dir,
+                                                       nJobsPerRound, modes_to_run, cout_mutex);
+        safe_cout("\n[Thread 6] ✓ Bounded Pareto combination random files completed!\n\n");
+    });
+
+    // Thread 7: Process Normal combination random files
+    main_threads.emplace_back([&]() {
+        safe_cout("========================================\n");
+        safe_cout("[Thread 7] Processing Normal combination random files...\n");
+        safe_cout("========================================\n");
+
+        auto combination_random_wrapper = [](std::vector<Job> jobs, int nJobsPerRound,
+                                            const std::vector<int>& modes_to_run) {
+            return run_all_modes_for_file_normal(jobs, nJobsPerRound, modes_to_run);
+        };
+
+        process_normal_combination_random_folders_multimode_RF(combination_random_wrapper, data_dir, output_dir,
+                                                       nJobsPerRound, modes_to_run, cout_mutex);
+        safe_cout("\n[Thread 7] ✓ Normal combination random files completed!\n\n");
+    });
+
+    // Thread 8: Process Bounded Pareto combination softrandom files
+    main_threads.emplace_back([&]() {
+        safe_cout("========================================\n");
+        safe_cout("[Thread 8] Processing Bounded Pareto combination softrandom files...\n");
+        safe_cout("========================================\n");
+
+        auto combination_softrandom_wrapper = [](std::vector<Job> jobs, int nJobsPerRound,
+                                                const std::vector<int>& modes_to_run) {
+            return run_all_modes_for_file_frequency(jobs, nJobsPerRound, modes_to_run);
+        };
+
+        process_bounded_pareto_combination_softrandom_folders_multimode_RF(combination_softrandom_wrapper, data_dir, output_dir,
+                                                            nJobsPerRound, modes_to_run, cout_mutex);
+        safe_cout("\n[Thread 8] ✓ Bounded Pareto combination softrandom files completed!\n\n");
+    });
+
+    // Thread 9: Process Normal combination softrandom files
+    main_threads.emplace_back([&]() {
+        safe_cout("========================================\n");
+        safe_cout("[Thread 9] Processing Normal combination softrandom files...\n");
+        safe_cout("========================================\n");
+
+        auto combination_softrandom_wrapper = [](std::vector<Job> jobs, int nJobsPerRound,
+                                                const std::vector<int>& modes_to_run) {
+            return run_all_modes_for_file_frequency(jobs, nJobsPerRound, modes_to_run);
+        };
+
+        process_normal_combination_softrandom_folders_multimode_RF(combination_softrandom_wrapper, data_dir, output_dir,
+                                                            nJobsPerRound, modes_to_run, cout_mutex);
+        safe_cout("\n[Thread 9] ✓ Normal combination softrandom files completed!\n\n");
+    });
+
     for (auto& thread : main_threads) {
         thread.join();
     }

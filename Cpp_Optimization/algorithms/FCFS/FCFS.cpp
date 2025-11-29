@@ -22,10 +22,10 @@ int main() {
     
     create_directory(output_dir);
     
-    std::cout << "\n========================================\n";
-    std::cout << "Processing avg files...\n";
-    std::cout << "========================================\n";
-    process_avg_folders(Fcfs, "FCFS", data_dir, output_dir);
+    // std::cout << "\n========================================\n";
+    // std::cout << "Processing avg files...\n";
+    // std::cout << "========================================\n";
+    // process_avg_folders(Fcfs, "FCFS", data_dir, output_dir);
     
     std::cout << "\n========================================\n";
     std::cout << "Processing Bounded Pareto random files...\n";
@@ -46,7 +46,27 @@ int main() {
     std::cout << "Processing Normal softrandom files...\n";
     std::cout << "========================================\n";
     process_normal_softrandom_folders(Fcfs, "FCFS", data_dir, output_dir);
-    
+
+    std::cout << "\n========================================\n";
+    std::cout << "Processing Bounded Pareto combination random files...\n";
+    std::cout << "========================================\n";
+    process_bounded_pareto_combination_random_folders(Fcfs, "FCFS", data_dir, output_dir);
+
+    std::cout << "\n========================================\n";
+    std::cout << "Processing Normal combination random files...\n";
+    std::cout << "========================================\n";
+    process_normal_combination_random_folders(Fcfs, "FCFS", data_dir, output_dir);
+
+    std::cout << "\n========================================\n";
+    std::cout << "Processing Bounded Pareto combination softrandom files...\n";
+    std::cout << "========================================\n";
+    process_bounded_pareto_combination_softrandom_folders(Fcfs, "FCFS", data_dir, output_dir);
+
+    std::cout << "\n========================================\n";
+    std::cout << "Processing Normal combination softrandom files...\n";
+    std::cout << "========================================\n";
+    process_normal_combination_softrandom_folders(Fcfs, "FCFS", data_dir, output_dir);
+
     std::cout << "\n============================================================\n";
     std::cout << "FCFS batch processing completed successfully!\n";
     std::cout << "============================================================\n";
