@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 # PATH CONFIGURATION
 # ============================================================================
-BASE_DATA_PATH = "/home/melowu/Work/ultimus"
+BASE_DATA_PATH = "/Users/melowu/Desktop/ultimus"
 ALGORITHM_RESULT_PATH = os.path.join(BASE_DATA_PATH, "algorithm_result")
 OUTPUT_PATH = os.path.join(BASE_DATA_PATH, "plots_output")
 
@@ -103,48 +103,6 @@ def setup_plot_style():
 # BENCHMARK MODE SELECTION FOR DYNAMIC ALGORITHMS
 # ============================================================================
 DYNAMIC_BENCHMARK_MODES = {}
-RFDYNAMIC_BENCHMARK_MODE = None
-
-def find_rfdynamic_benchmark_mode():
-    """
-    Find RFDynamic's best mode based on highest frequency in all random cases
-    Excludes mode 6 from consideration
-    
-    Returns:
-        Best mode number (1-5)
-    """
-    global RFDYNAMIC_BENCHMARK_MODE
-    
-    if RFDYNAMIC_BENCHMARK_MODE is not None:
-        return RFDYNAMIC_BENCHMARK_MODE
-    
-    # Aggregate the Bounded_Pareto random data for RFDynamic
-    df = aggregate_random_softrandom_data('RFDynamic', 'Bounded_Pareto', 'random')
-    
-    if df is None:
-        logger.warning(f"No random data for RFDynamic, defaulting to mode5")
-        RFDYNAMIC_BENCHMARK_MODE = 5
-        return 5
-    
-    mode_win_counts = {i: 0 for i in range(1, 6)}  # Modes 1-5 (exclude mode 6)
-    
-    for _, row in df.iterrows():
-        mode_values = {}
-        for i in range(1, 6):  # Only check modes 1-5
-            col_name = f'RFDynamic_njobs100_mode{i}_L2_norm_flow_time'
-            if col_name in df.columns and pd.notna(row[col_name]):
-                mode_values[i] = row[col_name]
-        
-        if mode_values:
-            best_mode = min(mode_values.items(), key=lambda x: x[1])[0]
-            mode_win_counts[best_mode] += 1
-    
-    benchmark_mode = max(mode_win_counts.items(), key=lambda x: x[1])[0]
-    logger.info(f"RFDynamic benchmark mode (excluding mode 6): mode{benchmark_mode}")
-    logger.info(f"  Mode win counts: {mode_win_counts}")
-    
-    RFDYNAMIC_BENCHMARK_MODE = benchmark_mode
-    return benchmark_mode
 
 def aggregate_random_softrandom_data(algorithm, distribution_type, random_type):
     """
@@ -215,45 +173,57 @@ def aggregate_random_softrandom_data(algorithm, distribution_type, random_type):
     
     return grouped
 
-def find_benchmark_mode_exclude_1_6(algorithm):
+def find_benchmark_mode_exclude_6(algorithm):
     """
     Find benchmark mode for Dynamic algorithms based on highest frequency in random cases
-    Excludes mode 1 and mode 6 from consideration
+    Excludes only mode 6 from consideration
+    All three Dynamic algorithms (Dynamic, Dynamic_BAL, RFDynamic) use the same mode
+    
+    Args:
+        algorithm: Name of the dynamic algorithm (Dynamic, Dynamic_BAL, or RFDynamic)
     
     Returns:
-        Best mode number (2-5)
+        Best mode number (1-5)
     """
     global DYNAMIC_BENCHMARK_MODES
     
-    if algorithm in DYNAMIC_BENCHMARK_MODES:
-        return DYNAMIC_BENCHMARK_MODES[algorithm]
+    # If any Dynamic algorithm already has a mode, use that for all
+    if DYNAMIC_BENCHMARK_MODES:
+        existing_mode = list(DYNAMIC_BENCHMARK_MODES.values())[0]
+        if algorithm not in DYNAMIC_BENCHMARK_MODES:
+            DYNAMIC_BENCHMARK_MODES[algorithm] = existing_mode
+            logger.info(f"{algorithm} using shared benchmark mode: mode{existing_mode}")
+        return existing_mode
     
-    # First, aggregate the Bounded_Pareto random data
-    df = aggregate_random_softrandom_data(algorithm, 'Bounded_Pareto', 'random')
+    # Use Dynamic algorithm data to determine the benchmark mode for all
+    reference_algo = 'Dynamic'
+    df = aggregate_random_softrandom_data(reference_algo, 'Bounded_Pareto', 'random')
     
     if df is None:
-        logger.warning(f"No random data for {algorithm}, defaulting to mode5")
-        DYNAMIC_BENCHMARK_MODES[algorithm] = 5
-        return 5
-    
-    mode_win_counts = {i: 0 for i in range(2, 6)}  # Only modes 2-5
-    
-    for _, row in df.iterrows():
-        mode_values = {}
-        for i in range(2, 6):  # Only check modes 2-5
-            col_name = f'{algorithm}_njobs100_mode{i}_L2_norm_flow_time'
-            if col_name in df.columns and pd.notna(row[col_name]):
-                mode_values[i] = row[col_name]
+        logger.warning(f"No random data for {reference_algo}, defaulting to mode5 for all Dynamic algorithms")
+        benchmark_mode = 5
+    else:
+        mode_win_counts = {i: 0 for i in range(1, 6)}  # Modes 1-5 (exclude mode 6)
         
-        if mode_values:
-            best_mode = min(mode_values.items(), key=lambda x: x[1])[0]
-            mode_win_counts[best_mode] += 1
+        for _, row in df.iterrows():
+            mode_values = {}
+            for i in range(1, 6):  # Check modes 1-5
+                col_name = f'{reference_algo}_njobs100_mode{i}_L2_norm_flow_time'
+                if col_name in df.columns and pd.notna(row[col_name]):
+                    mode_values[i] = row[col_name]
+            
+            if mode_values:
+                best_mode = min(mode_values.items(), key=lambda x: x[1])[0]
+                mode_win_counts[best_mode] += 1
+        
+        benchmark_mode = max(mode_win_counts.items(), key=lambda x: x[1])[0]
+        logger.info(f"Unified benchmark mode for all Dynamic algorithms (based on {reference_algo}): mode{benchmark_mode}")
+        logger.info(f"  Mode win counts: {mode_win_counts}")
     
-    benchmark_mode = max(mode_win_counts.items(), key=lambda x: x[1])[0]
-    logger.info(f"{algorithm} benchmark mode (excluding 1&6): mode{benchmark_mode}")
-    logger.info(f"  Mode win counts: {mode_win_counts}")
+    # Store the same mode for all Dynamic algorithms
+    for algo in DYNAMIC_ALGORITHMS:
+        DYNAMIC_BENCHMARK_MODES[algo] = benchmark_mode
     
-    DYNAMIC_BENCHMARK_MODES[algorithm] = benchmark_mode
     return benchmark_mode
 
 # ============================================================================
@@ -311,8 +281,8 @@ def load_algorithm_avg_data(algorithm, avg_type):
         logger.info(f"  Found mode columns: {mode_cols}")
         grouped = combined_df.groupby(group_cols)[mode_cols].mean().reset_index()
         
-        # Find best mode for this algorithm
-        best_mode = find_benchmark_mode_exclude_1_6(algorithm) if algorithm != 'RFDynamic' else find_rfdynamic_benchmark_mode()
+        # Find best mode for this algorithm (all dynamic algorithms use same logic)
+        best_mode = find_benchmark_mode_exclude_6(algorithm)
         best_mode_col = f'{algorithm}_njobs100_mode{best_mode}_L2_norm_flow_time'
         
         logger.info(f"  Best mode for {algorithm}: {best_mode}, looking for column: {best_mode_col}")
@@ -491,6 +461,12 @@ def plot_normal_by_std(data_dict, group_name, avg_type):
                 markersize = 7
                 zorder = 5
                 fillstyle = 'none'
+            
+            # Only our algorithms (Dynamic, Dynamic_BAL, RFDynamic) use solid lines
+            if algorithm in DYNAMIC_ALGORITHMS:
+                linestyle = '-'
+            else:
+                linestyle = '--'
 
             ax.plot(std_df['Mean_inter_arrival_time'], std_df[l2_col],
                    marker=ALGORITHM_MARKERS.get(algorithm, 'o'),
@@ -498,6 +474,7 @@ def plot_normal_by_std(data_dict, group_name, avg_type):
                    linewidth=linewidth,
                    markersize=markersize,
                    fillstyle=fillstyle,
+                   linestyle=linestyle,
                    markeredgewidth=2.5,
                    markeredgecolor=ALGORITHM_COLORS.get(algorithm, 'black'),
                    label=label,
@@ -530,9 +507,58 @@ def plot_normal_by_std(data_dict, group_name, avg_type):
 # PLOTTING FUNCTIONS - RANDOM/SOFTRANDOM CASES
 # ============================================================================
 
+def get_combination_mapping(data_dir, distribution_type, random_type):
+    """
+    Create a mapping from pair/triplet/quadruplet IDs to their H-value combinations
+    
+    Returns:
+        dict: Maps combination folder names to pair IDs
+              e.g., {'two_combination_H64_H512': 'pair_1', 'three_combination_H64_H512_H4096': 'triplet_1'}
+    """
+    mapping = {}
+    
+    # Look for combination folders
+    folder_pattern = f"{distribution_type}_combination_{random_type}_*"
+    folders = sorted(glob.glob(os.path.join(data_dir, folder_pattern)))
+    
+    if not folders:
+        return mapping
+    
+    # Use first version folder to establish mapping
+    base_folder = folders[0]
+    
+    # Get all combination subfolders
+    comb_folders = sorted(glob.glob(os.path.join(base_folder, "*_combination_*")))
+    
+    for comb_folder in comb_folders:
+        comb_name = os.path.basename(comb_folder)
+        
+        # Find a freq folder
+        freq_folders = glob.glob(os.path.join(comb_folder, "freq_*"))
+        if not freq_folders:
+            continue
+        
+        # Check files in first freq folder to get the pair/triplet/quadruplet ID
+        files = glob.glob(os.path.join(freq_folders[0], "*.csv"))
+        if files:
+            filename = os.path.basename(files[0])
+            # Extract pair_X, triplet_X, or quadruplet_X
+            for prefix in ['pair_', 'triplet_', 'quadruplet_']:
+                if prefix in filename:
+                    # Extract the ID (e.g., "pair_1" from "pair_1_freq_1024.csv")
+                    start = filename.find(prefix)
+                    end = filename.find('_freq_')
+                    if end != -1:
+                        pair_id = filename[start:end]
+                        mapping[comb_name] = pair_id
+                        break
+    
+    return mapping
+
 def plot_random_or_softrandom(algorithms, result_type, group_name, distribution_type):
     """
-    Plot random or softrandom results for a specific distribution type
+    Plot random or softrandom results for each combination case separately
+    Creates one plot per combination case (e.g., two_combination_H64_H512)
     
     Args:
         algorithms: List of algorithms
@@ -540,114 +566,182 @@ def plot_random_or_softrandom(algorithms, result_type, group_name, distribution_
         group_name: 'clairvoyant' or 'non_clairvoyant'
         distribution_type: 'Bounded_Pareto' or 'normal'
     """
-    setup_plot_style()
-    fig, ax = plt.subplots(figsize=(14, 8))
+    # Get mapping from combination folders to pair IDs
+    mapping = get_combination_mapping(os.path.join(BASE_DATA_PATH, "data"), distribution_type, result_type)
     
-    plotted_any = False
-    
-    for algorithm in algorithms:
-        # First aggregate the data
-        df = aggregate_random_softrandom_data(algorithm, distribution_type, result_type)
-        
-        if df is None:
-            continue
-        
-        try:
-            if algorithm in DYNAMIC_ALGORITHMS:
-                if algorithm == 'RFDynamic':
-                    algo_mode = find_rfdynamic_benchmark_mode()
-                else:
-                    algo_mode = find_benchmark_mode_exclude_1_6(algorithm)
-                
-                algo_col = f'{algorithm}_njobs100_mode{algo_mode}_L2_norm_flow_time'
-                
-                if algo_col in df.columns:
-                    label = f"{algorithm} (mode{algo_mode})"
-                    
-                    # Highlight FCFS, SRPT, RMLF with thicker lines
-                    if algorithm in HIGHLIGHTED_ALGORITHMS:
-                        linewidth = 3.0
-                        markersize = 8
-                        zorder = 10
-                        markevery = 1
-                    else:
-                        linewidth = 2.0
-                        markersize = 6
-                        zorder = 5
-                        markevery = 2
-                    
-                    ax.plot(df['coherence_time'], df[algo_col],
-                           marker=ALGORITHM_MARKERS.get(algorithm, 'o'),
-                           color=ALGORITHM_COLORS.get(algorithm, 'black'),
-                           linewidth=linewidth,
-                           markersize=markersize,
-                           markevery=markevery,
-                           markeredgewidth=0.5,
-                           markeredgecolor='white',
-                           label=label,
-                           alpha=0.9,
-                           zorder=zorder)
-                    plotted_any = True
-            else:
-                l2_col = f'{algorithm}_L2_norm_flow_time'
-                if l2_col in df.columns:
-                    # Highlight FCFS, SRPT, RMLF with thicker lines
-                    if algorithm in HIGHLIGHTED_ALGORITHMS:
-                        linewidth = 3.0
-                        markersize = 8
-                        zorder = 10
-                        markevery = 1
-                    else:
-                        linewidth = 2.0
-                        markersize = 6
-                        zorder = 5
-                        markevery = 2
-                    
-                    ax.plot(df['coherence_time'], df[l2_col],
-                           marker=ALGORITHM_MARKERS.get(algorithm, 'o'),
-                           color=ALGORITHM_COLORS.get(algorithm, 'black'),
-                           linewidth=linewidth,
-                           markersize=markersize,
-                           markevery=markevery,
-                           markeredgewidth=0.5,
-                           markeredgecolor='white',
-                           label=algorithm,
-                           alpha=0.9,
-                           zorder=zorder)
-                    plotted_any = True
-        
-        except Exception as e:
-            logger.warning(f"Error plotting {algorithm}: {e}")
-            continue
-    
-    if not plotted_any:
-        plt.close()
-        logger.warning(f"No data plotted for {group_name} {distribution_type} {result_type}")
+    if not mapping:
+        logger.warning(f"No combination mapping found for {distribution_type} {result_type}")
         return
     
-    ax.set_xlabel('Coherence Time (CPU Time)', fontweight='bold')
-    ax.set_ylabel('L2-Norm Flow Time (log scale)', fontweight='bold')
-    ax.set_yscale('log')
+    logger.info(f"Found {len(mapping)} combination cases for {distribution_type} {result_type}")
     
-    dist_label = "Bounded Pareto" if distribution_type == "Bounded_Pareto" else "Normal"
-    ax.set_title(f'{group_name.replace("_", " ").title()} - {result_type.capitalize()}\nDistribution: {dist_label}',
-                fontweight='bold', pad=20)
-    
-    ax.legend(loc='best', framealpha=0.9)
-    ax.grid(True, alpha=0.3, which='both', linestyle='-', linewidth=0.5)
-    ax.set_xscale('log', base=2)
-    ax.set_xlim(left=2)
-    
-    x_ticks = [2**i for i in range(1, 17)]
-    ax.set_xticks(x_ticks)
-    ax.set_xticklabels([f'$2^{{{int(np.log2(x))}}}$' for x in x_ticks])
-    
-    output_file = os.path.join(OUTPUT_PATH, 
-                               f"{group_name}_{distribution_type}_{result_type}_comparison.png")
-    plt.savefig(output_file, dpi=300, bbox_inches='tight')
-    plt.close()
-    
-    logger.info(f"Saved: {output_file}")
+    # Create a plot for each combination case
+    for comb_name, pair_id in sorted(mapping.items()):
+        logger.info(f"Creating plot for {comb_name} ({pair_id})...")
+        
+        setup_plot_style()
+        fig, ax = plt.subplots(figsize=(14, 8))
+        
+        plotted_any = False
+        
+        for algorithm in algorithms:
+            # Determine the combination type (two, three, or four)
+            if 'two_combination' in comb_name:
+                comb_type = 'two_result'
+            elif 'three_combination' in comb_name:
+                comb_type = 'three_result'
+            elif 'four_combination' in comb_name:
+                comb_type = 'four_result'
+            else:
+                continue
+            
+            # Load data for this specific combination
+            algorithm_dir = os.path.join(ALGORITHM_RESULT_PATH, f"{algorithm}_result")
+            result_dir = os.path.join(algorithm_dir, f"{distribution_type}_combination_{result_type}_result", comb_type)
+            
+            if not os.path.exists(result_dir):
+                continue
+            
+            # Find files matching this pair_id
+            pattern = os.path.join(result_dir, f"{pair_id}_{algorithm}_*.csv")
+            files = sorted(glob.glob(pattern))
+            
+            if not files:
+                continue
+            
+            # Load and combine all version files
+            all_dfs = []
+            for file_path in files:
+                try:
+                    df = pd.read_csv(file_path)
+                    all_dfs.append(df)
+                except Exception as e:
+                    logger.warning(f"Error reading {file_path}: {e}")
+                    continue
+            
+            if not all_dfs:
+                continue
+            
+            combined_df = pd.concat(all_dfs, ignore_index=True)
+            
+            # Group by frequency and average
+            if algorithm in DYNAMIC_ALGORITHMS:
+                mode_cols = [col for col in combined_df.columns if 'mode' in col and 'L2_norm_flow_time' in col]
+                grouped = combined_df.groupby('frequency')[mode_cols].mean().reset_index()
+                grouped.rename(columns={'frequency': 'coherence_time'}, inplace=True)
+            else:
+                l2_col = f'{algorithm}_L2_norm_flow_time'
+                if l2_col not in combined_df.columns:
+                    continue
+                grouped = combined_df.groupby('frequency')[l2_col].mean().reset_index()
+                grouped.rename(columns={'frequency': 'coherence_time'}, inplace=True)
+            
+            df = grouped
+            
+            try:
+                if algorithm in DYNAMIC_ALGORITHMS:
+                    algo_mode = find_benchmark_mode_exclude_6(algorithm)
+                    
+                    algo_col = f'{algorithm}_njobs100_mode{algo_mode}_L2_norm_flow_time'
+                    
+                    if algo_col in df.columns:
+                        label = f"{algorithm} (mode{algo_mode})"
+                        
+                        # Highlight FCFS, SRPT, RMLF with thicker lines
+                        if algorithm in HIGHLIGHTED_ALGORITHMS:
+                            linewidth = 3.0
+                            markersize = 8
+                            zorder = 10
+                            markevery = 1
+                        else:
+                            linewidth = 2.0
+                            markersize = 6
+                            zorder = 5
+                            markevery = 2
+                        
+                        # Dynamic algorithms use solid lines
+                        linestyle = '-'
+                        
+                        ax.plot(df['coherence_time'], df[algo_col],
+                               marker=ALGORITHM_MARKERS.get(algorithm, 'o'),
+                               color=ALGORITHM_COLORS.get(algorithm, 'black'),
+                               linewidth=linewidth,
+                               markersize=markersize,
+                               markevery=markevery,
+                               linestyle=linestyle,
+                               markeredgewidth=0.5,
+                               markeredgecolor='white',
+                               label=label,
+                               alpha=0.9,
+                               zorder=zorder)
+                        plotted_any = True
+                else:
+                    l2_col = f'{algorithm}_L2_norm_flow_time'
+                    if l2_col in df.columns:
+                        # Highlight FCFS, SRPT, RMLF with thicker lines
+                        if algorithm in HIGHLIGHTED_ALGORITHMS:
+                            linewidth = 3.0
+                            markersize = 8
+                            zorder = 10
+                            markevery = 1
+                        else:
+                            linewidth = 2.0
+                            markersize = 6
+                            zorder = 5
+                            markevery = 2
+                        
+                        # Non-Dynamic algorithms use dashed lines
+                        linestyle = '--'
+                        
+                        ax.plot(df['coherence_time'], df[l2_col],
+                               marker=ALGORITHM_MARKERS.get(algorithm, 'o'),
+                               color=ALGORITHM_COLORS.get(algorithm, 'black'),
+                               linewidth=linewidth,
+                               markersize=markersize,
+                               markevery=markevery,
+                               linestyle=linestyle,
+                               markeredgewidth=0.5,
+                               markeredgecolor='white',
+                               label=algorithm,
+                               alpha=0.9,
+                               zorder=zorder)
+                        plotted_any = True
+            
+            except Exception as e:
+                logger.warning(f"Error plotting {algorithm} for {comb_name}: {e}")
+                continue
+        
+        if not plotted_any:
+            plt.close()
+            logger.warning(f"No data plotted for {comb_name}")
+            continue
+        
+        ax.set_xlabel('Coherence Time (CPU Time)', fontweight='bold')
+        ax.set_ylabel('L2-Norm Flow Time (log scale)', fontweight='bold')
+        ax.set_yscale('log')
+        
+        # Extract H values for title
+        h_values = comb_name.replace('two_combination_', '').replace('three_combination_', '').replace('four_combination_', '')
+        h_values = h_values.replace('std', 'std=')
+        dist_label = "Bounded Pareto" if distribution_type == "Bounded_Pareto" else "Normal"
+        ax.set_title(f'{group_name.replace("_", " ").title()} - {result_type.capitalize()}\nDistribution: {dist_label}, Case: {h_values}',
+                    fontweight='bold', pad=20)
+        
+        ax.legend(loc='best', framealpha=0.9)
+        ax.grid(True, alpha=0.3, which='both', linestyle='-', linewidth=0.5)
+        ax.set_xscale('log', base=2)
+        ax.set_xlim(left=2)
+        
+        x_ticks = [2**i for i in range(1, 17)]
+        ax.set_xticks(x_ticks)
+        ax.set_xticklabels([f'$2^{{{int(np.log2(x))}}}$' for x in x_ticks])
+        
+        output_file = os.path.join(OUTPUT_PATH, 
+                                   f"{group_name}_{distribution_type}_{result_type}_{comb_name}.png")
+        plt.savefig(output_file, dpi=300, bbox_inches='tight')
+        plt.close()
+        
+        logger.info(f"Saved: {output_file}")
 
 # ============================================================================
 # MODE COMPARISON PLOTTING FUNCTIONS
@@ -858,10 +952,7 @@ def main():
     logger.info(f"{'='*80}")
     
     for algo in DYNAMIC_ALGORITHMS:
-        if algo == 'RFDynamic':
-            find_rfdynamic_benchmark_mode()
-        else:
-            find_benchmark_mode_exclude_1_6(algo)
+        find_benchmark_mode_exclude_6(algo)
 
     # Process avg types
     for avg_type in ['avg30']:

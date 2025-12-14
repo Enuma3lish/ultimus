@@ -12,8 +12,8 @@
 #include "process_softrandom_folders.h"
 
 int main() {
-    std::string data_dir = "/home/melowu/Work/ultimus/data";
-    std::string output_dir = "/home/melowu/Work/ultimus/SETF_result";
+    std::string data_dir = "/Users/melowu/Desktop/ultimus/data";
+    std::string output_dir = "/Users/melowu/Desktop/ultimus/SETF_result";
     
     std::cout << "============================================================\n";
     std::cout << "Starting SETF batch processing:\n";

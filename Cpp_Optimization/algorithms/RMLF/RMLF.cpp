@@ -15,8 +15,8 @@ RMLFResult RMLF_wrapper(std::vector<Job> jobs) {
 
 int main(int argc, char* argv[]) {
     // Default paths
-    std::string data_dir = "/home/melowu/Work/ultimus/data";
-    std::string output_dir = "/home/melowu/Work/ultimus/RMLF_result";
+    std::string data_dir = "/Users/melowu/Desktop/ultimus/data";
+    std::string output_dir = "/Users/melowu/Desktop/ultimus/RMLF_result";
     
     // Parse command line arguments
     if (argc >= 2) {

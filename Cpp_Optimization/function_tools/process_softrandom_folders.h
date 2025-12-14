@@ -1215,19 +1215,28 @@ void process_bounded_pareto_combination_softrandom_folders(AlgoFunc algo, const 
         std::cout << "Processing Bounded Pareto combination_softrandom base: " << basename
                  << " (version=" << base_version << ")" << std::endl;
 
-        // Process two_combination, three_combination, four_combination subfolders
-        std::vector<std::pair<std::string, std::string>> combination_types = {
+        // Process two_combination_*, three_combination_*, four_combination_* subfolders
+        std::map<std::string, std::string> result_folder_mapping = {
             {"two_combination", "two_result"},
             {"three_combination", "three_result"},
             {"four_combination", "four_result"}
         };
 
-        for (const auto& [comb_type, result_folder_name] : combination_types) {
-            std::string comb_folder = folder + "/" + comb_type;
+        auto comb_subfolders = list_directory(folder);
+        
+        for (const auto& comb_folder : comb_subfolders) {
+            std::string comb_basename = comb_folder.substr(comb_folder.find_last_of('/') + 1);
             if (!directory_exists(comb_folder)) continue;
 
-            std::cout << "  Processing " << comb_type << std::endl;
+            // Parse combination type (e.g., "two_combination" from "two_combination_H64_H512")
+            std::string comb_type = parse_combination_type_from_folder(comb_basename);
+            if (comb_type.empty() || result_folder_mapping.find(comb_type) == result_folder_mapping.end()) {
+                continue;
+            }
 
+            std::cout << "  Processing " << comb_basename << " (type: " << comb_type << ")" << std::endl;
+
+            std::string result_folder_name = result_folder_mapping[comb_type];
             std::string result_dir = combination_softrandom_result_dir + "/" + result_folder_name;
             create_directory(result_dir);
 
@@ -1361,19 +1370,28 @@ void process_normal_combination_softrandom_folders(AlgoFunc algo, const std::str
         std::cout << "Processing Normal combination_softrandom base: " << basename
                  << " (version=" << base_version << ")" << std::endl;
 
-        // Process two_combination, three_combination, four_combination subfolders
-        std::vector<std::pair<std::string, std::string>> combination_types = {
+        // Process two_combination_*, three_combination_*, four_combination_* subfolders
+        std::map<std::string, std::string> result_folder_mapping = {
             {"two_combination", "two_result"},
             {"three_combination", "three_result"},
             {"four_combination", "four_result"}
         };
 
-        for (const auto& [comb_type, result_folder_name] : combination_types) {
-            std::string comb_folder = folder + "/" + comb_type;
+        auto comb_subfolders = list_directory(folder);
+        
+        for (const auto& comb_folder : comb_subfolders) {
+            std::string comb_basename = comb_folder.substr(comb_folder.find_last_of('/') + 1);
             if (!directory_exists(comb_folder)) continue;
 
-            std::cout << "  Processing " << comb_type << std::endl;
+            // Parse combination type (e.g., "two_combination" from "two_combination_std6_std9")
+            std::string comb_type = parse_combination_type_from_folder(comb_basename);
+            if (comb_type.empty() || result_folder_mapping.find(comb_type) == result_folder_mapping.end()) {
+                continue;
+            }
 
+            std::cout << "  Processing " << comb_basename << " (type: " << comb_type << ")" << std::endl;
+
+            std::string result_folder_name = result_folder_mapping[comb_type];
             std::string result_dir = combination_softrandom_result_dir + "/" + result_folder_name;
             create_directory(result_dir);
 
@@ -1506,15 +1524,23 @@ void process_bounded_pareto_combination_softrandom_folders_multimode_DBAL(MultiM
         if (basename.find("Bounded_Pareto_combination_softrandom_") == std::string::npos || !directory_exists(folder)) continue;
         int base_version = extract_version_from_path(basename);
         safe_cout("Processing Bounded Pareto combination_softrandom base: " + basename + "\n");
-        std::vector<std::pair<std::string, std::string>> combination_types = {
-            {"two_combination", "two_result"},
-            {"three_combination", "three_result"},
-            {"four_combination", "four_result"}
-        };
-        for (const auto& [comb_type, result_folder_name] : combination_types) {
-            std::string comb_folder = folder + "/" + comb_type;
+        
+        // List actual combination subfolders (e.g., two_combination_H64_H512)
+        auto comb_subfolders = list_directory(folder);
+        for (const auto& comb_folder : comb_subfolders) {
+            std::string comb_basename = comb_folder.substr(comb_folder.find_last_of('/') + 1);
             if (!directory_exists(comb_folder)) continue;
-            safe_cout("  Processing " + comb_type + "\n");
+            
+            std::string comb_type = parse_combination_type_from_folder(comb_basename);
+            if (comb_type.empty()) continue;
+            
+            std::string result_folder_name;
+            if (comb_type == "two_combination") result_folder_name = "two_result";
+            else if (comb_type == "three_combination") result_folder_name = "three_result";
+            else if (comb_type == "four_combination") result_folder_name = "four_result";
+            else continue;
+            
+            safe_cout("  Processing " + comb_basename + "\n");
             std::string result_dir = combination_softrandom_result_dir + "/" + result_folder_name;
             create_directory(result_dir);
             std::map<std::string, std::vector<std::map<std::string, std::string>>> results_by_pair;
@@ -1605,15 +1631,23 @@ void process_normal_combination_softrandom_folders_multimode_DBAL(MultiModeFunc 
         if (basename.find("normal_combination_softrandom_") == std::string::npos || !directory_exists(folder)) continue;
         int base_version = extract_version_from_path(basename);
         safe_cout("Processing Normal combination_softrandom base: " + basename + "\n");
-        std::vector<std::pair<std::string, std::string>> combination_types = {
-            {"two_combination", "two_result"},
-            {"three_combination", "three_result"},
-            {"four_combination", "four_result"}
-        };
-        for (const auto& [comb_type, result_folder_name] : combination_types) {
-            std::string comb_folder = folder + "/" + comb_type;
+        
+        // List actual combination subfolders (e.g., two_combination_std6_std9)
+        auto comb_subfolders = list_directory(folder);
+        for (const auto& comb_folder : comb_subfolders) {
+            std::string comb_basename = comb_folder.substr(comb_folder.find_last_of('/') + 1);
             if (!directory_exists(comb_folder)) continue;
-            safe_cout("  Processing " + comb_type + "\n");
+            
+            std::string comb_type = parse_combination_type_from_folder(comb_basename);
+            if (comb_type.empty()) continue;
+            
+            std::string result_folder_name;
+            if (comb_type == "two_combination") result_folder_name = "two_result";
+            else if (comb_type == "three_combination") result_folder_name = "three_result";
+            else if (comb_type == "four_combination") result_folder_name = "four_result";
+            else continue;
+            
+            safe_cout("  Processing " + comb_basename + "\n");
             std::string result_dir = combination_softrandom_result_dir + "/" + result_folder_name;
             create_directory(result_dir);
             std::map<std::string, std::vector<std::map<std::string, std::string>>> results_by_pair;
@@ -1704,15 +1738,23 @@ void process_bounded_pareto_combination_softrandom_folders_multimode(MultiModeFu
         if (basename.find("Bounded_Pareto_combination_softrandom_") == std::string::npos || !directory_exists(folder)) continue;
         int base_version = extract_version_from_path(basename);
         safe_cout("Processing Bounded Pareto combination_softrandom base: " + basename + "\n");
-        std::vector<std::pair<std::string, std::string>> combination_types = {
-            {"two_combination", "two_result"},
-            {"three_combination", "three_result"},
-            {"four_combination", "four_result"}
-        };
-        for (const auto& [comb_type, result_folder_name] : combination_types) {
-            std::string comb_folder = folder + "/" + comb_type;
+        
+        // List actual combination subfolders (e.g., two_combination_H64_H512)
+        auto comb_subfolders = list_directory(folder);
+        for (const auto& comb_folder : comb_subfolders) {
+            std::string comb_basename = comb_folder.substr(comb_folder.find_last_of('/') + 1);
             if (!directory_exists(comb_folder)) continue;
-            safe_cout("  Processing " + comb_type + "\n");
+            
+            std::string comb_type = parse_combination_type_from_folder(comb_basename);
+            if (comb_type.empty()) continue;
+            
+            std::string result_folder_name;
+            if (comb_type == "two_combination") result_folder_name = "two_result";
+            else if (comb_type == "three_combination") result_folder_name = "three_result";
+            else if (comb_type == "four_combination") result_folder_name = "four_result";
+            else continue;
+            
+            safe_cout("  Processing " + comb_basename + "\n");
             std::string result_dir = combination_softrandom_result_dir + "/" + result_folder_name;
             create_directory(result_dir);
             std::map<std::string, std::vector<std::map<std::string, std::string>>> results_by_pair;
@@ -1803,15 +1845,23 @@ void process_normal_combination_softrandom_folders_multimode(MultiModeFunc multi
         if (basename.find("normal_combination_softrandom_") == std::string::npos || !directory_exists(folder)) continue;
         int base_version = extract_version_from_path(basename);
         safe_cout("Processing Normal combination_softrandom base: " + basename + "\n");
-        std::vector<std::pair<std::string, std::string>> combination_types = {
-            {"two_combination", "two_result"},
-            {"three_combination", "three_result"},
-            {"four_combination", "four_result"}
-        };
-        for (const auto& [comb_type, result_folder_name] : combination_types) {
-            std::string comb_folder = folder + "/" + comb_type;
+        
+        // List actual combination subfolders (e.g., two_combination_std6_std9)
+        auto comb_subfolders = list_directory(folder);
+        for (const auto& comb_folder : comb_subfolders) {
+            std::string comb_basename = comb_folder.substr(comb_folder.find_last_of('/') + 1);
             if (!directory_exists(comb_folder)) continue;
-            safe_cout("  Processing " + comb_type + "\n");
+            
+            std::string comb_type = parse_combination_type_from_folder(comb_basename);
+            if (comb_type.empty()) continue;
+            
+            std::string result_folder_name;
+            if (comb_type == "two_combination") result_folder_name = "two_result";
+            else if (comb_type == "three_combination") result_folder_name = "three_result";
+            else if (comb_type == "four_combination") result_folder_name = "four_result";
+            else continue;
+            
+            safe_cout("  Processing " + comb_basename + "\n");
             std::string result_dir = combination_softrandom_result_dir + "/" + result_folder_name;
             create_directory(result_dir);
             std::map<std::string, std::vector<std::map<std::string, std::string>>> results_by_pair;
@@ -1902,15 +1952,23 @@ void process_bounded_pareto_combination_softrandom_folders_multimode_RF(MultiMod
         if (basename.find("Bounded_Pareto_combination_softrandom_") == std::string::npos || !directory_exists(folder)) continue;
         int base_version = extract_version_from_path(basename);
         safe_cout("Processing Bounded Pareto combination_softrandom base: " + basename + "\n");
-        std::vector<std::pair<std::string, std::string>> combination_types = {
-            {"two_combination", "two_result"},
-            {"three_combination", "three_result"},
-            {"four_combination", "four_result"}
-        };
-        for (const auto& [comb_type, result_folder_name] : combination_types) {
-            std::string comb_folder = folder + "/" + comb_type;
+        
+        // List actual combination subfolders (e.g., two_combination_H64_H512)
+        auto comb_subfolders = list_directory(folder);
+        for (const auto& comb_folder : comb_subfolders) {
+            std::string comb_basename = comb_folder.substr(comb_folder.find_last_of('/') + 1);
             if (!directory_exists(comb_folder)) continue;
-            safe_cout("  Processing " + comb_type + "\n");
+            
+            std::string comb_type = parse_combination_type_from_folder(comb_basename);
+            if (comb_type.empty()) continue;
+            
+            std::string result_folder_name;
+            if (comb_type == "two_combination") result_folder_name = "two_result";
+            else if (comb_type == "three_combination") result_folder_name = "three_result";
+            else if (comb_type == "four_combination") result_folder_name = "four_result";
+            else continue;
+            
+            safe_cout("  Processing " + comb_basename + "\n");
             std::string result_dir = combination_softrandom_result_dir + "/" + result_folder_name;
             create_directory(result_dir);
             std::map<std::string, std::vector<std::map<std::string, std::string>>> results_by_pair;
@@ -2001,15 +2059,23 @@ void process_normal_combination_softrandom_folders_multimode_RF(MultiModeFunc mu
         if (basename.find("normal_combination_softrandom_") == std::string::npos || !directory_exists(folder)) continue;
         int base_version = extract_version_from_path(basename);
         safe_cout("Processing Normal combination_softrandom base: " + basename + "\n");
-        std::vector<std::pair<std::string, std::string>> combination_types = {
-            {"two_combination", "two_result"},
-            {"three_combination", "three_result"},
-            {"four_combination", "four_result"}
-        };
-        for (const auto& [comb_type, result_folder_name] : combination_types) {
-            std::string comb_folder = folder + "/" + comb_type;
+        
+        // List actual combination subfolders (e.g., two_combination_std6_std9)
+        auto comb_subfolders = list_directory(folder);
+        for (const auto& comb_folder : comb_subfolders) {
+            std::string comb_basename = comb_folder.substr(comb_folder.find_last_of('/') + 1);
             if (!directory_exists(comb_folder)) continue;
-            safe_cout("  Processing " + comb_type + "\n");
+            
+            std::string comb_type = parse_combination_type_from_folder(comb_basename);
+            if (comb_type.empty()) continue;
+            
+            std::string result_folder_name;
+            if (comb_type == "two_combination") result_folder_name = "two_result";
+            else if (comb_type == "three_combination") result_folder_name = "three_result";
+            else if (comb_type == "four_combination") result_folder_name = "four_result";
+            else continue;
+            
+            safe_cout("  Processing " + comb_basename + "\n");
             std::string result_dir = combination_softrandom_result_dir + "/" + result_folder_name;
             create_directory(result_dir);
             std::map<std::string, std::vector<std::map<std::string, std::string>>> results_by_pair;

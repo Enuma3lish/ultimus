@@ -74,7 +74,7 @@ void save_analysis_results(const std::string& input_file_path, int nJobsPerRound
         params.bp_H = old_params.bp_H;
     }
     
-    std::string main_dir = "/home/melowu/Work/ultimus/Dynamic_analysis";
+    std::string main_dir = "/Users/melowu/Desktop/ultimus/Dynamic_analysis";
     std::string avg_folder = "avg_" + avg_type;
     std::string mode_folder = "mode_" + std::to_string(mode);
     std::string folder_path = main_dir + "/" + avg_folder + "/" + mode_folder;
@@ -587,8 +587,8 @@ int main(int argc, char* argv[]) {
         }
     }
     
-    std::string data_dir = "/home/melowu/Work/ultimus/data";
-    std::string output_dir = "/home/melowu/Work/ultimus/Dynamic_result";
+    std::string data_dir = "/Users/melowu/Desktop/ultimus/data";
+    std::string output_dir = "/Users/melowu/Desktop/ultimus/Dynamic_result";
     
     // Detect number of hardware threads
     unsigned int num_threads = std::thread::hardware_concurrency();

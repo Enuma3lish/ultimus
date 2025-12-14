@@ -11,8 +11,8 @@
 #include "process_softrandom_folders.h"
 
 int main() {
-    std::string data_dir = "/home/melowu/Work/ultimus/data";
-    std::string output_dir = "/home/melowu/Work/ultimus/FCFS_result";
+    std::string data_dir = "/Users/melowu/Desktop/ultimus/data";
+    std::string output_dir = "/Users/melowu/Desktop/ultimus/FCFS_result";
     
     std::cout << "============================================================\n";
     std::cout << "Starting FCFS batch processing:\n";

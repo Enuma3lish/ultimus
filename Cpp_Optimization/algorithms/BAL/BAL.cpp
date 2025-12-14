@@ -15,8 +15,8 @@ BALResult BalWrapper(std::vector<Job> jobs) {
 }
 
 int main() {
-    std::string data_dir = "/home/melowu/Work/ultimus/data";
-    std::string output_dir = "/home/melowu/Work/ultimus/BAL_result";
+    std::string data_dir = "/Users/melowu/Desktop/ultimus/data";
+    std::string output_dir = "/Users/melowu/Desktop/ultimus/BAL_result";
     
     std::cout << "============================================================\n";
     std::cout << "Starting BAL batch processing:\n";

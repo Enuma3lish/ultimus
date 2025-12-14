@@ -16,8 +16,8 @@
 // Main function to demonstrate MLFQ usage
 int main(int argc, char* argv[]) {
     // Default parameters
-    std::string data_dir = "/home/melowu/Work/ultimus/data";
-    std::string output_dir = "/home/melowu/Work/ultimus/MLFQ_result";
+    std::string data_dir = "/Users/melowu/Desktop/ultimus/data";
+    std::string output_dir = "/Users/melowu/Desktop/ultimus/MLFQ_result";
     int num_queues = 5;  // Default number of MLFQ queues
     
     // Parse command line arguments if provided

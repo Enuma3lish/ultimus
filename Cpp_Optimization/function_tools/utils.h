@@ -35,9 +35,9 @@ inline AvgParams parse_avg_filename(const std::string& filename) {
     std::regex pattern("\\((\\d+(?:\\.\\d+)?),\\s*(\\d+(?:\\.\\d+)?)_(\\d+)\\)");
     std::smatch match;
     if (std::regex_search(filename, match, pattern)) {
-        return {std::stod(match[1]), std::stod(match[2]), std::stoi(match[3])};
+        return {std::stod(match[1]), std::stod(match[2]), static_cast<double>(std::stoi(match[3]))};
     }
-    return {-1.0, -1.0, -1};
+    return {-1.0, -1.0, -1.0};
 }
 
 // ============ parse_freq_from_folder ============
@@ -48,6 +48,33 @@ inline int parse_freq_from_folder(const std::string& folder_name) {
         return std::stoi(match[1]);
     }
     return -1;
+}
+
+// ============ parse_combination_type_from_folder ============
+inline std::string parse_combination_type_from_folder(const std::string& folder_name) {
+    // Extract combination type from folder names like:
+    // two_combination_H64_H512 -> "two_combination"
+    // three_combination_std6_std9_std12 -> "three_combination"
+    // four_combination_H64_H512_H4096_H32768 -> "four_combination"
+    std::regex pattern("(two_combination|three_combination|four_combination)");
+    std::smatch match;
+    if (std::regex_search(folder_name, match, pattern)) {
+        return match[1];
+    }
+    return "";
+}
+
+// ============ parse_combination_params_from_folder ============
+inline std::string parse_combination_params_from_folder(const std::string& folder_name) {
+    // Extract parameter part from folder names like:
+    // two_combination_H64_H512 -> "H64_H512"
+    // three_combination_std6_std9_std12 -> "std6_std9_std12"
+    std::regex pattern("(?:two|three|four)_combination_(.+)$");
+    std::smatch match;
+    if (std::regex_search(folder_name, match, pattern)) {
+        return match[1];
+    }
+    return "";
 }
 
 // ============ read_jobs_from_csv ============
