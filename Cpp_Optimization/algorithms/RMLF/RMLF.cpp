@@ -7,6 +7,13 @@
 #include "process_avg_folders.h"
 #include "process_random_folders.h"
 #include "process_softrandom_folders.h"
+#include "process_experiment1_folders.h"
+#include "process_experiment2_folders.h"
+#include "process_experiment3_folders.h"
+#include "process_experiment4_folders.h"
+#include "process_experiment5_folders.h"
+#include "process_experiment6_folders.h"
+#include "process_fix_combination_folders.h"
 
 // Wrapper function for average data processing
 RMLFResult RMLF_wrapper(std::vector<Job> jobs) {
@@ -165,5 +172,14 @@ int main(int argc, char* argv[]) {
     std::cout << "=== All processing completed ===" << std::endl;
     std::cout << "Results saved to: " << output_dir << std::endl;
     
+
+
+    // ==================== FIX COMBINATION FOLDERS (Fixed Mean Arrival Time) ====================
+
+    std::cout << "\n========================================\n";
+    std::cout << "Processing Fix Combination Folders (fix20, fix30, fix40)...\n";
+    std::cout << "========================================\n";
+    process_fix_combination_folders(RMLF_wrapper, "RMLF", data_dir, output_dir);
+
     return 0;
 }

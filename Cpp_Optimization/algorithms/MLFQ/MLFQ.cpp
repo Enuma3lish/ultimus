@@ -12,6 +12,9 @@
 #include "process_avg_folders.h"
 #include "process_random_folders.h"
 #include "process_softrandom_folders.h"
+#include "process_experiment1_folders.h"
+#include "process_experiment2_folders.h"
+#include "process_experiment3_folders.h"
 
 // Main function to demonstrate MLFQ usage
 int main(int argc, char* argv[]) {

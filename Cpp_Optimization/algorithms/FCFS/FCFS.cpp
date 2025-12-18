@@ -9,6 +9,13 @@
 #include "process_avg_folders.h"
 #include "process_random_folders.h"
 #include "process_softrandom_folders.h"
+#include "process_experiment1_folders.h"
+#include "process_experiment2_folders.h"
+#include "process_experiment3_folders.h"
+#include "process_experiment4_folders.h"
+#include "process_experiment5_folders.h"
+#include "process_experiment6_folders.h"
+#include "process_fix_combination_folders.h"
 
 int main() {
     std::string data_dir = "/Users/melowu/Desktop/ultimus/data";
@@ -68,8 +75,16 @@ int main() {
     process_normal_combination_softrandom_folders(Fcfs, "FCFS", data_dir, output_dir);
 
     std::cout << "\n============================================================\n";
-    std::cout << "FCFS batch processing completed successfully!\n";
+
+    // ==================== FIX COMBINATION FOLDERS (Fixed Mean Arrival Time) ====================
+
+    std::cout << "\n========================================\n";
+    std::cout << "Processing Fix Combination Folders (fix20, fix30, fix40)...\n";
+    std::cout << "========================================\n";
+    process_fix_combination_folders(Fcfs, "FCFS", data_dir, output_dir);
+
+    std::cout << "FCFS batch processing completed successfully!\n  (Including fix combination folders)\n";
     std::cout << "============================================================\n";
-    
+
     return 0;
 }

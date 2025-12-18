@@ -661,6 +661,95 @@ def Save_file(num_jobs, i):
         filename = f"{normal_softrandom_folder}/normal_softrandom_freq_{ct}.csv"
         Write_csv.Write_raw(filename, job_list)
 
+    # ==================== EXPERIMENTS ====================
+
+    # Experiment 1: Fixed arrival rate, vary coherence_time
+    exp1_base = f"data/experiment1_fixed_arrival_{i}"
+    os.makedirs(exp1_base, exist_ok=True)
+
+    for ct in tqdm.tqdm(coherence_times, desc=f"Processing Experiment 1 (fixed arrival) _{i}"):
+        exp1_folder = f"{exp1_base}/freq_{ct}_{i}"
+        os.makedirs(exp1_folder, exist_ok=True)
+
+        job_list = experiment1_fixed_arrival_vary_coherence(num_jobs, fixed_inter_arrival=30, coherence_time=ct)
+        filename = f"{exp1_folder}/exp1_fixed_arrival_freq_{ct}.csv"
+        Write_csv.Write_raw(filename, job_list)
+
+    # Experiment 2: Fixed job size, vary coherence_time
+    # Test with different fixed parameters
+    exp2_base = f"data/experiment2_fixed_jobsize_{i}"
+    os.makedirs(exp2_base, exist_ok=True)
+
+    for param_idx in range(len(bp_parameter_30)):
+        param = bp_parameter_30[param_idx]
+        param_folder = f"{exp2_base}/param_L{param['L']:.3f}_H{int(param['H'])}"
+        os.makedirs(param_folder, exist_ok=True)
+
+        for ct in tqdm.tqdm(coherence_times, desc=f"Processing Experiment 2 (param {param_idx}) _{i}"):
+            exp2_freq_folder = f"{param_folder}/freq_{ct}_{i}"
+            os.makedirs(exp2_freq_folder, exist_ok=True)
+
+            job_list = experiment2_fixed_jobsize_vary_coherence(num_jobs, fixed_param_index=param_idx, coherence_time=ct)
+            filename = f"{exp2_freq_folder}/exp2_fixed_jobsize_param{param_idx}_freq_{ct}.csv"
+            Write_csv.Write_raw(filename, job_list)
+
+    # Experiment 3: Record parameter switches
+    exp3_base = f"data/experiment3_record_switches_{i}"
+    os.makedirs(exp3_base, exist_ok=True)
+
+    for ct in tqdm.tqdm(coherence_times, desc=f"Processing Experiment 3 (record switches) _{i}"):
+        exp3_folder = f"{exp3_base}/freq_{ct}_{i}"
+        os.makedirs(exp3_folder, exist_ok=True)
+
+        job_list, switch_history = experiment3_record_switches(num_jobs, coherence_time=ct)
+
+        # Save job list
+        job_filename = f"{exp3_folder}/exp3_jobs_freq_{ct}.csv"
+        Write_csv.Write_raw(job_filename, job_list)
+
+        # Save switch history
+        switch_filename = f"{exp3_folder}/exp3_switches_freq_{ct}.csv"
+        if switch_history:
+            import pandas as pd
+            df_switches = pd.DataFrame(switch_history)
+            df_switches.to_csv(switch_filename, index=False)
+
+    # Experiment 4: Fixed inter-arrival = 20 (Overload: ρ=1.5)
+    exp4_base = f"data/experiment4_fixed_arrival_20_{i}"
+    os.makedirs(exp4_base, exist_ok=True)
+
+    for ct in tqdm.tqdm(coherence_times, desc=f"Processing Experiment 4 (arrival=20) _{i}"):
+        exp4_folder = f"{exp4_base}/freq_{ct}_{i}"
+        os.makedirs(exp4_folder, exist_ok=True)
+
+        job_list = experiment4_fixed_interarrival_20(num_jobs, coherence_time=ct)
+        filename = f"{exp4_folder}/exp4_fixed_arrival20_freq_{ct}.csv"
+        Write_csv.Write_raw(filename, job_list)
+
+    # Experiment 5: Fixed inter-arrival = 30 (Balanced: ρ=1.0)
+    exp5_base = f"data/experiment5_fixed_arrival_30_{i}"
+    os.makedirs(exp5_base, exist_ok=True)
+
+    for ct in tqdm.tqdm(coherence_times, desc=f"Processing Experiment 5 (arrival=30) _{i}"):
+        exp5_folder = f"{exp5_base}/freq_{ct}_{i}"
+        os.makedirs(exp5_folder, exist_ok=True)
+
+        job_list = experiment5_fixed_interarrival_30(num_jobs, coherence_time=ct)
+        filename = f"{exp5_folder}/exp5_fixed_arrival30_freq_{ct}.csv"
+        Write_csv.Write_raw(filename, job_list)
+
+    # Experiment 6: Fixed inter-arrival = 40 (Stable: ρ=0.75)
+    exp6_base = f"data/experiment6_fixed_arrival_40_{i}"
+    os.makedirs(exp6_base, exist_ok=True)
+
+    for ct in tqdm.tqdm(coherence_times, desc=f"Processing Experiment 6 (arrival=40) _{i}"):
+        exp6_folder = f"{exp6_base}/freq_{ct}_{i}"
+        os.makedirs(exp6_folder, exist_ok=True)
+
+        job_list = experiment6_fixed_interarrival_40(num_jobs, coherence_time=ct)
+        filename = f"{exp6_folder}/exp6_fixed_arrival40_freq_{ct}.csv"
+        Write_csv.Write_raw(filename, job_list)
+
     # Define combination sets from avg_30 BP parameters (sequential pairs, triplets, quadruplets)
     # Bounded Pareto combinations
     bp_two_combinations = [
@@ -883,6 +972,532 @@ def Save_file(num_jobs, i):
             job_list = combination_softrandom_job_init(num_jobs, param_set, coherence_time=ct)
             filename = f"{freq_folder}/quadruplet_{idx+1}_freq_{ct}.csv"
             Write_csv.Write_raw(filename, job_list)
+
+def experiment1_fixed_arrival_vary_coherence(num_jobs, fixed_inter_arrival=30, coherence_time=1):
+    """
+    實驗1：固定到達率，改變coherence_time
+
+    只改變工作大小參數，到達率保持固定
+
+    Parameters:
+    num_jobs (int): Number of jobs to generate
+    fixed_inter_arrival (float): Fixed inter-arrival time (default=30)
+    coherence_time (int): Time units after which job size parameters may change
+
+    Returns:
+    list: Job list with fixed arrival rate
+    """
+    samples = []
+
+    # Use only BP parameters from avg_30
+    all_bp_parameters = bp_parameter_30
+
+    # Initialize with random parameter but FIXED inter-arrival
+    current_param = random.choice(all_bp_parameters)
+    current_time = 0
+    last_change_time = 0
+
+    # Generate jobs one by one
+    for _ in range(num_jobs):
+        # Check if coherence_time has passed (based on CPU time)
+        if current_time - last_change_time >= coherence_time:
+            # Only change job size parameter, NOT arrival rate
+            current_param = random.choice(all_bp_parameters)
+            last_change_time = current_time
+
+        # Generate job size
+        job_size = math.ceil(generate_job_size(current_param, size=1)[0])
+
+        # Generate arrival time with FIXED inter-arrival
+        inter_arrival = round(np.random.exponential(scale=fixed_inter_arrival))
+        inter_arrival = max(1, inter_arrival)
+        current_time += inter_arrival
+
+        samples.append({
+            "arrival_time": current_time,
+            "job_size": job_size
+        })
+
+    return samples
+
+def experiment2_fixed_jobsize_vary_coherence(num_jobs, fixed_param_index=0, coherence_time=1):
+    """
+    實驗2：固定工作大小，改變coherence_time
+
+    只改變到達率，工作大小參數保持固定
+
+    Parameters:
+    num_jobs (int): Number of jobs to generate
+    fixed_param_index (int): Index of fixed parameter in bp_parameter_30 (0-4, default=0)
+    coherence_time (int): Time units after which arrival rate may change
+
+    Returns:
+    list: Job list with fixed job size parameter
+    """
+    samples = []
+
+    # Use a fixed BP parameter
+    fixed_param = bp_parameter_30[fixed_param_index]
+
+    # Initialize with random inter-arrival time
+    current_avg_inter_arrival = random.choice(inter_arrival_time)
+    current_time = 0
+    last_change_time = 0
+
+    # Generate jobs one by one
+    for _ in range(num_jobs):
+        # Check if coherence_time has passed (based on CPU time)
+        if current_time - last_change_time >= coherence_time:
+            # Only change arrival rate, NOT job size parameter
+            current_avg_inter_arrival = random.choice(inter_arrival_time)
+            last_change_time = current_time
+
+        # Generate job size with FIXED parameter
+        job_size = math.ceil(generate_job_size(fixed_param, size=1)[0])
+
+        # Generate arrival time
+        inter_arrival = round(np.random.exponential(scale=current_avg_inter_arrival))
+        inter_arrival = max(1, inter_arrival)
+        current_time += inter_arrival
+
+        samples.append({
+            "arrival_time": current_time,
+            "job_size": job_size
+        })
+
+    return samples
+
+def experiment3_record_switches(num_jobs, coherence_time=1):
+    """
+    實驗3：記錄參數切換歷史
+
+    在生成數據時記錄每次參數切換的詳細信息
+
+    Parameters:
+    num_jobs (int): Number of jobs to generate
+    coherence_time (int): Time units after which parameters may change
+
+    Returns:
+    tuple: (job_list, switch_history)
+        - job_list: List of jobs with arrival_time and job_size
+        - switch_history: List of parameter switches with detailed info
+    """
+    samples = []
+    switch_history = []
+
+    # Use BP parameters from avg_30
+    all_bp_parameters = bp_parameter_30
+
+    # Initialize with random parameter and inter-arrival time
+    current_param = random.choice(all_bp_parameters)
+    current_avg_inter_arrival = random.choice(inter_arrival_time)
+    current_time = 0
+    last_change_time = 0
+
+    # Record initial parameters
+    switch_history.append({
+        "switch_time": 0,
+        "job_index": 0,
+        "old_param_L": None,
+        "old_param_H": None,
+        "new_param_L": current_param["L"],
+        "new_param_H": current_param["H"],
+        "old_inter_arrival": None,
+        "new_inter_arrival": current_avg_inter_arrival,
+        "old_load": None,
+        "new_load": 30.0 / current_avg_inter_arrival,  # Approximate load
+        "duration_since_last_switch": 0
+    })
+
+    # Generate jobs one by one
+    for job_idx in range(num_jobs):
+        # Check if coherence_time has passed (based on CPU time)
+        if current_time - last_change_time >= coherence_time:
+            # Record old parameters
+            old_param = current_param
+            old_inter_arrival = current_avg_inter_arrival
+            old_load = 30.0 / old_inter_arrival
+
+            # Change parameters
+            current_param = random.choice(all_bp_parameters)
+            current_avg_inter_arrival = random.choice(inter_arrival_time)
+
+            # Calculate new load
+            new_load = 30.0 / current_avg_inter_arrival
+
+            # Record switch
+            switch_history.append({
+                "switch_time": current_time,
+                "job_index": job_idx,
+                "old_param_L": old_param["L"],
+                "old_param_H": old_param["H"],
+                "new_param_L": current_param["L"],
+                "new_param_H": current_param["H"],
+                "old_inter_arrival": old_inter_arrival,
+                "new_inter_arrival": current_avg_inter_arrival,
+                "old_load": old_load,
+                "new_load": new_load,
+                "duration_since_last_switch": current_time - last_change_time
+            })
+
+            last_change_time = current_time
+
+        # Generate job size
+        job_size = math.ceil(generate_job_size(current_param, size=1)[0])
+
+        # Generate arrival time
+        inter_arrival = round(np.random.exponential(scale=current_avg_inter_arrival))
+        inter_arrival = max(1, inter_arrival)
+        current_time += inter_arrival
+
+        samples.append({
+            "arrival_time": current_time,
+            "job_size": job_size,
+            "param_L": current_param["L"],
+            "param_H": current_param["H"],
+            "inter_arrival_setting": current_avg_inter_arrival
+        })
+
+    return samples, switch_history
+
+def experiment4_fixed_interarrival_20(num_jobs, coherence_time=1):
+    """
+    Experiment 4: Fixed inter-arrival time = 20 (Overload: ρ=1.5)
+
+    Job size parameters switch between BP and Normal from avg_30.
+    This creates an overload scenario since E[job_size]=30 and inter_arrival=20.
+
+    Parameters:
+    num_jobs (int): Number of jobs to generate
+    coherence_time (int): Time units after which job size parameters may change
+
+    Returns:
+    list: Job list with fixed arrival rate = 20
+    """
+    samples = []
+
+    # Combine BP and Normal parameters from avg_30
+    all_parameters = bp_parameter_30 + normal_parameter_30
+
+    # Initialize with random parameter but FIXED inter-arrival = 20
+    current_param = random.choice(all_parameters)
+    current_time = 0
+    last_change_time = 0
+
+    # Generate jobs one by one
+    for _ in range(num_jobs):
+        # Check if coherence_time has passed (based on CPU time)
+        if current_time - last_change_time >= coherence_time:
+            # Only change job size parameter, NOT arrival rate
+            current_param = random.choice(all_parameters)
+            last_change_time = current_time
+
+        # Generate job size (can be BP or Normal)
+        job_size = math.ceil(generate_job_size(current_param, size=1)[0])
+
+        # Generate arrival time with FIXED inter-arrival = 20
+        inter_arrival = round(np.random.exponential(scale=20))
+        inter_arrival = max(1, inter_arrival)
+        current_time += inter_arrival
+
+        samples.append({
+            "arrival_time": current_time,
+            "job_size": job_size
+        })
+
+    return samples
+
+def experiment5_fixed_interarrival_30(num_jobs, coherence_time=1):
+    """
+    Experiment 5: Fixed inter-arrival time = 30 (Balanced: ρ=1.0)
+
+    Job size parameters switch between BP and Normal from avg_30.
+    This creates a critical load scenario since E[job_size]=30 and inter_arrival=30.
+
+    Parameters:
+    num_jobs (int): Number of jobs to generate
+    coherence_time (int): Time units after which job size parameters may change
+
+    Returns:
+    list: Job list with fixed arrival rate = 30
+    """
+    samples = []
+
+    # Combine BP and Normal parameters from avg_30
+    all_parameters = bp_parameter_30 + normal_parameter_30
+
+    # Initialize with random parameter but FIXED inter-arrival = 30
+    current_param = random.choice(all_parameters)
+    current_time = 0
+    last_change_time = 0
+
+    # Generate jobs one by one
+    for _ in range(num_jobs):
+        # Check if coherence_time has passed (based on CPU time)
+        if current_time - last_change_time >= coherence_time:
+            # Only change job size parameter, NOT arrival rate
+            current_param = random.choice(all_parameters)
+            last_change_time = current_time
+
+        # Generate job size (can be BP or Normal)
+        job_size = math.ceil(generate_job_size(current_param, size=1)[0])
+
+        # Generate arrival time with FIXED inter-arrival = 30
+        inter_arrival = round(np.random.exponential(scale=30))
+        inter_arrival = max(1, inter_arrival)
+        current_time += inter_arrival
+
+        samples.append({
+            "arrival_time": current_time,
+            "job_size": job_size
+        })
+
+    return samples
+
+def experiment6_fixed_interarrival_40(num_jobs, coherence_time=1):
+    """
+    Experiment 6: Fixed inter-arrival time = 40 (Stable: ρ=0.75)
+
+    Job size parameters switch between BP and Normal from avg_30.
+    This creates a stable load scenario since E[job_size]=30 and inter_arrival=40.
+
+    Parameters:
+    num_jobs (int): Number of jobs to generate
+    coherence_time (int): Time units after which job size parameters may change
+
+    Returns:
+    list: Job list with fixed arrival rate = 40
+    """
+    samples = []
+
+    # Combine BP and Normal parameters from avg_30
+    all_parameters = bp_parameter_30 + normal_parameter_30
+
+    # Initialize with random parameter but FIXED inter-arrival = 40
+    current_param = random.choice(all_parameters)
+    current_time = 0
+    last_change_time = 0
+
+    # Generate jobs one by one
+    for _ in range(num_jobs):
+        # Check if coherence_time has passed (based on CPU time)
+        if current_time - last_change_time >= coherence_time:
+            # Only change job size parameter, NOT arrival rate
+            current_param = random.choice(all_parameters)
+            last_change_time = current_time
+
+        # Generate job size (can be BP or Normal)
+        job_size = math.ceil(generate_job_size(current_param, size=1)[0])
+
+        # Generate arrival time with FIXED inter-arrival = 40
+        inter_arrival = round(np.random.exponential(scale=40))
+        inter_arrival = max(1, inter_arrival)
+        current_time += inter_arrival
+
+        samples.append({
+            "arrival_time": current_time,
+            "job_size": job_size
+        })
+
+    return samples
+
+def combination_fixed_arrival_job_init(num_jobs, param_set, fixed_inter_arrival, coherence_time=1):
+    """
+    Create jobs with FIXED inter-arrival time but RANDOM parameter switching.
+    Similar to combination_random_job_init but with fixed arrival rate.
+
+    Parameters:
+    num_jobs (int): Number of jobs to generate
+    param_set (list): List of parameters to choose from (2, 3, or 4 parameters)
+    fixed_inter_arrival (int): Fixed mean inter-arrival time (20, 30, or 40)
+    coherence_time (int): CPU time units after which parameters may change
+
+    Returns:
+    list: Job list with fixed arrival rate but random parameter switching
+    """
+    samples = []
+
+    # Initialize with random parameter from the set
+    current_param = random.choice(param_set)
+    current_time = 0
+    last_change_time = 0
+
+    # Generate jobs one by one
+    for _ in range(num_jobs):
+        # Check if coherence_time has passed (based on CPU time)
+        if current_time - last_change_time >= coherence_time:
+            current_param = random.choice(param_set)  # Switch parameter
+            last_change_time = current_time
+
+        # Generate job size using current parameter
+        job_size = math.ceil(generate_job_size(current_param, size=1)[0])
+
+        # Generate arrival time with FIXED inter-arrival
+        inter_arrival = round(np.random.exponential(scale=fixed_inter_arrival))
+        inter_arrival = max(1, inter_arrival)
+        current_time += inter_arrival
+
+        samples.append({"arrival_time": current_time, "job_size": job_size})
+
+    return samples
+
+
+def Save_fix_combination_files(num_jobs, num_replications=10):
+    """
+    Generate and save fixed arrival combination data (like Bounded_Pareto_combination).
+
+    Creates folder structure:
+    data/
+      fix20_combination_1/
+        two_combination_H64_H512/
+          freq_2_1/
+            pair_1_freq_2.csv
+        three_combination_H64_H512_H4096/
+          freq_2_1/
+            triplet_1_freq_2.csv
+        four_combination_H512_H4096_H32768_H262144/
+          freq_2_1/
+            quadruplet_1_freq_2.csv
+      fix20_combination_2/
+        ...
+      fix30_combination_1/
+        ...
+      fix40_combination_1/
+        ...
+
+    Parameters:
+    num_jobs (int): Number of jobs to generate per file
+    num_replications (int): Number of replications for each fixed arrival time
+    """
+    # Fixed inter-arrival times: 20, 30, 40
+    fixed_arrivals = {
+        "fix20": 20,  # ρ = 30/20 = 1.5 (overload)
+        "fix30": 30,  # ρ = 30/30 = 1.0 (critical)
+        "fix40": 40   # ρ = 30/40 = 0.75 (stable)
+    }
+
+    # Use only BP parameters for combinations
+    bp_params = bp_parameter_30
+
+    # Define all combinations (matching existing structure)
+    # Two combinations
+    two_combinations = []
+    for i in range(len(bp_params)):
+        for j in range(i + 1, len(bp_params)):
+            two_combinations.append([bp_params[i], bp_params[j]])
+
+    # Three combinations
+    three_combinations = []
+    for i in range(len(bp_params)):
+        for j in range(i + 1, len(bp_params)):
+            for k in range(j + 1, len(bp_params)):
+                three_combinations.append([bp_params[i], bp_params[j], bp_params[k]])
+
+    # Four combinations
+    four_combinations = []
+    for i in range(len(bp_params)):
+        for j in range(i + 1, len(bp_params)):
+            for k in range(j + 1, len(bp_params)):
+                for l in range(k + 1, len(bp_params)):
+                    four_combinations.append([bp_params[i], bp_params[j], bp_params[k], bp_params[l]])
+
+    # Coherence times (frequencies)
+    coherence_times = [2**i for i in range(1, 17)]  # 2, 4, 8, ..., 65536
+
+    print("=" * 80)
+    print("生成固定到達率組合實驗資料")
+    print("=" * 80)
+    print(f"工作數量: {num_jobs}")
+    print(f"重複次數: {num_replications}")
+    print(f"固定到達率: {list(fixed_arrivals.values())}")
+    print(f"2-組合數量: {len(two_combinations)}")
+    print(f"3-組合數量: {len(three_combinations)}")
+    print(f"4-組合數量: {len(four_combinations)}")
+    print(f"Coherence times: {len(coherence_times)}")
+    total_files = len(fixed_arrivals) * num_replications * (len(two_combinations) + len(three_combinations) + len(four_combinations)) * len(coherence_times)
+    print(f"總檔案數: {total_files}")
+    print("=" * 80)
+
+    for arrival_name, arrival_rate in fixed_arrivals.items():
+        print(f"\n處理 {arrival_name} (mean inter-arrival = {arrival_rate})...")
+
+        for rep in tqdm.tqdm(range(1, num_replications + 1), desc=f"{arrival_name} combination replications"):
+            folder_name = f"{arrival_name}_combination_{rep}"
+
+            # Process two combinations
+            for idx, param_set in enumerate(two_combinations, 1):
+                # Create folder name like "two_combination_H64_H512"
+                h_values = "_".join([f"H{int(p['H'])}" for p in param_set])
+                comb_folder_name = f"two_combination_{h_values}"
+
+                for coherence_time in coherence_times:
+                    # Generate jobs
+                    job_list = combination_fixed_arrival_job_init(
+                        num_jobs=num_jobs,
+                        param_set=param_set,
+                        fixed_inter_arrival=arrival_rate,
+                        coherence_time=coherence_time
+                    )
+
+                    # Create directory structure
+                    freq_folder_name = f"freq_{coherence_time}_1"
+                    csv_filename = f"pair_{idx}_freq_{coherence_time}.csv"
+
+                    # Full path: data/fix20_combination_1/two_combination_H64_H512/freq_2_1/pair_1_freq_2.csv
+                    folder_path = os.path.join("data", folder_name, comb_folder_name, freq_folder_name)
+                    os.makedirs(folder_path, exist_ok=True)
+
+                    csv_path = os.path.join(folder_path, csv_filename)
+                    Write_csv.Write(csv_path, job_list)
+
+            # Process three combinations
+            for idx, param_set in enumerate(three_combinations, 1):
+                h_values = "_".join([f"H{int(p['H'])}" for p in param_set])
+                comb_folder_name = f"three_combination_{h_values}"
+
+                for coherence_time in coherence_times:
+                    job_list = combination_fixed_arrival_job_init(
+                        num_jobs=num_jobs,
+                        param_set=param_set,
+                        fixed_inter_arrival=arrival_rate,
+                        coherence_time=coherence_time
+                    )
+
+                    freq_folder_name = f"freq_{coherence_time}_1"
+                    csv_filename = f"triplet_{idx}_freq_{coherence_time}.csv"
+
+                    folder_path = os.path.join("data", folder_name, comb_folder_name, freq_folder_name)
+                    os.makedirs(folder_path, exist_ok=True)
+
+                    csv_path = os.path.join(folder_path, csv_filename)
+                    Write_csv.Write(csv_path, job_list)
+
+            # Process four combinations
+            for idx, param_set in enumerate(four_combinations, 1):
+                h_values = "_".join([f"H{int(p['H'])}" for p in param_set])
+                comb_folder_name = f"four_combination_{h_values}"
+
+                for coherence_time in coherence_times:
+                    job_list = combination_fixed_arrival_job_init(
+                        num_jobs=num_jobs,
+                        param_set=param_set,
+                        fixed_inter_arrival=arrival_rate,
+                        coherence_time=coherence_time
+                    )
+
+                    freq_folder_name = f"freq_{coherence_time}_1"
+                    csv_filename = f"quadruplet_{idx}_freq_{coherence_time}.csv"
+
+                    folder_path = os.path.join("data", folder_name, comb_folder_name, freq_folder_name)
+                    os.makedirs(folder_path, exist_ok=True)
+
+                    csv_path = os.path.join(folder_path, csv_filename)
+                    Write_csv.Write(csv_path, job_list)
+
+    print("\n" + "=" * 80)
+    print("✓ 資料生成完成！")
+    print("=" * 80)
+
 
 def analyze_jobs(job_list: List[Dict]) -> Dict:
     """
@@ -1116,37 +1731,44 @@ def compare_distributions(num_jobs: int = 5000) -> pd.DataFrame:
 
 if __name__ == "__main__":
     import argparse
-    
+
     parser = argparse.ArgumentParser(description='Job initialization and testing')
-    parser.add_argument('--mode', type=str, default='generate', 
-                       choices=['generate', 'test', 'compare'],
-                       help='運行模式: generate=生成數據, test=運行測試, compare=比較分布')
-    parser.add_argument('--num-jobs', type=int, default=1000,
+    parser.add_argument('--mode', type=str, default='generate',
+                       choices=['generate', 'test', 'compare', 'fix_combination'],
+                       help='運行模式: generate=生成數據, test=運行測試, compare=比較分布, fix_combination=生成固定到達率組合數據')
+    parser.add_argument('--num-jobs', type=int, default=10000,
                        help='測試時生成的工作數量')
+    parser.add_argument('--num-replications', type=int, default=10,
+                       help='固定到達率實驗的重複次數')
     parser.add_argument('--output', type=str, default='test_results.csv',
                        help='測試結果輸出文件名')
-    
+
     args = parser.parse_args()
-    
+
     if args.mode == 'generate':
         # 原始的數據生成模式
         for i in range(1, 11):
-            Save_file(4000, i)
-    
+            Save_file(10000, i)
+
+    elif args.mode == 'fix_combination':
+        # 固定到達率組合實驗資料生成
+        print("生成固定到達率組合實驗資料...")
+        Save_fix_combination_files(num_jobs=args.num_jobs, num_replications=args.num_replications)
+
     elif args.mode == 'test':
         # 測試模式
         print("開始測試工作生成函數...")
         results = test_job_generation(num_jobs=args.num_jobs, verbose=True)
         export_test_results_to_csv(results, args.output)
         print("\n測試完成！")
-    
+
     elif args.mode == 'compare':
         # 比較模式
         print("開始比較不同分布...")
         df = compare_distributions(num_jobs=args.num_jobs)
         print("\n分布比較結果:")
         print(df.to_string())
-        
+
         output_file = args.output.replace('.csv', '_comparison.csv')
         df.to_csv(output_file, index=False)
         print(f"\n比較結果已保存到: {output_file}")

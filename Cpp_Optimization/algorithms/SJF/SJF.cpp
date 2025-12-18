@@ -5,6 +5,9 @@
 #include "process_avg_folders.h"
 #include "process_random_folders.h"
 #include "process_softrandom_folders.h"
+#include "process_experiment1_folders.h"
+#include "process_experiment2_folders.h"
+#include "process_experiment3_folders.h"
 #include "utils.h"
 
 int main(int argc, char* argv[]) {
@@ -91,7 +94,7 @@ int main(int argc, char* argv[]) {
     process_normal_combination_softrandom_folders(sjf_lambda, "SJF", data_dir, output_dir);
 
     std::cout << "\n============================================================" << std::endl;
-    std::cout << "SJF batch processing completed successfully!" << std::endl;
+    std::cout << "SJF batch processing completed successfully!\n  (Including 3 experiments)" << std::endl;
     std::cout << "============================================================" << std::endl;
     
     return 0;

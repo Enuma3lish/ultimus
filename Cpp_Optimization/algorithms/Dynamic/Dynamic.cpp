@@ -20,6 +20,13 @@
 #include "process_avg_folders.h"
 #include "process_random_folders.h"
 #include "process_softrandom_folders.h"
+#include "process_experiment1_folders.h"
+#include "process_experiment2_folders.h"
+#include "process_experiment3_folders.h"
+#include "process_experiment4_folders.h"
+#include "process_experiment5_folders.h"
+#include "process_experiment6_folders.h"
+#include "process_fix_combination_folders.h"
 
 // Global mutex for thread-safe console output
 std::mutex cout_mutex;
@@ -554,6 +561,11 @@ std::vector<int> parse_modes(const std::string& mode_str) {
     return modes;
 }
 
+// Wrapper function for experiments (simple single-parameter interface)
+DynamicResult Dynamic(std::vector<Job> jobs) {
+    return DYNAMIC(jobs, 100, 1, "");  // Use default nJobsPerRound=100, mode=1
+}
+
 int main(int argc, char* argv[]) {
     // Default values
     int nJobsPerRound = 100;
@@ -775,10 +787,26 @@ int main(int argc, char* argv[]) {
     }
     
     std::cout << "\n============================================================\n";
-    std::cout << "All Dynamic processing completed successfully!\n";
+
+    // ==================== FIX COMBINATION FOLDERS (Fixed Mean Arrival Time) ====================
+
+    std::cout << "\n========================================\n";
+    std::cout << "Processing Fix Combination Folders (fix20, fix30, fix40) with multimode...\n";
+    std::cout << "========================================\n";
+
+    // Lambda that wraps our multimode function for the template
+    auto fix_combination_wrapper = [](std::vector<Job> jobs, int nJobsPerRound,
+                                      const std::vector<int>& modes_to_run) {
+        return run_all_modes_for_file_frequency(jobs, nJobsPerRound, modes_to_run);
+    };
+
+    process_fix_combination_folders_multimode(fix_combination_wrapper, "Dynamic", data_dir, output_dir,
+                                             nJobsPerRound, modes_to_run, cout_mutex);
+
+    std::cout << "All Dynamic processing completed successfully!\n  (Including fix combination folders with multimode)\n";
     std::cout << "============================================================\n";
 
 
-    
+
     return 0;
 }

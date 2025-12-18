@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3:*)",
+      "Bash(chmod:*)",
+      "Bash(make:*)",
+      "Bash(done)",
+      "Bash(cmake:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(pip3 install:*)",
+      "Bash(g++:*)",
+      "Bash(cat:*)",
+      "Bash(./SRPT)",
+      "Bash(for algo in SRPT Dynamic Dynamic_BAL RFDynamic BAL FCFS SETF RMLF)",
+      "Bash(do if [ -d \"algorithm_result/$algo_result\" ])",
+      "Bash(then cd \"algorithm_result/$algo_result\" ls -d */)",
+      "Bash(xargs rm -rf cd ../.. fi done)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

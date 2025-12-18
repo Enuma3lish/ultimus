@@ -628,7 +628,7 @@ run_all_algorithms() {
 run_plotter() {
   echo ""
   echo "=========================================="
-  echo "Step 6: Running Comparison Plotter"
+  echo "Step 5: Running Comparison Plotter"
   echo "=========================================="
 
   if [[ ! -f "$PLOTTER_SCRIPT" ]]; then
@@ -645,6 +645,33 @@ run_plotter() {
     return 0
   else
     echo "✗ Plotting failed. Check log: $logf"
+    tail -n 20 "$logf"
+    return 1
+  fi
+}
+
+run_experiment_plotter() {
+  echo ""
+  echo "=========================================="
+  echo "Step 6: Running Experiment Plotter"
+  echo "=========================================="
+
+  local experiment_plotter="${PROJECT_ROOT}/plot_experiments.py"
+
+  if [[ ! -f "$experiment_plotter" ]]; then
+    echo "Error: Experiment plotter not found at $experiment_plotter"
+    return 1
+  fi
+
+  local logf="${LOG_DIR}/plot_experiments.log"
+  echo "Running plot_experiments.py..."
+  echo "Log: $logf"
+
+  if "${VENV_PATH}/bin/python" "$experiment_plotter" > "$logf" 2>&1; then
+    echo "✓ Experiment plotting completed successfully"
+    return 0
+  else
+    echo "✗ Experiment plotting failed. Check log: $logf"
     tail -n 20 "$logf"
     return 1
   fi
@@ -844,14 +871,21 @@ run_pipeline() {
     return 1
   fi
 
-  # Step 5: Run plotter (commented out by default)
-  # echo ""
-  # echo "Waiting ${STEP_DELAY} seconds before plotting..."
-  # sleep $STEP_DELAY
-  # if ! run_plotter; then
-  #   echo "✗ Pipeline failed at Plotting"
-  #   return 1
-  # fi
+  # Step 5: Run plotter
+  echo ""
+  echo "Waiting ${STEP_DELAY} seconds before plotting..."
+  sleep $STEP_DELAY
+  if ! run_plotter; then
+    echo "⚠ Warning: Main plotting failed, but continuing..."
+  fi
+
+  # Step 6: Run experiment plotter
+  echo ""
+  echo "Waiting ${STEP_DELAY} seconds before experiment plotting..."
+  sleep $STEP_DELAY
+  if ! run_experiment_plotter; then
+    echo "⚠ Warning: Experiment plotting failed, but continuing..."
+  fi
 
   local end_time=$(date +%s)
   local duration=$((end_time - start_time))
