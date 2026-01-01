@@ -20,12 +20,6 @@
 #include "process_avg_folders.h"
 #include "process_random_folders.h"
 #include "process_softrandom_folders.h"
-#include "process_experiment1_folders.h"
-#include "process_experiment2_folders.h"
-#include "process_experiment3_folders.h"
-#include "process_experiment4_folders.h"
-#include "process_experiment5_folders.h"
-#include "process_experiment6_folders.h"
 #include "process_fix_combination_folders.h"
 
 // Global mutex for thread-safe console output
@@ -43,75 +37,109 @@ struct DynamicResult {
     double max_flow_time;
 };
 
-// Save analysis results for avg files
+// Get analysis base directory
+std::string get_analysis_base_dir() {
+    const char* base = std::getenv("ULTIMUS_ANALYSIS_DIR");
+    if (base) return std::string(base);
+    return "/home/melowu/Work/ultimus/Analysis/Dynamic_BAL_analysis";
+}
+
+// Save analysis results for all file types (avg, random, softrandom, combination)
 void save_analysis_results(const std::string& input_file_path, int nJobsPerRound, int mode,
                            const std::vector<std::string>& algorithm_history, int total_rounds) {
     if (input_file_path.empty() || algorithm_history.empty()) {
         return;
     }
-    
+
     size_t last_slash = input_file_path.find_last_of('/');
     std::string dir_path = input_file_path.substr(0, last_slash);
     std::string folder_name = dir_path.substr(dir_path.find_last_of('/') + 1);
     std::string filename = input_file_path.substr(last_slash + 1);
-    
-    if (folder_name.find("avg_") != 0) {
-        return;
-    }
-    
+
+    std::string main_dir = get_analysis_base_dir();
+    std::string sub_folder;
     int version = extract_version_from_path(folder_name);
-    std::regex avg_type_pattern("avg_(\\d+)");
-    std::smatch match;
-    std::string avg_type;
-    if (std::regex_search(folder_name, match, avg_type_pattern)) {
-        avg_type = match[1];
+
+    NewAvgParams params;
+    params.arrival_rate = -1;
+    params.bp_L = -1;
+    params.bp_H = -1;
+
+    if (folder_name.find("avg_") == 0) {
+        std::regex avg_type_pattern("avg_(\\d+)");
+        std::smatch match;
+        std::string avg_type = "30";
+        if (std::regex_search(folder_name, match, avg_type_pattern)) {
+            avg_type = match[1];
+        }
+        sub_folder = "avg_" + avg_type;
+
+        params = parse_new_avg_filename(filename);
+        if (params.arrival_rate < 0) {
+            AvgParams old_params = parse_avg_filename(filename);
+            if (old_params.arrival_rate >= 0) {
+                params.arrival_rate = old_params.arrival_rate;
+                params.bp_L = old_params.bp_L;
+                params.bp_H = old_params.bp_H;
+            }
+        }
+    } else if (input_file_path.find("random") != std::string::npos ||
+               input_file_path.find("Random") != std::string::npos) {
+        if (input_file_path.find("softrandom") != std::string::npos) {
+            sub_folder = "Softrandom";
+        } else {
+            sub_folder = "Random";
+        }
+        params.arrival_rate = 30.0;
+        params.bp_L = 16.77;
+        params.bp_H = 64;
+    } else if (input_file_path.find("combination") != std::string::npos) {
+        sub_folder = "Combination";
+        params.arrival_rate = 30.0;
+        params.bp_L = 16.77;
+        params.bp_H = 64;
+    } else if (input_file_path.find("fix") != std::string::npos) {
+        sub_folder = "Fix";
+        params.arrival_rate = 30.0;
+        params.bp_L = 16.77;
+        params.bp_H = 64;
     } else {
         return;
     }
-    
-    // Parse filename using new format
-    NewAvgParams params = parse_new_avg_filename(filename);
-    
-    // Fallback to old format if new format fails
+
     if (params.arrival_rate < 0) {
-        AvgParams old_params = parse_avg_filename(filename);
-        if (old_params.arrival_rate < 0) return;
-        params.arrival_rate = old_params.arrival_rate;
-        params.bp_L = old_params.bp_L;
-        params.bp_H = old_params.bp_H;
+        return;
     }
-    
-    std::string main_dir = "/Users/melowu/Desktop/ultimus/Dynamic_BAL_analysis";
-    std::string avg_folder = "avg_" + avg_type;
+
     std::string mode_folder = "mode_" + std::to_string(mode);
-    std::string folder_path = main_dir + "/" + avg_folder + "/" + mode_folder;
-    
+    std::string folder_path = main_dir + "/" + sub_folder + "/" + mode_folder;
+
     create_directory(main_dir);
-    create_directory(main_dir + "/" + avg_folder);
+    create_directory(main_dir + "/" + sub_folder);
     create_directory(folder_path);
-    
+
     int bal_count = 0, fcfs_count = 0;
     for (const auto& algo : algorithm_history) {
         if (algo == "BAL") bal_count++;
         else if (algo == "FCFS") fcfs_count++;
     }
-    
+
     int total = algorithm_history.size();
     double bal_percentage = total > 0 ? (bal_count * 100.0 / total) : 0.0;
     double fcfs_percentage = total > 0 ? (fcfs_count * 100.0 / total) : 0.0;
-    
+
     std::string output_file;
     if (version >= 0) {
-        output_file = folder_path + "/Dynamic_BAL_avg_" + avg_type + "_nJobsPerRound_" + 
-                     std::to_string(nJobsPerRound) + "_mode_" + std::to_string(mode) + 
+        output_file = folder_path + "/Dynamic_BAL_" + sub_folder + "_nJobsPerRound_" +
+                     std::to_string(nJobsPerRound) + "_mode_" + std::to_string(mode) +
                      "_round_" + std::to_string(version) + ".csv";
     } else {
-        output_file = folder_path + "/Dynamic_BAL_avg_" + avg_type + "_nJobsPerRound_" + 
+        output_file = folder_path + "/Dynamic_BAL_" + sub_folder + "_nJobsPerRound_" +
                      std::to_string(nJobsPerRound) + "_mode_" + std::to_string(mode) + ".csv";
     }
-    
+
     bool write_header = !std::ifstream(output_file).good();
-    
+
     std::ofstream out(output_file, std::ios::app);
     if (write_header) {
         out << "arrival_rate,bp_L,bp_H,FCFS_percentage,BAL_percentage,total_rounds\n";
@@ -616,21 +644,21 @@ int main(int argc, char* argv[]) {
     std::cout << "\nLaunching parallel processing threads...\n\n";
     
     // Thread 1: Process avg files using multimode function
-    // main_threads.emplace_back([&]() {
-    //     safe_cout("========================================\n");
-    //     safe_cout("[Thread 1] Processing avg files...\n");
-    //     safe_cout("========================================\n");
-    //
-    //     // Lambda that wraps our function for the template
-    //     auto avg_wrapper = [](std::vector<Job> jobs, int nJobsPerRound,
-    //                          const std::vector<int>& modes_to_run) {
-    //         return run_all_modes_for_file_normal(jobs, nJobsPerRound, "", modes_to_run);
-    //     };
-    //
-    //     process_avg_folders_multimode_DBAL(avg_wrapper, data_dir, output_dir,
-    //                                   nJobsPerRound, modes_to_run, cout_mutex);
-    //     safe_cout("\n[Thread 1] ✓ Avg files completed!\n\n");
-    // });
+    main_threads.emplace_back([&]() {
+        safe_cout("========================================\n");
+        safe_cout("[Thread 1] Processing avg files...\n");
+        safe_cout("========================================\n");
+
+        auto avg_wrapper = [](std::vector<Job> jobs, int nJobsPerRound,
+                             const std::string& input_file_path,
+                             const std::vector<int>& modes_to_run) {
+            return run_all_modes_for_file_normal(jobs, nJobsPerRound, input_file_path, modes_to_run);
+        };
+
+        process_avg_folders_multimode(avg_wrapper, data_dir, output_dir,
+                                      nJobsPerRound, modes_to_run, cout_mutex);
+        safe_cout("\n[Thread 1] Avg files completed!\n\n");
+    });
     
     // Thread 2: Process Bounded Pareto random files using multimode function
     main_threads.emplace_back([&]() {
@@ -770,23 +798,7 @@ int main(int argc, char* argv[]) {
     }
     
     std::cout << "\n============================================================\n";
-
-    // ==================== FIX COMBINATION FOLDERS (Fixed Mean Arrival Time) ====================
-
-    std::cout << "\n========================================\n";
-    std::cout << "Processing Fix Combination Folders (fix20, fix30, fix40) with multimode...\n";
-    std::cout << "========================================\n";
-
-    // Lambda that wraps our multimode function for the template
-    auto fix_combination_wrapper = [](std::vector<Job> jobs, int nJobsPerRound,
-                                      const std::vector<int>& modes_to_run) {
-        return run_all_modes_for_file_frequency(jobs, nJobsPerRound, modes_to_run);
-    };
-
-    process_fix_combination_folders_multimode(fix_combination_wrapper, "Dynamic_BAL", data_dir, output_dir,
-                                             nJobsPerRound, modes_to_run, cout_mutex);
-
-    std::cout << "All Dynamic BAL processing completed successfully!\n  (Including fix combination folders with multimode)\n";
+    std::cout << "All Dynamic BAL processing completed successfully!\n";
     std::cout << "============================================================\n";
 
     return 0;

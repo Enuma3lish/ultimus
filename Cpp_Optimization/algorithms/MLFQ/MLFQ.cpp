@@ -12,9 +12,6 @@
 #include "process_avg_folders.h"
 #include "process_random_folders.h"
 #include "process_softrandom_folders.h"
-#include "process_experiment1_folders.h"
-#include "process_experiment2_folders.h"
-#include "process_experiment3_folders.h"
 
 // Main function to demonstrate MLFQ usage
 int main(int argc, char* argv[]) {
@@ -51,16 +48,16 @@ int main(int argc, char* argv[]) {
         return MLFQ(jobs, num_queues);
     };
     
-    // std::cout << "\n[1/3] Processing AVG folders..." << std::endl;
-    // std::cout << "----------------------------------------" << std::endl;
-    // try {
-    //     process_avg_folders(mlfq_algo, "MLFQ", data_dir, output_dir);
-    //     std::cout << "✓ AVG folder processing completed successfully" << std::endl;
-    // } catch (const std::exception& e) {
-    //     std::cerr << "✗ Error processing AVG folders: " << e.what() << std::endl;
-    // }
-    
-    std::cout << "\n[2/5] Processing Bounded Pareto RANDOM folders..." << std::endl;
+    std::cout << "\n[1/9] Processing AVG folders..." << std::endl;
+    std::cout << "----------------------------------------" << std::endl;
+    try {
+        process_avg_folders(mlfq_algo, "MLFQ", data_dir, output_dir);
+        std::cout << "AVG folder processing completed successfully" << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "Error processing AVG folders: " << e.what() << std::endl;
+    }
+
+    std::cout << "\n[2/9] Processing Bounded Pareto RANDOM folders..." << std::endl;
     std::cout << "----------------------------------------" << std::endl;
     try {
         process_bounded_pareto_random_folders(mlfq_algo, "MLFQ", data_dir, output_dir);

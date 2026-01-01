@@ -62,15 +62,21 @@ void process_bounded_pareto_softrandom_folders(AlgoFunc algo, const std::string&
                 auto jobs = read_jobs_from_csv(file);
                 if (jobs.empty()) continue;
 
+                // Read longest H info
+                LongestHInfo h_info = read_longest_H_info(freq_folder);
+
                 try {
-                    auto [l2_results, max_flow_results] = run_random(algo, jobs);
+                    auto [l2_results, max_flow_results, longest_H_l2] = run_random_with_longest_H(
+                        algo, jobs, h_info.start_job_index, h_info.end_job_index);
                     std::cout << "    Results: L2=" << l2_results
-                             << ", Max Flow=" << max_flow_results << std::endl;
+                             << ", Max Flow=" << max_flow_results
+                             << ", Longest_H_L2=" << longest_H_l2 << std::endl;
 
                     std::map<std::string, std::string> result_map;
                     result_map["frequency"] = std::to_string(frequency);
                     result_map["l2_results"] = std::to_string(l2_results);
                     result_map["max_flow_results"] = std::to_string(max_flow_results);
+                    result_map["longest_H_l2"] = std::to_string(longest_H_l2);
 
                     results_by_version[base_version].push_back(result_map);
                 } catch (const std::exception& e) {
@@ -98,7 +104,8 @@ void process_bounded_pareto_softrandom_folders(AlgoFunc algo, const std::string&
 
         std::ofstream out(output_file);
         out << "frequency," << algo_name << "_L2_norm_flow_time,"
-            << algo_name << "_maximum_flow_time\n";
+            << algo_name << "_maximum_flow_time,"
+            << algo_name << "_longest_H_L2_norm\n";
 
         // Sort by frequency
         std::sort(pair.second.begin(), pair.second.end(),
@@ -109,7 +116,8 @@ void process_bounded_pareto_softrandom_folders(AlgoFunc algo, const std::string&
         for (const auto& result : pair.second) {
             out << result.at("frequency") << ","
                 << result.at("l2_results") << ","
-                << result.at("max_flow_results") << "\n";
+                << result.at("max_flow_results") << ","
+                << result.at("longest_H_l2") << "\n";
         }
 
         std::cout << "  Saved Bounded_Pareto_softrandom results (version "
@@ -168,15 +176,21 @@ void process_normal_softrandom_folders(AlgoFunc algo, const std::string& algo_na
                 auto jobs = read_jobs_from_csv(file);
                 if (jobs.empty()) continue;
 
+                // Read longest H info
+                LongestHInfo h_info = read_longest_H_info(freq_folder);
+
                 try {
-                    auto [l2_results, max_flow_results] = run_random(algo, jobs);
+                    auto [l2_results, max_flow_results, longest_H_l2] = run_random_with_longest_H(
+                        algo, jobs, h_info.start_job_index, h_info.end_job_index);
                     std::cout << "    Results: L2=" << l2_results
-                             << ", Max Flow=" << max_flow_results << std::endl;
+                             << ", Max Flow=" << max_flow_results
+                             << ", Longest_H_L2=" << longest_H_l2 << std::endl;
 
                     std::map<std::string, std::string> result_map;
                     result_map["frequency"] = std::to_string(frequency);
                     result_map["l2_results"] = std::to_string(l2_results);
                     result_map["max_flow_results"] = std::to_string(max_flow_results);
+                    result_map["longest_H_l2"] = std::to_string(longest_H_l2);
 
                     results_by_version[base_version].push_back(result_map);
                 } catch (const std::exception& e) {
@@ -204,7 +218,8 @@ void process_normal_softrandom_folders(AlgoFunc algo, const std::string& algo_na
 
         std::ofstream out(output_file);
         out << "frequency," << algo_name << "_L2_norm_flow_time,"
-            << algo_name << "_maximum_flow_time\n";
+            << algo_name << "_maximum_flow_time,"
+            << algo_name << "_longest_H_L2_norm\n";
 
         // Sort by frequency
         std::sort(pair.second.begin(), pair.second.end(),
@@ -215,7 +230,8 @@ void process_normal_softrandom_folders(AlgoFunc algo, const std::string& algo_na
         for (const auto& result : pair.second) {
             out << result.at("frequency") << ","
                 << result.at("l2_results") << ","
-                << result.at("max_flow_results") << "\n";
+                << result.at("max_flow_results") << ","
+                << result.at("longest_H_l2") << "\n";
         }
 
         std::cout << "  Saved normal_softrandom results (version "
@@ -741,15 +757,21 @@ void process_combination_softrandom_folders(AlgoFunc algo, const std::string& al
                     auto jobs = read_jobs_from_csv(file);
                     if (jobs.empty()) continue;
 
+                    // Read longest H info
+                    LongestHInfo h_info = read_longest_H_info(freq_folder);
+
                     try {
-                        auto [l2_results, max_flow_results] = run_random(algo, jobs);
+                        auto [l2_results, max_flow_results, longest_H_l2] = run_random_with_longest_H(
+                            algo, jobs, h_info.start_job_index, h_info.end_job_index);
                         std::cout << "      Results: L2=" << l2_results
-                                 << ", Max Flow=" << max_flow_results << std::endl;
+                                 << ", Max Flow=" << max_flow_results
+                                 << ", Longest_H_L2=" << longest_H_l2 << std::endl;
 
                         std::map<std::string, std::string> result_map;
                         result_map["frequency"] = std::to_string(frequency);
                         result_map["l2_results"] = std::to_string(l2_results);
                         result_map["max_flow_results"] = std::to_string(max_flow_results);
+                        result_map["longest_H_l2"] = std::to_string(longest_H_l2);
 
                         results_by_pair[pair_id].push_back(result_map);
                     } catch (const std::exception& e) {
@@ -776,7 +798,8 @@ void process_combination_softrandom_folders(AlgoFunc algo, const std::string& al
 
                 std::ofstream out(output_file);
                 out << "frequency," << algo_name << "_L2_norm_flow_time,"
-                    << algo_name << "_maximum_flow_time\n";
+                    << algo_name << "_maximum_flow_time,"
+                    << algo_name << "_longest_H_L2_norm\n";
 
                 // Sort by frequency
                 std::sort(pair.second.begin(), pair.second.end(),
@@ -787,7 +810,8 @@ void process_combination_softrandom_folders(AlgoFunc algo, const std::string& al
                 for (const auto& result : pair.second) {
                     out << result.at("frequency") << ","
                         << result.at("l2_results") << ","
-                        << result.at("max_flow_results") << "\n";
+                        << result.at("max_flow_results") << ","
+                        << result.at("longest_H_l2") << "\n";
                 }
 
                 std::cout << "      Saved " << pair.first << " results to " << output_file << std::endl;
@@ -1294,15 +1318,21 @@ void process_bounded_pareto_combination_softrandom_folders(AlgoFunc algo, const 
                     auto jobs = read_jobs_from_csv(file);
                     if (jobs.empty()) continue;
 
+                    // Read longest H info
+                    LongestHInfo h_info = read_longest_H_info(freq_folder);
+
                     try {
-                        auto [l2_results, max_flow_results] = run_random(algo, jobs);
+                        auto [l2_results, max_flow_results, longest_H_l2] = run_random_with_longest_H(
+                            algo, jobs, h_info.start_job_index, h_info.end_job_index);
                         std::cout << "      Results: L2=" << l2_results
-                                 << ", Max Flow=" << max_flow_results << std::endl;
+                                 << ", Max Flow=" << max_flow_results
+                                 << ", Longest_H_L2=" << longest_H_l2 << std::endl;
 
                         std::map<std::string, std::string> result_map;
                         result_map["frequency"] = std::to_string(frequency);
                         result_map["l2_results"] = std::to_string(l2_results);
                         result_map["max_flow_results"] = std::to_string(max_flow_results);
+                        result_map["longest_H_l2"] = std::to_string(longest_H_l2);
 
                         results_by_pair[pair_id].push_back(result_map);
                     } catch (const std::exception& e) {
@@ -1329,7 +1359,8 @@ void process_bounded_pareto_combination_softrandom_folders(AlgoFunc algo, const 
 
                 std::ofstream out(output_file);
                 out << "frequency," << algo_name << "_L2_norm_flow_time,"
-                    << algo_name << "_maximum_flow_time\n";
+                    << algo_name << "_maximum_flow_time,"
+                    << algo_name << "_longest_H_L2_norm\n";
 
                 // Sort by frequency
                 std::sort(pair.second.begin(), pair.second.end(),
@@ -1340,7 +1371,8 @@ void process_bounded_pareto_combination_softrandom_folders(AlgoFunc algo, const 
                 for (const auto& result : pair.second) {
                     out << result.at("frequency") << ","
                         << result.at("l2_results") << ","
-                        << result.at("max_flow_results") << "\n";
+                        << result.at("max_flow_results") << ","
+                        << result.at("longest_H_l2") << "\n";
                 }
 
                 std::cout << "      Saved " << pair.first << " results to " << output_file << std::endl;
@@ -1449,15 +1481,21 @@ void process_normal_combination_softrandom_folders(AlgoFunc algo, const std::str
                     auto jobs = read_jobs_from_csv(file);
                     if (jobs.empty()) continue;
 
+                    // Read longest H info
+                    LongestHInfo h_info = read_longest_H_info(freq_folder);
+
                     try {
-                        auto [l2_results, max_flow_results] = run_random(algo, jobs);
+                        auto [l2_results, max_flow_results, longest_H_l2] = run_random_with_longest_H(
+                            algo, jobs, h_info.start_job_index, h_info.end_job_index);
                         std::cout << "      Results: L2=" << l2_results
-                                 << ", Max Flow=" << max_flow_results << std::endl;
+                                 << ", Max Flow=" << max_flow_results
+                                 << ", Longest_H_L2=" << longest_H_l2 << std::endl;
 
                         std::map<std::string, std::string> result_map;
                         result_map["frequency"] = std::to_string(frequency);
                         result_map["l2_results"] = std::to_string(l2_results);
                         result_map["max_flow_results"] = std::to_string(max_flow_results);
+                        result_map["longest_H_l2"] = std::to_string(longest_H_l2);
 
                         results_by_pair[pair_id].push_back(result_map);
                     } catch (const std::exception& e) {
@@ -1484,7 +1522,8 @@ void process_normal_combination_softrandom_folders(AlgoFunc algo, const std::str
 
                 std::ofstream out(output_file);
                 out << "frequency," << algo_name << "_L2_norm_flow_time,"
-                    << algo_name << "_maximum_flow_time\n";
+                    << algo_name << "_maximum_flow_time,"
+                    << algo_name << "_longest_H_L2_norm\n";
 
                 // Sort by frequency
                 std::sort(pair.second.begin(), pair.second.end(),
@@ -1495,7 +1534,8 @@ void process_normal_combination_softrandom_folders(AlgoFunc algo, const std::str
                 for (const auto& result : pair.second) {
                     out << result.at("frequency") << ","
                         << result.at("l2_results") << ","
-                        << result.at("max_flow_results") << "\n";
+                        << result.at("max_flow_results") << ","
+                        << result.at("longest_H_l2") << "\n";
                 }
 
                 std::cout << "      Saved " << pair.first << " results to " << output_file << std::endl;

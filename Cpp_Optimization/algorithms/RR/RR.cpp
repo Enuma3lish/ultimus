@@ -6,9 +6,6 @@
 #include "process_avg_folders.h"
 #include "process_random_folders.h"
 #include "process_softrandom_folders.h"
-#include "process_experiment1_folders.h"
-#include "process_experiment2_folders.h"
-#include "process_experiment3_folders.h"
 #include "utils.h"
 
 int main(int argc, char* argv[]) {
@@ -47,12 +44,11 @@ int main(int argc, char* argv[]) {
     };
     
     // Process avg30 files
-    // run() will extract .l2_norm_flow_time from SchedulingResult
-    // std::cout << "\n========================================" << std::endl;
-    // std::cout << "Processing avg files..." << std::endl;
-    // std::cout << "========================================" << std::endl;
-    // process_avg_folders(nc_rr_lambda, "RR", data_dir, output_dir);
-    
+    std::cout << "\n========================================" << std::endl;
+    std::cout << "Processing avg files..." << std::endl;
+    std::cout << "========================================" << std::endl;
+    process_avg_folders(nc_rr_lambda, "RR", data_dir, output_dir);
+
     // Process Bounded Pareto random files
     std::cout << "\n========================================" << std::endl;
     std::cout << "Processing Bounded Pareto random files..." << std::endl;

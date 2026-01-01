@@ -8,10 +8,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Add compiler flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -O3")
 
-# Add include directories
-include_directories(/Users/melowu/Desktop/ultimus/Cpp_Optimization/function_tools)
-include_directories(/Users/melowu/Desktop/ultimus/Cpp_Optimization/Job_Format)
-include_directories(/Users/melowu/Desktop/ultimus/Cpp_Optimization/algorithm_executer)
+# Add include directories (using relative paths)
+set(CPP_OPT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../..")
+include_directories(${CPP_OPT_DIR}/function_tools)
+include_directories(${CPP_OPT_DIR}/Job_Format)
+include_directories(${CPP_OPT_DIR}/algorithm_executer)
 # Add executable
 add_executable(SRPT SRPT.cpp)
 

@@ -31,6 +31,32 @@ struct AvgParams {
     double normal_std;   // For Normal distribution
 };
 
+struct NewAvgParams {
+    double arrival_rate;
+    double bp_L;
+    double bp_H;
+    std::string distribution_type;
+    double normal_mean;
+    double normal_std;
+};
+
+inline NewAvgParams parse_new_avg_filename(const std::string& filename) {
+    // Format: avg_(arrival,L_H).csv  e.g. avg_(30,1_100).csv
+    std::regex pattern("\\((\\d+(?:\\.\\d+)?),\\s*(\\d+(?:\\.\\d+)?)_(\\d+)\\)");
+    std::smatch match;
+    if (std::regex_search(filename, match, pattern)) {
+        NewAvgParams params;
+        params.arrival_rate = std::stod(match[1]);
+        params.bp_L = std::stod(match[2]);
+        params.bp_H = static_cast<double>(std::stoi(match[3]));
+        params.distribution_type = "BP";
+        params.normal_mean = 0;
+        params.normal_std = 0;
+        return params;
+    }
+    return {-1.0, -1.0, -1.0, "", 0, 0};
+}
+
 inline AvgParams parse_avg_filename(const std::string& filename) {
     std::regex pattern("\\((\\d+(?:\\.\\d+)?),\\s*(\\d+(?:\\.\\d+)?)_(\\d+)\\)");
     std::smatch match;
@@ -75,6 +101,51 @@ inline std::string parse_combination_params_from_folder(const std::string& folde
         return match[1];
     }
     return "";
+}
+
+// ============ Longest H interval info ============
+struct LongestHInfo {
+    int start_job_index;
+    int end_job_index;
+    int job_count;
+    int total_jobs;
+    double job_count_percentage;
+    long long longest_H_job_size;
+    long long total_job_size;
+    double job_size_percentage;
+    bool valid;  // True if file was found and parsed successfully
+};
+
+inline LongestHInfo read_longest_H_info(const std::string& folder_path) {
+    LongestHInfo info = {-1, -1, 0, 0, 0.0, 0, 0, 0.0, false};
+    std::string filepath = folder_path + "/longest_H_info.csv";
+    std::ifstream file(filepath);
+    if (!file.is_open()) {
+        return info;  // File not found, return invalid info
+    }
+
+    std::string line;
+    std::getline(file, line);  // Skip header
+
+    if (std::getline(file, line)) {
+        std::stringstream ss(line);
+        std::string field;
+
+        // Read all fields: start_job_index,end_job_index,job_count,total_jobs,job_count_percentage,longest_H_job_size,total_job_size,job_size_percentage
+        if (std::getline(ss, field, ',')) info.start_job_index = std::stoi(field);
+        if (std::getline(ss, field, ',')) info.end_job_index = std::stoi(field);
+        if (std::getline(ss, field, ',')) info.job_count = std::stoi(field);
+        if (std::getline(ss, field, ',')) info.total_jobs = std::stoi(field);
+        if (std::getline(ss, field, ',')) info.job_count_percentage = std::stod(field);
+        if (std::getline(ss, field, ',')) info.longest_H_job_size = std::stoll(field);
+        if (std::getline(ss, field, ',')) info.total_job_size = std::stoll(field);
+        if (std::getline(ss, field, ',')) info.job_size_percentage = std::stod(field);
+
+        info.valid = true;
+    }
+
+    file.close();
+    return info;
 }
 
 // ============ read_jobs_from_csv ============

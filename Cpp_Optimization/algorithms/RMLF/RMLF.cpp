@@ -7,12 +7,6 @@
 #include "process_avg_folders.h"
 #include "process_random_folders.h"
 #include "process_softrandom_folders.h"
-#include "process_experiment1_folders.h"
-#include "process_experiment2_folders.h"
-#include "process_experiment3_folders.h"
-#include "process_experiment4_folders.h"
-#include "process_experiment5_folders.h"
-#include "process_experiment6_folders.h"
 #include "process_fix_combination_folders.h"
 
 // Wrapper function for average data processing
@@ -70,17 +64,17 @@ int main(int argc, char* argv[]) {
     }
     
     // Process average data if exists
-    // if (has_avg) {
-    //     std::cout << ">>> Processing average data folders..." << std::endl;
-    //     try {
-    //         process_avg_folders(RMLF_wrapper, "RMLF", data_dir, output_dir);
-    //         std::cout << "Average data processing completed." << std::endl;
-    //     } catch (const std::exception& e) {
-    //         std::cerr << "Error processing average data: " << e.what() << std::endl;
-    //     }
-    //     std::cout << std::endl;
-    // }
-    
+    if (has_avg) {
+        std::cout << ">>> Processing average data folders..." << std::endl;
+        try {
+            process_avg_folders(RMLF_wrapper, "RMLF", data_dir, output_dir);
+            std::cout << "Average data processing completed." << std::endl;
+        } catch (const std::exception& e) {
+            std::cerr << "Error processing average data: " << e.what() << std::endl;
+        }
+        std::cout << std::endl;
+    }
+
     // Process random data if exists
     if (has_random) {
         std::cout << ">>> Processing Bounded Pareto random data folders..." << std::endl;
@@ -171,15 +165,6 @@ int main(int argc, char* argv[]) {
     
     std::cout << "=== All processing completed ===" << std::endl;
     std::cout << "Results saved to: " << output_dir << std::endl;
-    
-
-
-    // ==================== FIX COMBINATION FOLDERS (Fixed Mean Arrival Time) ====================
-
-    std::cout << "\n========================================\n";
-    std::cout << "Processing Fix Combination Folders (fix20, fix30, fix40)...\n";
-    std::cout << "========================================\n";
-    process_fix_combination_folders(RMLF_wrapper, "RMLF", data_dir, output_dir);
 
     return 0;
 }

@@ -6,12 +6,6 @@
 #include "process_avg_folders.h"
 #include "process_random_folders.h"
 #include "process_softrandom_folders.h"
-#include "process_experiment1_folders.h"
-#include "process_experiment2_folders.h"
-#include "process_experiment3_folders.h"
-#include "process_experiment4_folders.h"
-#include "process_experiment5_folders.h"
-#include "process_experiment6_folders.h"
 #include "process_fix_combination_folders.h"
 
 // Wrapper function for BAL that calculates starvation threshold automatically
@@ -33,10 +27,10 @@ int main() {
     
     create_directory(output_dir);
     
-    // std::cout << "\n========================================\n";
-    // std::cout << "Processing avg files...\n";
-    // std::cout << "========================================\n";
-    // process_avg_folders(BalWrapper, "BAL", data_dir, output_dir);
+    std::cout << "\n========================================\n";
+    std::cout << "Processing avg files...\n";
+    std::cout << "========================================\n";
+    process_avg_folders(BalWrapper, "BAL", data_dir, output_dir);
     
     std::cout << "\n========================================\n";
     std::cout << "Processing Bounded Pareto random files...\n";
@@ -79,17 +73,7 @@ int main() {
     process_normal_combination_softrandom_folders(BalWrapper, "BAL", data_dir, output_dir);
 
     std::cout << "\n============================================================\n";
-
-    // ==================== FIX COMBINATION FOLDERS (Fixed Mean Arrival Time) ====================
-
-    std::cout << "\n========================================\n";
-    std::cout << "Processing Fix Combination Folders (fix20, fix30, fix40)...\n";
-    std::cout << "========================================\n";
-    process_fix_combination_folders(BalWrapper, "BAL", data_dir, output_dir);
-
-    std::cout << "\n============================================================\n";
     std::cout << "BAL batch processing completed successfully!\n";
-    std::cout << "  (Including fix combination folders)\n";
     std::cout << "============================================================\n";
 
     return 0;
