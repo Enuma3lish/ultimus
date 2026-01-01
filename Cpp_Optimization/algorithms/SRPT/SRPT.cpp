@@ -177,8 +177,8 @@ SRPTResult SRPT(std::vector<Job>& jobs) {
 // ============ Main Function ============
 
 int main() {
-    std::string data_dir = "/Users/melowu/Desktop/ultimus/data";
-    std::string output_dir = "/Users/melowu/Desktop/ultimus/SRPT_result";
+    std::string data_dir = "./data";
+    std::string output_dir = "./algorithm_result/SRPT_result";
 
     std::cout << "============================================================\n";
     std::cout << "Starting SRPT batch processing (FIXED VERSION v2):\n";

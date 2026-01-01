@@ -1058,6 +1058,69 @@ def combination_softrandom_job_init(num_jobs, param_set, coherence_time=1) -> Tu
 
 
 # =============================================================================
+# Avg Job Generation (Fixed parameters per file)
+# =============================================================================
+
+def avg_job_init(num_jobs: int, avg_inter_arrival_time: int, param: Dict) -> List[Dict]:
+    """
+    Generate jobs with fixed inter-arrival time and fixed distribution parameters.
+    This is the standard avg case generation for process_avg_folders.h
+
+    Args:
+        num_jobs: Number of jobs to generate
+        avg_inter_arrival_time: Mean inter-arrival time (e.g., 20, 22, ..., 40)
+        param: Distribution parameter dict with type "BP" or "Normal"
+
+    Returns:
+        List of job samples with arrival_time and job_size
+    """
+    samples = []
+
+    # Generate job sizes based on distribution type
+    job_sizes = [math.ceil(size) for size in generate_job_size(param, size=num_jobs)]
+
+    # Generate arrival times using exponential distribution
+    current_time = 0
+    for k in range(num_jobs):
+        inter_arrival = round(np.random.exponential(scale=avg_inter_arrival_time))
+        inter_arrival = max(1, inter_arrival)
+        current_time += inter_arrival
+        samples.append({
+            "arrival_time": current_time,
+            "job_size": job_sizes[k]
+        })
+
+    return samples
+
+
+def get_avg_filename(avg_inter_arrival_time: int, param: Dict) -> str:
+    """
+    Generate filename for avg case in the format expected by parse_new_avg_filename.
+    Format: avg_(arrival_rate,L_H).csv
+
+    Args:
+        avg_inter_arrival_time: Mean inter-arrival time
+        param: Distribution parameter dict
+
+    Returns:
+        Filename string
+    """
+    if param["type"] == "BP":
+        # Format: avg_(30,16.772_64).csv
+        L = param["L"]
+        H = int(param["H"])
+        return f"avg_({avg_inter_arrival_time},{L}_{H}).csv"
+    elif param["type"] == "Normal":
+        # For Normal distribution, encode mean_std as L_H format
+        # This allows reuse of existing parser
+        mean = param["mean"]
+        std = param["std"]
+        return f"avg_({avg_inter_arrival_time},{mean}_{std}).csv"
+    else:
+        raise ValueError(f"Unknown parameter type: {param['type']}")
+
+
+# =============================================================================
 # Utility Functions
 # =============================================================================
 
@@ -1103,12 +1166,39 @@ def get_combination_folder_name(param_set):
 def Save_file(num_jobs, i):
     """Save all job files and perform analysis."""
     os.makedirs("data", exist_ok=True)
-    
+
     coherence_times = [pow(2, j) for j in range(1, 17, 1)]
-    
+
     # Store results for group aggregation
     group_results = defaultdict(list)
-    
+
+    # ==========================================================================
+    # Generate avg_30 jobs (fixed parameters per file)
+    # ==========================================================================
+    avg_30_folder = f"data/avg_30_{i}"
+    os.makedirs(avg_30_folder, exist_ok=True)
+
+    # All parameters for avg_30: both Bounded Pareto and Normal
+    all_avg_30_params = bp_parameter_30 + normal_parameter_30
+
+    total_files = len(inter_arrival_time) * len(all_avg_30_params)
+    with tqdm.tqdm(total=total_files, desc=f"Processing avg_30 _{i}") as pbar:
+        for avg_inter_arrival in inter_arrival_time:
+            for param in all_avg_30_params:
+                # Generate jobs
+                samples = avg_job_init(num_jobs, avg_inter_arrival, param)
+
+                # Generate filename
+                filename = get_avg_filename(avg_inter_arrival, param)
+                filepath = f"{avg_30_folder}/{filename}"
+
+                # Write to CSV
+                Write_csv.Write_raw(filepath, samples)
+
+                pbar.update(1)
+
+    print(f"  Generated {total_files} avg_30 files in {avg_30_folder}")
+
     # Generate Bounded_Pareto random jobs
     for ct in tqdm.tqdm(coherence_times, desc=f"Processing Bounded_Pareto random jobs _{i}"):
         bp_random_folder = f"data/Bounded_Pareto_random_{i}/freq_{ct}_{i}"
@@ -1555,7 +1645,7 @@ if __name__ == "__main__":
     parser.add_argument('--mode', type=str, default='generate',
                        choices=['generate'],
                        help='Run mode: generate=generate data')
-    parser.add_argument('--num-jobs', type=int, default=10000,
+    parser.add_argument('--num-jobs', type=int, default=1000,
                        help='Number of jobs to generate')
     parser.add_argument('--analysis-output', type=str, default='analysis',
                        help='Analysis output directory (default: analysis)')

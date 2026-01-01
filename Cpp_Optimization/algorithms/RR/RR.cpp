@@ -14,8 +14,8 @@ int main(int argc, char* argv[]) {
     std::cout << "============================================================" << std::endl;
     
     // Configuration
-    std::string data_dir = "/Users/melowu/Desktop/ultimus/data";
-    std::string output_dir = "/Users/melowu/Desktop/ultimus/RR_result";
+    std::string data_dir = "./data";
+    std::string output_dir = "./algorithm_result/RR_result";
     int time_quantum = 1;  // Default time quantum
     
     // Parse command line arguments
@@ -98,7 +98,7 @@ int main(int argc, char* argv[]) {
     process_normal_combination_softrandom_folders(nc_rr_lambda, "RR", data_dir, output_dir);
 
     std::cout << "\n============================================================" << std::endl;
-    std::cout << "NC-RR batch processing completed successfully!\n  (Including 3 experiments)" << std::endl;
+    std::cout << "NC-RR batch processing completed successfully!\n" << std::endl;
     std::cout << "============================================================" << std::endl;
     
     return 0;

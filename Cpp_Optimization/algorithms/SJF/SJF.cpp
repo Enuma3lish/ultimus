@@ -13,8 +13,8 @@ int main(int argc, char* argv[]) {
     std::cout << "============================================================" << std::endl;
     
     // Configuration
-    std::string data_dir = "/Users/melowu/Desktop/ultimus/data";
-    std::string output_dir = "/Users/melowu/Desktop/ultimus/SJF_result";
+    std::string data_dir = "./data";
+    std::string output_dir = "./algorithm_result/SJF_result";
     
     // Parse command line arguments
     if (argc > 1) {

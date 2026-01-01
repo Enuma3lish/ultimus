@@ -29,9 +29,10 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 # PATH CONFIGURATION
 # ============================================================================
-BASE_DATA_PATH = "/Users/melowu/Desktop/ultimus"
+BASE_DATA_PATH = "."
 ALGORITHM_RESULT_PATH = os.path.join(BASE_DATA_PATH, "algorithm_result")
 OUTPUT_PATH = os.path.join(BASE_DATA_PATH, "plots_output")
+ANALYSIS_PATH = os.path.join(BASE_DATA_PATH, "Analysis")
 
 os.makedirs(OUTPUT_PATH, exist_ok=True)
 
@@ -67,8 +68,12 @@ ALGORITHM_MARKERS = {
     'MLFQ': 'h',  'RFDynamic': '<', 'SJF': 'X'
 }
 
-# Highlighted algorithms (FCFS, SRPT, RMLF, Dynamic, Dynamic_BAL, RFDynamic) - use thicker lines
+# Highlighted algorithms - use thicker lines
 HIGHLIGHTED_ALGORITHMS = ['FCFS', 'SRPT', 'RMLF', 'Dynamic', 'Dynamic_BAL', 'RFDynamic']
+
+# Solid line algorithms per group
+CLAIRVOYANT_SOLID_ALGORITHMS = ['SRPT', 'BAL', 'Dynamic', 'Dynamic_BAL']
+NON_CLAIRVOYANT_SOLID_ALGORITHMS = ['RMLF', 'RFDynamic']
 
 # Mode colors for mode comparison plots
 MODE_COLORS = {
@@ -371,12 +376,19 @@ def plot_bounded_pareto_by_params(data_dict, group_name, avg_type):
                 zorder = 5
                 fillstyle = 'none'
 
+            # Determine line style based on group
+            if 'Clairvoyant' in group_name and 'Non' not in group_name:
+                linestyle = '-' if algorithm in CLAIRVOYANT_SOLID_ALGORITHMS else '--'
+            else:  # Non-Clairvoyant
+                linestyle = '-' if algorithm in NON_CLAIRVOYANT_SOLID_ALGORITHMS else '--'
+
             ax.plot(param_df['Mean_inter_arrival_time'], param_df[l2_col],
                    marker=ALGORITHM_MARKERS.get(algorithm, 'o'),
                    color=ALGORITHM_COLORS.get(algorithm, 'black'),
                    linewidth=linewidth,
                    markersize=markersize,
                    fillstyle=fillstyle,
+                   linestyle=linestyle,
                    markeredgewidth=2.5,
                    markeredgecolor=ALGORITHM_COLORS.get(algorithm, 'black'),
                    label=label,
@@ -461,12 +473,12 @@ def plot_normal_by_std(data_dict, group_name, avg_type):
                 markersize = 7
                 zorder = 5
                 fillstyle = 'none'
-            
-            # Only our algorithms (Dynamic, Dynamic_BAL, RFDynamic) use solid lines
-            if algorithm in DYNAMIC_ALGORITHMS:
-                linestyle = '-'
-            else:
-                linestyle = '--'
+
+            # Determine line style based on group
+            if 'Clairvoyant' in group_name and 'Non' not in group_name:
+                linestyle = '-' if algorithm in CLAIRVOYANT_SOLID_ALGORITHMS else '--'
+            else:  # Non-Clairvoyant
+                linestyle = '-' if algorithm in NON_CLAIRVOYANT_SOLID_ALGORITHMS else '--'
 
             ax.plot(std_df['Mean_inter_arrival_time'], std_df[l2_col],
                    marker=ALGORITHM_MARKERS.get(algorithm, 'o'),
@@ -647,7 +659,7 @@ def plot_random_or_softrandom(algorithms, result_type, group_name, distribution_
                     if algo_col in df.columns:
                         label = f"{algorithm} (mode{algo_mode})"
                         
-                        # Highlight FCFS, SRPT, RMLF with thicker lines
+                        # Highlight settings
                         if algorithm in HIGHLIGHTED_ALGORITHMS:
                             linewidth = 3.0
                             markersize = 8
@@ -658,10 +670,13 @@ def plot_random_or_softrandom(algorithms, result_type, group_name, distribution_
                             markersize = 6
                             zorder = 5
                             markevery = 2
-                        
-                        # Dynamic algorithms use solid lines
-                        linestyle = '-'
-                        
+
+                        # Determine line style based on group
+                        if 'clairvoyant' in group_name.lower() and 'non' not in group_name.lower():
+                            linestyle = '-' if algorithm in CLAIRVOYANT_SOLID_ALGORITHMS else '--'
+                        else:  # non_clairvoyant
+                            linestyle = '-' if algorithm in NON_CLAIRVOYANT_SOLID_ALGORITHMS else '--'
+
                         ax.plot(df['coherence_time'], df[algo_col],
                                marker=ALGORITHM_MARKERS.get(algorithm, 'o'),
                                color=ALGORITHM_COLORS.get(algorithm, 'black'),
@@ -678,7 +693,7 @@ def plot_random_or_softrandom(algorithms, result_type, group_name, distribution_
                 else:
                     l2_col = f'{algorithm}_L2_norm_flow_time'
                     if l2_col in df.columns:
-                        # Highlight FCFS, SRPT, RMLF with thicker lines
+                        # Highlight settings
                         if algorithm in HIGHLIGHTED_ALGORITHMS:
                             linewidth = 3.0
                             markersize = 8
@@ -689,10 +704,13 @@ def plot_random_or_softrandom(algorithms, result_type, group_name, distribution_
                             markersize = 6
                             zorder = 5
                             markevery = 2
-                        
-                        # Non-Dynamic algorithms use dashed lines
-                        linestyle = '--'
-                        
+
+                        # Determine line style based on group
+                        if 'clairvoyant' in group_name.lower() and 'non' not in group_name.lower():
+                            linestyle = '-' if algorithm in CLAIRVOYANT_SOLID_ALGORITHMS else '--'
+                        else:  # non_clairvoyant
+                            linestyle = '-' if algorithm in NON_CLAIRVOYANT_SOLID_ALGORITHMS else '--'
+
                         ax.plot(df['coherence_time'], df[l2_col],
                                marker=ALGORITHM_MARKERS.get(algorithm, 'o'),
                                color=ALGORITHM_COLORS.get(algorithm, 'black'),
@@ -767,9 +785,9 @@ def plot_mode_comparison_avg(algorithm, avg_type):
         logger.warning(f"Directory not found: {algorithm_dir}")
         return
     
-    pattern = os.path.join(algorithm_dir, f"*_{algorithm}_*_result.csv")
+    pattern = os.path.join(algorithm_dir, f"*_{algorithm}_result_*.csv")
     files = sorted(glob.glob(pattern))
-    
+
     if not files:
         logger.warning(f"No files found for {algorithm} in {algorithm_dir}")
         return
@@ -1022,10 +1040,196 @@ def main():
             for algo in DYNAMIC_ALGORITHMS:
                 plot_mode_comparison_random(algo, distribution_type, random_type)
 
+    # Create analysis percentage plots
+    logger.info(f"\n{'='*80}")
+    logger.info("Creating analysis percentage plots")
+    logger.info(f"{'='*80}")
+
+    plot_analysis_percentage()
+
     logger.info("\n" + "=" * 80)
     logger.info("ALL TASKS COMPLETED SUCCESSFULLY!")
     logger.info(f"Output directory: {OUTPUT_PATH}")
     logger.info("=" * 80)
+
+# ============================================================================
+# ANALYSIS PERCENTAGE PLOTTING FUNCTIONS
+# ============================================================================
+
+def load_analysis_data(algorithm):
+    """
+    Load analysis data for a Dynamic algorithm from avg_30 folder only.
+
+    Args:
+        algorithm: 'Dynamic', 'Dynamic_BAL', or 'RFDynamic'
+
+    Returns:
+        dict: {mode: DataFrame} with averaged data per mode
+    """
+    analysis_dir = os.path.join(ANALYSIS_PATH, f"{algorithm}_analysis", "avg_30")
+
+    if not os.path.exists(analysis_dir):
+        logger.warning(f"Analysis directory not found: {analysis_dir}")
+        return None
+
+    mode_data = {}
+
+    for mode in range(1, 7):
+        mode_dir = os.path.join(analysis_dir, f"mode_{mode}")
+        if not os.path.exists(mode_dir):
+            continue
+
+        pattern = os.path.join(mode_dir, f"{algorithm}_avg_30_*.csv")
+        files = sorted(glob.glob(pattern))
+
+        if not files:
+            continue
+
+        all_dfs = []
+        for file_path in files:
+            try:
+                df = pd.read_csv(file_path)
+                # Skip rows that are header duplicates
+                df = df[df['arrival_rate'] != 'arrival_rate']
+                df['arrival_rate'] = pd.to_numeric(df['arrival_rate'], errors='coerce')
+                df['bp_L'] = pd.to_numeric(df['bp_L'], errors='coerce')
+                df['bp_H'] = pd.to_numeric(df['bp_H'], errors='coerce')
+                df = df.dropna(subset=['arrival_rate', 'bp_L', 'bp_H'])
+                all_dfs.append(df)
+            except Exception as e:
+                logger.warning(f"Error reading {file_path}: {e}")
+                continue
+
+        if all_dfs:
+            combined_df = pd.concat(all_dfs, ignore_index=True)
+            # Convert percentage columns to numeric
+            for col in combined_df.columns:
+                if 'percentage' in col.lower():
+                    combined_df[col] = pd.to_numeric(combined_df[col], errors='coerce')
+            mode_data[mode] = combined_df
+
+    return mode_data if mode_data else None
+
+
+def plot_analysis_percentage():
+    """
+    Create analysis percentage plots for Dynamic algorithms.
+    - Dynamic: SRPT_percentage
+    - Dynamic_BAL: BAL_percentage
+    - RFDynamic: RMLF_percentage
+    """
+    # Algorithm configurations: (algorithm_name, percentage_column, y_label)
+    algo_configs = [
+        ('Dynamic', 'SRPT_percentage', 'SRPT Usage Percentage (%)'),
+        ('Dynamic_BAL', 'BAL_percentage', 'BAL Usage Percentage (%)'),
+        ('RFDynamic', 'RMLF_percentage', 'RMLF Usage Percentage (%)')
+    ]
+
+    for algorithm, pct_col, y_label in algo_configs:
+        logger.info(f"Creating analysis plots for {algorithm}...")
+
+        # Create output directory
+        output_dir = os.path.join(OUTPUT_PATH, "analysis", algorithm)
+        os.makedirs(output_dir, exist_ok=True)
+
+        # Load data
+        mode_data = load_analysis_data(algorithm)
+        if mode_data is None:
+            logger.warning(f"No analysis data found for {algorithm}")
+            continue
+
+        # Get all unique (bp_L, bp_H) pairs across all modes
+        all_param_pairs = set()
+        for mode, df in mode_data.items():
+            for _, row in df[['bp_L', 'bp_H']].drop_duplicates().iterrows():
+                all_param_pairs.add((round(row['bp_L'], 3), round(row['bp_H'], 1)))
+
+        if not all_param_pairs:
+            logger.warning(f"No parameter pairs found for {algorithm}")
+            continue
+
+        # Aggregate data: average across rounds for each (arrival_rate, bp_L, bp_H, mode)
+        aggregated_mode_data = {}
+        for mode, df in mode_data.items():
+            # Round bp_L and bp_H for consistent grouping
+            df['bp_L_rounded'] = df['bp_L'].round(3)
+            df['bp_H_rounded'] = df['bp_H'].round(1)
+
+            # Group by arrival_rate and parameters, then average
+            if pct_col in df.columns:
+                grouped = df.groupby(['arrival_rate', 'bp_L_rounded', 'bp_H_rounded']).agg({
+                    pct_col: 'mean',
+                    'FCFS_percentage': 'mean'
+                }).reset_index()
+                aggregated_mode_data[mode] = grouped
+
+        # Save aggregated data
+        for mode, df in aggregated_mode_data.items():
+            avg_file = os.path.join(output_dir, f"{algorithm}_mode{mode}_avg_analysis.csv")
+            df.to_csv(avg_file, index=False)
+            logger.info(f"  Saved: {avg_file}")
+
+        # Create a plot for each (bp_L, bp_H) pair
+        for bp_L, bp_H in sorted(all_param_pairs):
+            setup_plot_style()
+            fig, ax = plt.subplots(figsize=(12, 7))
+
+            plotted_any = False
+
+            for mode in range(1, 7):
+                if mode not in aggregated_mode_data:
+                    continue
+
+                df = aggregated_mode_data[mode]
+                param_df = df[(df['bp_L_rounded'] == bp_L) & (df['bp_H_rounded'] == bp_H)].copy()
+
+                if param_df.empty or pct_col not in param_df.columns:
+                    continue
+
+                param_df = param_df.sort_values('arrival_rate')
+
+                ax.plot(param_df['arrival_rate'], param_df[pct_col],
+                       marker='o',
+                       color=MODE_COLORS.get(mode, 'black'),
+                       linewidth=2.5,
+                       markersize=10,
+                       markerfacecolor=MODE_COLORS.get(mode, 'black'),
+                       markeredgecolor='white',
+                       markeredgewidth=1.5,
+                       linestyle='-',
+                       label=f"mode{mode}",
+                       zorder=10)
+                plotted_any = True
+
+            if not plotted_any:
+                plt.close()
+                continue
+
+            ax.set_xlabel('Mean Inter-Arrival Time', fontweight='bold', fontsize=12)
+            ax.set_ylabel(y_label, fontweight='bold', fontsize=12)
+            ax.set_xlim(20, 40)
+            ax.set_xticks(range(20, 41, 2))
+            ax.set_ylim(0, 100)
+
+            # Determine distribution type for title
+            if bp_L > bp_H:
+                title = f'{algorithm} Analysis - Normal (std={int(bp_H)})'
+                filename = f"{algorithm}_analysis_normal_std_{int(bp_H)}.png"
+            else:
+                title = f'{algorithm} Analysis - Bounded Pareto (L={bp_L:.3f}, H={int(bp_H)})'
+                filename = f"{algorithm}_analysis_BP_L_{bp_L:.3f}_H_{int(bp_H)}.png"
+
+            ax.set_title(title, fontweight='bold', fontsize=14, pad=15)
+            ax.legend(loc='best', framealpha=0.95, fontsize=10, ncol=2)
+            ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.5)
+            plt.tight_layout()
+
+            output_file = os.path.join(output_dir, filename)
+            plt.savefig(output_file, dpi=300, bbox_inches='tight')
+            plt.close()
+
+            logger.info(f"  Saved: {output_file}")
+
 
 if __name__ == "__main__":
     main()

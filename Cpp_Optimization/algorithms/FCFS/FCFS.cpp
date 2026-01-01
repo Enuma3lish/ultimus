@@ -12,8 +12,8 @@
 #include "process_fix_combination_folders.h"
 
 int main() {
-    std::string data_dir = "/Users/melowu/Desktop/ultimus/data";
-    std::string output_dir = "/Users/melowu/Desktop/ultimus/FCFS_result";
+    std::string data_dir = "./data";
+    std::string output_dir = "./algorithm_result/FCFS_result";
     
     std::cout << "============================================================\n";
     std::cout << "Starting FCFS batch processing:\n";

@@ -41,7 +41,7 @@ struct DynamicResult {
 std::string get_analysis_base_dir() {
     const char* base = std::getenv("ULTIMUS_ANALYSIS_DIR");
     if (base) return std::string(base);
-    return "/home/melowu/Work/ultimus/Analysis/Dynamic_BAL_analysis";
+    return "./Analysis/Dynamic_BAL_analysis";
 }
 
 // Save analysis results for all file types (avg, random, softrandom, combination)
@@ -616,8 +616,8 @@ int main(int argc, char* argv[]) {
         }
     }
     
-    std::string data_dir = "/Users/melowu/Desktop/ultimus/data";
-    std::string output_dir = "/Users/melowu/Desktop/ultimus/Dynamic_BAL_result";
+    std::string data_dir = "./data";
+    std::string output_dir = "./algorithm_result/Dynamic_BAL_result";
     
     unsigned int num_threads = std::thread::hardware_concurrency();
     if (num_threads == 0) num_threads = 4;
@@ -655,7 +655,7 @@ int main(int argc, char* argv[]) {
             return run_all_modes_for_file_normal(jobs, nJobsPerRound, input_file_path, modes_to_run);
         };
 
-        process_avg_folders_multimode(avg_wrapper, data_dir, output_dir,
+        process_avg_folders_multimode_DBAL(avg_wrapper, data_dir, output_dir,
                                       nJobsPerRound, modes_to_run, cout_mutex);
         safe_cout("\n[Thread 1] Avg files completed!\n\n");
     });

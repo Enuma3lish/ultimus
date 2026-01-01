@@ -1,7 +1,8 @@
 #!/bin/bash
 set -e
 
-PROJECT_ROOT="/Users/melowu/Desktop/ultimus"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="${SCRIPT_DIR}"
 ALGO_DIR="${PROJECT_ROOT}/Cpp_Optimization/algorithms"
 
 ALGORITHMS=(BAL SRPT Dynamic Dynamic_BAL FCFS RR SETF SJF MLFQ RMLF RFDynamic ) 

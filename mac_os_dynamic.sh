@@ -3,7 +3,7 @@ set -euo pipefail
 
 # ======== Configuration ========
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="/Users/melowu/Desktop/ultimus"
+PROJECT_ROOT="${SCRIPT_DIR}"
 VENV_PATH="${PROJECT_ROOT}/.venv"
 JOB_INIT_SCRIPT="${PROJECT_ROOT}/Job_init.py"
 PLOTTER_SCRIPT="${PROJECT_ROOT}/_plotter.py"

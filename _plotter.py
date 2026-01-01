@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 # PATH CONFIGURATION
 # ============================================================================
-BASE_DATA_PATH = "/Users/melowu/Desktop/ultimus"
+BASE_DATA_PATH = "."
 ALGORITHM_RESULT_PATH = os.path.join(BASE_DATA_PATH, "algorithm_result")
 OUTPUT_PATH = os.path.join(BASE_DATA_PATH, "plots_output")
 

@@ -20,7 +20,10 @@
       "Bash(do rm -rf \"Cpp_Optimization/algorithms/$algo/build\")",
       "Bash(./build.sh:*)",
       "Bash(xargs -I {} sh -c 'echo \"\"=== {} ===\"\" && cat {}')",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(xargs cat:*)",
+      "Bash(./Cpp_Optimization/algorithms/Dynamic_BAL/build/Dynamic_BAL:*)",
+      "Bash(head:*)"
     ],
     "deny": [],
     "ask": []

@@ -42,7 +42,7 @@ std::string get_analysis_base_dir() {
     // Use environment variable or default path
     const char* base = std::getenv("ULTIMUS_ANALYSIS_DIR");
     if (base) return std::string(base);
-    return "/home/melowu/Work/ultimus/Analysis/Dynamic_analysis";
+    return "./Analysis/Dynamic_analysis";
 }
 
 // Save analysis results for all file types (avg, random, softrandom, combination)
@@ -637,8 +637,8 @@ int main(int argc, char* argv[]) {
         }
     }
     
-    std::string data_dir = "/Users/melowu/Desktop/ultimus/data";
-    std::string output_dir = "/Users/melowu/Desktop/ultimus/Dynamic_result";
+    std::string data_dir = "./data";
+    std::string output_dir = "./algorithm_result/Dynamic_result";
     
     // Detect number of hardware threads
     unsigned int num_threads = std::thread::hardware_concurrency();

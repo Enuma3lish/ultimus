@@ -160,7 +160,7 @@ struct DynamicRFResult {
 std::string get_analysis_base_dir() {
     const char* base = std::getenv("ULTIMUS_ANALYSIS_DIR");
     if (base) return std::string(base);
-    return "/home/melowu/Work/ultimus/Analysis/RFDynamic_analysis";
+    return "./Analysis/RFDynamic_analysis";
 }
 
 // Save analysis results for all file types (avg, random, softrandom, combination)
@@ -621,8 +621,8 @@ int main(int argc) {
     int nJobsPerRound = 100;
     std::vector<int> modes_to_run = {1, 2, 3, 4, 5, 6};
     
-    std::string data_dir = "/Users/melowu/Desktop/ultimus/data";
-    std::string output_dir = "/Users/melowu/Desktop/ultimus/RFDynamic_result"; 
+    std::string data_dir = "./data";
+    std::string output_dir = "./algorithm_result/RFDynamic_result"; 
     
     unsigned int num_threads = std::thread::hardware_concurrency();
     if (num_threads == 0) num_threads = 4;
@@ -678,7 +678,7 @@ int main(int argc) {
             return mode_results;
         };
 
-        process_avg_folders_multimode(avg_wrapper, data_dir, output_dir,
+        process_avg_folders_multimode_RF(avg_wrapper, data_dir, output_dir,
                                       nJobsPerRound, modes_to_run, cout_mutex);
         safe_cout("\n[Thread 1] Avg files completed!\n\n");
     });

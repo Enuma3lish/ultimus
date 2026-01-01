@@ -317,31 +317,31 @@ void process_avg_folders_multimode_DBAL(MultiModeFunc multi_mode_algo,
                     if (jobs.empty()) return;
                     
                     // Run multi-mode algorithm - expects function that returns map<int, double>
-                    auto mode_results = multi_mode_algo(jobs, nJobsPerRound, modes_to_run);
-                    
+                    auto mode_results = multi_mode_algo(jobs, nJobsPerRound, csv_file, modes_to_run);
+
                     std::map<std::string, std::string> result_map;
                     result_map["bp_parameter_L"] = std::to_string(params.bp_L);
                     result_map["bp_parameter_H"] = std::to_string(params.bp_H);
                     for (int mode : modes_to_run) {
                         result_map["mode_" + std::to_string(mode)] = std::to_string(mode_results[mode]);
                     }
-                    
+
                     {
                         std::lock_guard<std::mutex> lock(results_mutex);
                         results_by_arrival_rate[(int)params.arrival_rate].push_back(result_map);
                     }
                 });
             }
-            
+
             // Wait for all CSV file processing to finish
             for (auto& thread : file_threads) {
                 thread.join();
             }
-            
+
             // Write results
             for (auto& pair : results_by_arrival_rate) {
-                std::string output_file = avg_result_dir + "/" + 
-                    std::to_string(pair.first) + "_Dynamic_BAL_result_" + 
+                std::string output_file = avg_result_dir + "/" +
+                    std::to_string(pair.first) + "_Dynamic_BAL_result_" +
                     std::to_string(version) + ".csv";
                 
                 std::ofstream out(output_file);
@@ -435,31 +435,31 @@ void process_avg_folders_multimode_RF(MultiModeFunc multi_mode_algo,
                     if (jobs.empty()) return;
                     
                     // Run multi-mode algorithm - expects function that returns map<int, double>
-                    auto mode_results = multi_mode_algo(jobs, nJobsPerRound, modes_to_run);
-                    
+                    auto mode_results = multi_mode_algo(jobs, nJobsPerRound, csv_file, modes_to_run);
+
                     std::map<std::string, std::string> result_map;
                     result_map["bp_parameter_L"] = std::to_string(params.bp_L);
                     result_map["bp_parameter_H"] = std::to_string(params.bp_H);
                     for (int mode : modes_to_run) {
                         result_map["mode_" + std::to_string(mode)] = std::to_string(mode_results[mode]);
                     }
-                    
+
                     {
                         std::lock_guard<std::mutex> lock(results_mutex);
                         results_by_arrival_rate[(int)params.arrival_rate].push_back(result_map);
                     }
                 });
             }
-            
+
             // Wait for all CSV file processing to finish
             for (auto& thread : file_threads) {
                 thread.join();
             }
-            
+
             // Write results
             for (auto& pair : results_by_arrival_rate) {
-                std::string output_file = avg_result_dir + "/" + 
-                    std::to_string(pair.first) + "_RFDynamic_result_" + 
+                std::string output_file = avg_result_dir + "/" +
+                    std::to_string(pair.first) + "_RFDynamic_result_" +
                     std::to_string(version) + ".csv";
                 
                 std::ofstream out(output_file);

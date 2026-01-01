@@ -67,7 +67,7 @@ NON_CLAIRVOYANT_ALGORITHMS = ['RFDynamic', 'SETF', 'RMLF', 'FCFS']
 # ============================================================================
 import os
 
-BASE_DIR = "/Users/melowu/Desktop/ultimus"
+BASE_DIR = "."
 DATA_DIR = os.path.join(BASE_DIR, "data")
 RESULT_DIR = os.path.join(BASE_DIR, "algorithm_result")
 PLOT_DIR = os.path.join(BASE_DIR, "plots_output")
