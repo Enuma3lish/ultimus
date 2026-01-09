@@ -1645,7 +1645,7 @@ if __name__ == "__main__":
     parser.add_argument('--mode', type=str, default='generate',
                        choices=['generate'],
                        help='Run mode: generate=generate data')
-    parser.add_argument('--num-jobs', type=int, default=1000,
+    parser.add_argument('--num-jobs', type=int, default=10000,
                        help='Number of jobs to generate')
     parser.add_argument('--analysis-output', type=str, default='analysis',
                        help='Analysis output directory (default: analysis)')
@@ -1654,7 +1654,7 @@ if __name__ == "__main__":
 
     if args.mode == 'generate':
         all_results = defaultdict(list)
-        for i in range(1, 11):
+        for i in range(1, 6):
             group_results = Save_file(args.num_jobs, i)
             # Merge results
             for key, results in group_results.items():
