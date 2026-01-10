@@ -786,7 +786,9 @@ void process_bounded_pareto_combination_random_folders(AlgoFunc algo, const std:
                 continue;
             }
 
-            std::cout << "  Processing " << comb_basename << " (type: " << comb_type << ")" << std::endl;
+            // Extract combination params (e.g., "H64_H512" from "two_combination_H64_H512")
+            std::string comb_params = parse_combination_params_from_folder(comb_basename);
+            std::cout << "  Processing " << comb_basename << " (type: " << comb_type << ", params: " << comb_params << ")" << std::endl;
 
             std::string result_folder_name = result_folder_mapping[comb_type];
             std::string result_dir = combination_random_result_dir + "/" + result_folder_name;
@@ -876,10 +878,10 @@ void process_bounded_pareto_combination_random_folders(AlgoFunc algo, const std:
 
                 std::string output_file;
                 if (base_version >= 0) {
-                    output_file = result_dir + "/" + pair.first + "_" + algo_name + "_" +
+                    output_file = result_dir + "/" + comb_type + "_" + comb_params + "_" + pair.first + "_" + algo_name + "_" +
                                  std::to_string(base_version) + "_result.csv";
                 } else {
-                    output_file = result_dir + "/" + pair.first + "_" + algo_name + "_result.csv";
+                    output_file = result_dir + "/" + comb_type + "_" + comb_params + "_" + pair.first + "_" + algo_name + "_result.csv";
                 }
 
                 std::cout << "    Writing " << pair.second.size() << " results to "
@@ -949,7 +951,9 @@ void process_normal_combination_random_folders(AlgoFunc algo, const std::string&
                 continue;
             }
 
-            std::cout << "  Processing " << comb_basename << " (type: " << comb_type << ")" << std::endl;
+            // Extract combination params (e.g., "std6_std9" from "two_combination_std6_std9")
+            std::string comb_params = parse_combination_params_from_folder(comb_basename);
+            std::cout << "  Processing " << comb_basename << " (type: " << comb_type << ", params: " << comb_params << ")" << std::endl;
 
             std::string result_folder_name = result_folder_mapping[comb_type];
             std::string result_dir = combination_random_result_dir + "/" + result_folder_name;
@@ -1039,10 +1043,10 @@ void process_normal_combination_random_folders(AlgoFunc algo, const std::string&
 
                 std::string output_file;
                 if (base_version >= 0) {
-                    output_file = result_dir + "/" + pair.first + "_" + algo_name + "_" +
+                    output_file = result_dir + "/" + comb_type + "_" + comb_params + "_" + pair.first + "_" + algo_name + "_" +
                                  std::to_string(base_version) + "_result.csv";
                 } else {
-                    output_file = result_dir + "/" + pair.first + "_" + algo_name + "_result.csv";
+                    output_file = result_dir + "/" + comb_type + "_" + comb_params + "_" + pair.first + "_" + algo_name + "_result.csv";
                 }
 
                 std::cout << "    Writing " << pair.second.size() << " results to "
@@ -1492,23 +1496,26 @@ void process_bounded_pareto_combination_random_folders_multimode_DBAL(MultiModeF
             !directory_exists(folder)) continue;
         int base_version = extract_version_from_path(basename);
         safe_cout("Processing Bounded Pareto combination_random base: " + basename + "\n");
-        
+
         // List actual combination subfolders (e.g., two_combination_H64_H512)
         auto comb_subfolders = list_directory(folder);
         for (const auto& comb_folder : comb_subfolders) {
             std::string comb_basename = comb_folder.substr(comb_folder.find_last_of('/') + 1);
             if (!directory_exists(comb_folder)) continue;
-            
+
             std::string comb_type = parse_combination_type_from_folder(comb_basename);
             if (comb_type.empty()) continue;
-            
+
+            // Extract combination params (e.g., "H64_H512" from "two_combination_H64_H512")
+            std::string comb_params = parse_combination_params_from_folder(comb_basename);
+
             std::string result_folder_name;
             if (comb_type == "two_combination") result_folder_name = "two_result";
             else if (comb_type == "three_combination") result_folder_name = "three_result";
             else if (comb_type == "four_combination") result_folder_name = "four_result";
             else continue;
-            
-            safe_cout("  Processing " + comb_basename + "\n");
+
+            safe_cout("  Processing " + comb_basename + " (params: " + comb_params + ")\n");
             std::string result_dir = combination_random_result_dir + "/" + result_folder_name;
             create_directory(result_dir);
             std::map<std::string, std::vector<std::map<std::string, std::string>>> results_by_pair;
@@ -1557,7 +1564,7 @@ void process_bounded_pareto_combination_random_folders_multimode_DBAL(MultiModeF
             }
             for (auto& thread : folder_threads) thread.join();
             for (auto& pair : results_by_pair) {
-                std::string output_file = result_dir + "/" + pair.first + "_Dynamic_BAL_njobs" +
+                std::string output_file = result_dir + "/" + comb_type + "_" + comb_params + "_" + pair.first + "_Dynamic_BAL_njobs" +
                                          std::to_string(nJobsPerRound) + "_" + std::to_string(base_version) + ".csv";
                 std::ofstream out(output_file);
                 out << "frequency";
@@ -1594,23 +1601,26 @@ void process_normal_combination_random_folders_multimode_DBAL(MultiModeFunc mult
         if (basename.find("normal_combination_random_") == std::string::npos || !directory_exists(folder)) continue;
         int base_version = extract_version_from_path(basename);
         safe_cout("Processing Normal combination_random base: " + basename + "\n");
-        
+
         // List actual combination subfolders (e.g., two_combination_std6_std9)
         auto comb_subfolders = list_directory(folder);
         for (const auto& comb_folder : comb_subfolders) {
             std::string comb_basename = comb_folder.substr(comb_folder.find_last_of('/') + 1);
             if (!directory_exists(comb_folder)) continue;
-            
+
             std::string comb_type = parse_combination_type_from_folder(comb_basename);
             if (comb_type.empty()) continue;
-            
+
+            // Extract combination params (e.g., "std6_std9" from "two_combination_std6_std9")
+            std::string comb_params = parse_combination_params_from_folder(comb_basename);
+
             std::string result_folder_name;
             if (comb_type == "two_combination") result_folder_name = "two_result";
             else if (comb_type == "three_combination") result_folder_name = "three_result";
             else if (comb_type == "four_combination") result_folder_name = "four_result";
             else continue;
-            
-            safe_cout("  Processing " + comb_basename + "\n");
+
+            safe_cout("  Processing " + comb_basename + " (params: " + comb_params + ")\n");
             std::string result_dir = combination_random_result_dir + "/" + result_folder_name;
             create_directory(result_dir);
             std::map<std::string, std::vector<std::map<std::string, std::string>>> results_by_pair;
@@ -1659,7 +1669,7 @@ void process_normal_combination_random_folders_multimode_DBAL(MultiModeFunc mult
             }
             for (auto& thread : folder_threads) thread.join();
             for (auto& pair : results_by_pair) {
-                std::string output_file = result_dir + "/" + pair.first + "_Dynamic_BAL_njobs" +
+                std::string output_file = result_dir + "/" + comb_type + "_" + comb_params + "_" + pair.first + "_Dynamic_BAL_njobs" +
                                          std::to_string(nJobsPerRound) + "_" + std::to_string(base_version) + ".csv";
                 std::ofstream out(output_file);
                 out << "frequency";
@@ -1698,23 +1708,26 @@ void process_bounded_pareto_combination_random_folders_multimode(MultiModeFunc m
             !directory_exists(folder)) continue;
         int base_version = extract_version_from_path(basename);
         safe_cout("Processing Bounded Pareto combination_random base: " + basename + "\n");
-        
+
         // List actual combination subfolders (e.g., two_combination_H64_H512)
         auto comb_subfolders = list_directory(folder);
         for (const auto& comb_folder : comb_subfolders) {
             std::string comb_basename = comb_folder.substr(comb_folder.find_last_of('/') + 1);
             if (!directory_exists(comb_folder)) continue;
-            
+
             std::string comb_type = parse_combination_type_from_folder(comb_basename);
             if (comb_type.empty()) continue;
-            
+
+            // Extract combination params (e.g., "H64_H512" from "two_combination_H64_H512")
+            std::string comb_params = parse_combination_params_from_folder(comb_basename);
+
             std::string result_folder_name;
             if (comb_type == "two_combination") result_folder_name = "two_result";
             else if (comb_type == "three_combination") result_folder_name = "three_result";
             else if (comb_type == "four_combination") result_folder_name = "four_result";
             else continue;
-            
-            safe_cout("  Processing " + comb_basename + "\n");
+
+            safe_cout("  Processing " + comb_basename + " (params: " + comb_params + ")\n");
             std::string result_dir = combination_random_result_dir + "/" + result_folder_name;
             create_directory(result_dir);
             std::map<std::string, std::vector<std::map<std::string, std::string>>> results_by_pair;
@@ -1763,7 +1776,7 @@ void process_bounded_pareto_combination_random_folders_multimode(MultiModeFunc m
             }
             for (auto& thread : folder_threads) thread.join();
             for (auto& pair : results_by_pair) {
-                std::string output_file = result_dir + "/" + pair.first + "_Dynamic_njobs" +
+                std::string output_file = result_dir + "/" + comb_type + "_" + comb_params + "_" + pair.first + "_Dynamic_njobs" +
                                          std::to_string(nJobsPerRound) + "_" + std::to_string(base_version) + ".csv";
                 std::ofstream out(output_file);
                 out << "frequency";
@@ -1802,23 +1815,26 @@ void process_normal_combination_random_folders_multimode(MultiModeFunc multi_mod
             !directory_exists(folder)) continue;
         int base_version = extract_version_from_path(basename);
         safe_cout("Processing Normal combination_random base: " + basename + "\n");
-        
+
         // List actual combination subfolders (e.g., two_combination_std6_std9)
         auto comb_subfolders = list_directory(folder);
         for (const auto& comb_folder : comb_subfolders) {
             std::string comb_basename = comb_folder.substr(comb_folder.find_last_of('/') + 1);
             if (!directory_exists(comb_folder)) continue;
-            
+
             std::string comb_type = parse_combination_type_from_folder(comb_basename);
             if (comb_type.empty()) continue;
-            
+
+            // Extract combination params (e.g., "std6_std9" from "two_combination_std6_std9")
+            std::string comb_params = parse_combination_params_from_folder(comb_basename);
+
             std::string result_folder_name;
             if (comb_type == "two_combination") result_folder_name = "two_result";
             else if (comb_type == "three_combination") result_folder_name = "three_result";
             else if (comb_type == "four_combination") result_folder_name = "four_result";
             else continue;
-            
-            safe_cout("  Processing " + comb_basename + "\n");
+
+            safe_cout("  Processing " + comb_basename + " (params: " + comb_params + ")\n");
             std::string result_dir = combination_random_result_dir + "/" + result_folder_name;
             create_directory(result_dir);
             std::map<std::string, std::vector<std::map<std::string, std::string>>> results_by_pair;
@@ -1867,7 +1883,7 @@ void process_normal_combination_random_folders_multimode(MultiModeFunc multi_mod
             }
             for (auto& thread : folder_threads) thread.join();
             for (auto& pair : results_by_pair) {
-                std::string output_file = result_dir + "/" + pair.first + "_Dynamic_njobs" +
+                std::string output_file = result_dir + "/" + comb_type + "_" + comb_params + "_" + pair.first + "_Dynamic_njobs" +
                                          std::to_string(nJobsPerRound) + "_" + std::to_string(base_version) + ".csv";
                 std::ofstream out(output_file);
                 out << "frequency";
@@ -1906,23 +1922,26 @@ void process_bounded_pareto_combination_random_folders_multimode_RF(MultiModeFun
             !directory_exists(folder)) continue;
         int base_version = extract_version_from_path(basename);
         safe_cout("Processing Bounded Pareto combination_random base: " + basename + "\n");
-        
+
         // List actual combination subfolders (e.g., two_combination_H64_H512)
         auto comb_subfolders = list_directory(folder);
         for (const auto& comb_folder : comb_subfolders) {
             std::string comb_basename = comb_folder.substr(comb_folder.find_last_of('/') + 1);
             if (!directory_exists(comb_folder)) continue;
-            
+
             std::string comb_type = parse_combination_type_from_folder(comb_basename);
             if (comb_type.empty()) continue;
-            
+
+            // Extract combination params (e.g., "H64_H512" from "two_combination_H64_H512")
+            std::string comb_params = parse_combination_params_from_folder(comb_basename);
+
             std::string result_folder_name;
             if (comb_type == "two_combination") result_folder_name = "two_result";
             else if (comb_type == "three_combination") result_folder_name = "three_result";
             else if (comb_type == "four_combination") result_folder_name = "four_result";
             else continue;
-            
-            safe_cout("  Processing " + comb_basename + "\n");
+
+            safe_cout("  Processing " + comb_basename + " (params: " + comb_params + ")\n");
             std::string result_dir = combination_random_result_dir + "/" + result_folder_name;
             create_directory(result_dir);
             std::map<std::string, std::vector<std::map<std::string, std::string>>> results_by_pair;
@@ -1971,7 +1990,7 @@ void process_bounded_pareto_combination_random_folders_multimode_RF(MultiModeFun
             }
             for (auto& thread : folder_threads) thread.join();
             for (auto& pair : results_by_pair) {
-                std::string output_file = result_dir + "/" + pair.first + "_RFDynamic_njobs" +
+                std::string output_file = result_dir + "/" + comb_type + "_" + comb_params + "_" + pair.first + "_RFDynamic_njobs" +
                                          std::to_string(nJobsPerRound) + "_" + std::to_string(base_version) + ".csv";
                 std::ofstream out(output_file);
                 out << "frequency";

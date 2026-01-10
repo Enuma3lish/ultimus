@@ -59,7 +59,9 @@ void process_fix_combination_folders(AlgoFunc algo, const std::string& algo_name
                     continue;
                 }
 
-                std::cout << "  Processing " << comb_basename << " (type: " << comb_type << ")" << std::endl;
+                // Extract combination params (e.g., "H64_H512" from "two_combination_H64_H512")
+                std::string comb_params = parse_combination_params_from_folder(comb_basename);
+                std::cout << "  Processing " << comb_basename << " (type: " << comb_type << ", params: " << comb_params << ")" << std::endl;
 
                 std::string result_folder_name = result_folder_mapping[comb_type];
                 std::string result_dir = combination_result_dir + "/" + result_folder_name;
@@ -143,10 +145,10 @@ void process_fix_combination_folders(AlgoFunc algo, const std::string& algo_name
 
                     std::string output_file;
                     if (base_version >= 0) {
-                        output_file = result_dir + "/" + pair.first + "_" + fix_type + "_" + algo_name + "_" +
+                        output_file = result_dir + "/" + comb_type + "_" + comb_params + "_" + pair.first + "_" + fix_type + "_" + algo_name + "_" +
                                      std::to_string(base_version) + "_result.csv";
                     } else {
-                        output_file = result_dir + "/" + pair.first + "_" + fix_type + "_" + algo_name + "_result.csv";
+                        output_file = result_dir + "/" + comb_type + "_" + comb_params + "_" + pair.first + "_" + fix_type + "_" + algo_name + "_result.csv";
                     }
 
                     std::cout << "    Writing " << pair.second.size() << " results to "
@@ -239,7 +241,9 @@ void process_fix_combination_folders_multimode(MultiModeFunc multi_mode_algo,
                     continue;
                 }
 
-                safe_cout("  Processing " + comb_basename + " (type: " + comb_type + ")\n");
+                // Extract combination params (e.g., "H64_H512" from "two_combination_H64_H512")
+                std::string comb_params = parse_combination_params_from_folder(comb_basename);
+                safe_cout("  Processing " + comb_basename + " (type: " + comb_type + ", params: " + comb_params + ")\n");
 
                 std::string result_folder_name = result_folder_mapping[comb_type];
                 std::string result_dir = combination_result_dir + "/" + result_folder_name;
@@ -334,11 +338,11 @@ void process_fix_combination_folders_multimode(MultiModeFunc multi_mode_algo,
 
                     std::string output_file;
                     if (base_version >= 0) {
-                        output_file = result_dir + "/" + pair.first + "_" + fix_type + "_" +
+                        output_file = result_dir + "/" + comb_type + "_" + comb_params + "_" + pair.first + "_" + fix_type + "_" +
                                      algo_name + "_njobs" + std::to_string(nJobsPerRound) + "_" +
                                      std::to_string(base_version) + "_result.csv";
                     } else {
-                        output_file = result_dir + "/" + pair.first + "_" + fix_type + "_" +
+                        output_file = result_dir + "/" + comb_type + "_" + comb_params + "_" + pair.first + "_" + fix_type + "_" +
                                      algo_name + "_njobs" + std::to_string(nJobsPerRound) + "_result.csv";
                     }
 
