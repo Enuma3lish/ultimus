@@ -68,15 +68,10 @@ Cpp_Optimization/algorithms/*/RFDynamic
 # Generated plots directory
 distribution_based_plots/
 
-# Individual result CSV files
-*_result.csv
-*_final_*.csv
-
 # ============================================================================
 # Data Files
 # ============================================================================
 data/
-*.csv
 *.dat
 
 # Keep structure files (if you want to track specific CSVs, uncomment):
