@@ -114,9 +114,8 @@ void save_analysis_results(const std::string& input_file_path, int nJobsPerRound
     std::string mode_folder = "mode_" + std::to_string(mode);
     std::string folder_path = main_dir + "/" + sub_folder + "/" + mode_folder;
 
-    create_directory(main_dir);
-    create_directory(main_dir + "/" + sub_folder);
-    create_directory(folder_path);
+    // Create all directories recursively (like mkdir -p)
+    create_directories_recursive(folder_path);
 
     int bal_count = 0, fcfs_count = 0;
     for (const auto& algo : algorithm_history) {
@@ -487,34 +486,36 @@ DynamicResult DYNAMIC_BAL(std::vector<Job>& jobs, int nJobsPerRound, int mode,
 // Wrapper functions for use with the header file templates
 
 // For avg folders
-std::map<int, double> run_all_modes_for_file_normal(std::vector<Job> jobs, int nJobsPerRound,
+// Returns map<int, pair<double, double>> where pair = (L2_norm, max_flow_time)
+std::map<int, std::pair<double, double>> run_all_modes_for_file_normal(std::vector<Job> jobs, int nJobsPerRound,
                                                     const std::string& input_file_path,
                                                     const std::vector<int>& modes_to_run) {
-    std::map<int, double> mode_results;
+    std::map<int, std::pair<double, double>> mode_results;
     std::mutex results_mutex;
     std::vector<std::thread> threads;
-    
+
     for (int mode : modes_to_run) {
         threads.emplace_back([&, mode]() {
             std::vector<Job> jobs_copy = jobs;
             DynamicResult result = DYNAMIC_BAL(jobs_copy, nJobsPerRound, mode, input_file_path);
-            
+
             {
                 std::lock_guard<std::mutex> lock(results_mutex);
-                mode_results[mode] = result.l2_norm_flow_time;
+                mode_results[mode] = std::make_pair(result.l2_norm_flow_time, result.max_flow_time);
             }
-            
+
             std::stringstream ss;
-            ss << "    Mode " << mode << ": L2 norm = " << std::fixed 
-               << std::setprecision(4) << result.l2_norm_flow_time << std::endl;
+            ss << "    Mode " << mode << ": L2 norm = " << std::fixed
+               << std::setprecision(4) << result.l2_norm_flow_time
+               << ", Max flow = " << result.max_flow_time << std::endl;
             safe_cout(ss.str());
         });
     }
-    
+
     for (auto& thread : threads) {
         thread.join();
     }
-    
+
     return mode_results;
 }
 
@@ -736,7 +737,7 @@ int main(int argc, char* argv[]) {
 
         auto combination_random_wrapper = [](std::vector<Job> jobs, int nJobsPerRound,
                                             const std::vector<int>& modes_to_run) {
-            return run_all_modes_for_file_normal(jobs, nJobsPerRound, "", modes_to_run);
+            return run_all_modes_for_file_frequency(jobs, nJobsPerRound, modes_to_run);
         };
 
         process_bounded_pareto_combination_random_folders_multimode_DBAL(combination_random_wrapper, data_dir, output_dir,
@@ -752,7 +753,7 @@ int main(int argc, char* argv[]) {
 
         auto combination_random_wrapper = [](std::vector<Job> jobs, int nJobsPerRound,
                                             const std::vector<int>& modes_to_run) {
-            return run_all_modes_for_file_normal(jobs, nJobsPerRound, "", modes_to_run);
+            return run_all_modes_for_file_frequency(jobs, nJobsPerRound, modes_to_run);
         };
 
         process_normal_combination_random_folders_multimode_DBAL(combination_random_wrapper, data_dir, output_dir,

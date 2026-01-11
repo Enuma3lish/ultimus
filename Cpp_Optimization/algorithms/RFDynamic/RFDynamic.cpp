@@ -233,9 +233,8 @@ void save_analysis_results_RF(const std::string& input_file_path, int nJobsPerRo
     std::string mode_folder = "mode_" + std::to_string(mode);
     std::string folder_path = main_dir + "/" + sub_folder + "/" + mode_folder;
 
-    ensure_directory_exists(main_dir);
-    ensure_directory_exists(main_dir + "/" + sub_folder);
-    ensure_directory_exists(folder_path);
+    // Create all directories recursively (like mkdir -p)
+    create_directories_recursive(folder_path);
 
     int rmlf_count = 0, fcfs_count = 0;
     for (const auto& algo : algorithm_history) {
@@ -656,7 +655,8 @@ int main(int argc) {
                              const std::string& input_file_path,
                              const std::vector<int>& modes_to_run) {
             // Pass input file path for analysis
-            std::map<int, double> mode_results;
+            // Returns map<int, pair<double, double>> where pair = (L2_norm, max_flow_time)
+            std::map<int, std::pair<double, double>> mode_results;
             std::mutex results_mutex;
             std::vector<std::thread> threads;
 
@@ -667,7 +667,7 @@ int main(int argc) {
 
                     {
                         std::lock_guard<std::mutex> lock(results_mutex);
-                        mode_results[mode] = result.l2_norm_flow_time;
+                        mode_results[mode] = std::make_pair(result.l2_norm_flow_time, result.max_flow_time);
                     }
                 });
             }
@@ -755,7 +755,7 @@ int main(int argc) {
 
         auto combination_random_wrapper = [](std::vector<Job> jobs, int nJobsPerRound,
                                             const std::vector<int>& modes_to_run) {
-            return run_all_modes_for_file_normal(jobs, nJobsPerRound, modes_to_run);
+            return run_all_modes_for_file_frequency(jobs, nJobsPerRound, modes_to_run);
         };
 
         process_bounded_pareto_combination_random_folders_multimode_RF(combination_random_wrapper, data_dir, output_dir,
@@ -771,7 +771,7 @@ int main(int argc) {
 
         auto combination_random_wrapper = [](std::vector<Job> jobs, int nJobsPerRound,
                                             const std::vector<int>& modes_to_run) {
-            return run_all_modes_for_file_normal(jobs, nJobsPerRound, modes_to_run);
+            return run_all_modes_for_file_frequency(jobs, nJobsPerRound, modes_to_run);
         };
 
         process_normal_combination_random_folders_multimode_RF(combination_random_wrapper, data_dir, output_dir,

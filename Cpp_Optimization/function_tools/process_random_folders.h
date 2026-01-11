@@ -1549,11 +1549,14 @@ void process_bounded_pareto_combination_random_folders_multimode_DBAL(MultiModeF
                         if (pair_id.empty()) continue;
                         auto jobs = read_jobs_from_csv(file);
                         if (jobs.empty()) continue;
-                        auto mode_results = multi_mode_algo(jobs, nJobsPerRound, modes_to_run);
+                        auto result_pair = multi_mode_algo(jobs, nJobsPerRound, modes_to_run);
+                        std::map<int, double> mode_results = result_pair.first;
+                        std::map<int, double> max_flow_results = result_pair.second;
                         std::map<std::string, std::string> result_map;
                         result_map["frequency"] = std::to_string(frequency);
                         for (int mode : modes_to_run) {
                             result_map["l2_mode_" + std::to_string(mode)] = std::to_string(mode_results[mode]);
+                            result_map["max_mode_" + std::to_string(mode)] = std::to_string(max_flow_results[mode]);
                         }
                         {
                             std::lock_guard<std::mutex> lock(results_mutex);
@@ -1568,11 +1571,17 @@ void process_bounded_pareto_combination_random_folders_multimode_DBAL(MultiModeF
                                          std::to_string(nJobsPerRound) + "_" + std::to_string(base_version) + ".csv";
                 std::ofstream out(output_file);
                 out << "frequency";
-                for (int mode : modes_to_run) out << ",Dynamic_BAL_njobs" << nJobsPerRound << "_mode" << mode << "_L2_norm_flow_time";
+                for (int mode : modes_to_run) {
+                    out << ",Dynamic_BAL_njobs" << nJobsPerRound << "_mode" << mode << "_L2_norm_flow_time";
+                    out << ",Dynamic_BAL_njobs" << nJobsPerRound << "_mode" << mode << "_maximum_flow_time";
+                }
                 out << "\n";
                 for (const auto& result : pair.second) {
                     out << result.at("frequency");
-                    for (int mode : modes_to_run) out << "," << result.at("l2_mode_" + std::to_string(mode));
+                    for (int mode : modes_to_run) {
+                        out << "," << result.at("l2_mode_" + std::to_string(mode));
+                        out << "," << result.at("max_mode_" + std::to_string(mode));
+                    }
                     out << "\n";
                 }
                 safe_cout("      Saved results to " + output_file + "\n");
@@ -1654,11 +1663,14 @@ void process_normal_combination_random_folders_multimode_DBAL(MultiModeFunc mult
                         if (pair_id.empty()) continue;
                         auto jobs = read_jobs_from_csv(file);
                         if (jobs.empty()) continue;
-                        auto mode_results = multi_mode_algo(jobs, nJobsPerRound, modes_to_run);
+                        auto result_pair = multi_mode_algo(jobs, nJobsPerRound, modes_to_run);
+                        std::map<int, double> mode_results = result_pair.first;
+                        std::map<int, double> max_flow_results = result_pair.second;
                         std::map<std::string, std::string> result_map;
                         result_map["frequency"] = std::to_string(frequency);
                         for (int mode : modes_to_run) {
                             result_map["l2_mode_" + std::to_string(mode)] = std::to_string(mode_results[mode]);
+                            result_map["max_mode_" + std::to_string(mode)] = std::to_string(max_flow_results[mode]);
                         }
                         {
                             std::lock_guard<std::mutex> lock(results_mutex);
@@ -1673,11 +1685,17 @@ void process_normal_combination_random_folders_multimode_DBAL(MultiModeFunc mult
                                          std::to_string(nJobsPerRound) + "_" + std::to_string(base_version) + ".csv";
                 std::ofstream out(output_file);
                 out << "frequency";
-                for (int mode : modes_to_run) out << ",Dynamic_BAL_njobs" << nJobsPerRound << "_mode" << mode << "_L2_norm_flow_time";
+                for (int mode : modes_to_run) {
+                    out << ",Dynamic_BAL_njobs" << nJobsPerRound << "_mode" << mode << "_L2_norm_flow_time";
+                    out << ",Dynamic_BAL_njobs" << nJobsPerRound << "_mode" << mode << "_maximum_flow_time";
+                }
                 out << "\n";
                 for (const auto& result : pair.second) {
                     out << result.at("frequency");
-                    for (int mode : modes_to_run) out << "," << result.at("l2_mode_" + std::to_string(mode));
+                    for (int mode : modes_to_run) {
+                        out << "," << result.at("l2_mode_" + std::to_string(mode));
+                        out << "," << result.at("max_mode_" + std::to_string(mode));
+                    }
                     out << "\n";
                 }
                 safe_cout("      Saved results to " + output_file + "\n");
@@ -1761,11 +1779,12 @@ void process_bounded_pareto_combination_random_folders_multimode(MultiModeFunc m
                         if (pair_id.empty()) continue;
                         auto jobs = read_jobs_from_csv(file);
                         if (jobs.empty()) continue;
-                        auto mode_results = multi_mode_algo(jobs, nJobsPerRound, file, modes_to_run);
+                        auto mode_results_map = multi_mode_algo(jobs, nJobsPerRound, file, modes_to_run);
                         std::map<std::string, std::string> result_map;
                         result_map["frequency"] = std::to_string(frequency);
                         for (int mode : modes_to_run) {
-                            result_map["l2_mode_" + std::to_string(mode)] = std::to_string(mode_results[mode]);
+                            result_map["l2_mode_" + std::to_string(mode)] = std::to_string(mode_results_map[mode].first);
+                            result_map["max_mode_" + std::to_string(mode)] = std::to_string(mode_results_map[mode].second);
                         }
                         {
                             std::lock_guard<std::mutex> lock(results_mutex);
@@ -1780,11 +1799,17 @@ void process_bounded_pareto_combination_random_folders_multimode(MultiModeFunc m
                                          std::to_string(nJobsPerRound) + "_" + std::to_string(base_version) + ".csv";
                 std::ofstream out(output_file);
                 out << "frequency";
-                for (int mode : modes_to_run) out << ",Dynamic_njobs" << nJobsPerRound << "_mode" << mode << "_L2_norm_flow_time";
+                for (int mode : modes_to_run) {
+                    out << ",Dynamic_njobs" << nJobsPerRound << "_mode" << mode << "_L2_norm_flow_time";
+                    out << ",Dynamic_njobs" << nJobsPerRound << "_mode" << mode << "_maximum_flow_time";
+                }
                 out << "\n";
                 for (const auto& result : pair.second) {
                     out << result.at("frequency");
-                    for (int mode : modes_to_run) out << "," << result.at("l2_mode_" + std::to_string(mode));
+                    for (int mode : modes_to_run) {
+                        out << "," << result.at("l2_mode_" + std::to_string(mode));
+                        out << "," << result.at("max_mode_" + std::to_string(mode));
+                    }
                     out << "\n";
                 }
                 safe_cout("      Saved results to " + output_file + "\n");
@@ -1868,11 +1893,12 @@ void process_normal_combination_random_folders_multimode(MultiModeFunc multi_mod
                         if (pair_id.empty()) continue;
                         auto jobs = read_jobs_from_csv(file);
                         if (jobs.empty()) continue;
-                        auto mode_results = multi_mode_algo(jobs, nJobsPerRound, file, modes_to_run);
+                        auto mode_results_map = multi_mode_algo(jobs, nJobsPerRound, file, modes_to_run);
                         std::map<std::string, std::string> result_map;
                         result_map["frequency"] = std::to_string(frequency);
                         for (int mode : modes_to_run) {
-                            result_map["l2_mode_" + std::to_string(mode)] = std::to_string(mode_results[mode]);
+                            result_map["l2_mode_" + std::to_string(mode)] = std::to_string(mode_results_map[mode].first);
+                            result_map["max_mode_" + std::to_string(mode)] = std::to_string(mode_results_map[mode].second);
                         }
                         {
                             std::lock_guard<std::mutex> lock(results_mutex);
@@ -1887,11 +1913,17 @@ void process_normal_combination_random_folders_multimode(MultiModeFunc multi_mod
                                          std::to_string(nJobsPerRound) + "_" + std::to_string(base_version) + ".csv";
                 std::ofstream out(output_file);
                 out << "frequency";
-                for (int mode : modes_to_run) out << ",Dynamic_njobs" << nJobsPerRound << "_mode" << mode << "_L2_norm_flow_time";
+                for (int mode : modes_to_run) {
+                    out << ",Dynamic_njobs" << nJobsPerRound << "_mode" << mode << "_L2_norm_flow_time";
+                    out << ",Dynamic_njobs" << nJobsPerRound << "_mode" << mode << "_maximum_flow_time";
+                }
                 out << "\n";
                 for (const auto& result : pair.second) {
                     out << result.at("frequency");
-                    for (int mode : modes_to_run) out << "," << result.at("l2_mode_" + std::to_string(mode));
+                    for (int mode : modes_to_run) {
+                        out << "," << result.at("l2_mode_" + std::to_string(mode));
+                        out << "," << result.at("max_mode_" + std::to_string(mode));
+                    }
                     out << "\n";
                 }
                 safe_cout("      Saved results to " + output_file + "\n");
@@ -1975,11 +2007,14 @@ void process_bounded_pareto_combination_random_folders_multimode_RF(MultiModeFun
                         if (pair_id.empty()) continue;
                         auto jobs = read_jobs_from_csv(file);
                         if (jobs.empty()) continue;
-                        auto mode_results = multi_mode_algo(jobs, nJobsPerRound, modes_to_run);
+                        auto result_pair = multi_mode_algo(jobs, nJobsPerRound, modes_to_run);
+                        std::map<int, double> mode_l2_results = result_pair.first;
+                        std::map<int, double> mode_max_flow_results = result_pair.second;
                         std::map<std::string, std::string> result_map;
                         result_map["frequency"] = std::to_string(frequency);
                         for (int mode : modes_to_run) {
-                            result_map["l2_mode_" + std::to_string(mode)] = std::to_string(mode_results[mode]);
+                            result_map["l2_mode_" + std::to_string(mode)] = std::to_string(mode_l2_results[mode]);
+                            result_map["max_mode_" + std::to_string(mode)] = std::to_string(mode_max_flow_results[mode]);
                         }
                         {
                             std::lock_guard<std::mutex> lock(results_mutex);
@@ -1995,10 +2030,12 @@ void process_bounded_pareto_combination_random_folders_multimode_RF(MultiModeFun
                 std::ofstream out(output_file);
                 out << "frequency";
                 for (int mode : modes_to_run) out << ",RFDynamic_njobs" << nJobsPerRound << "_mode" << mode << "_L2_norm_flow_time";
+                for (int mode : modes_to_run) out << ",RFDynamic_njobs" << nJobsPerRound << "_mode" << mode << "_maximum_flow_time";
                 out << "\n";
                 for (const auto& result : pair.second) {
                     out << result.at("frequency");
                     for (int mode : modes_to_run) out << "," << result.at("l2_mode_" + std::to_string(mode));
+                    for (int mode : modes_to_run) out << "," << result.at("max_mode_" + std::to_string(mode));
                     out << "\n";
                 }
                 safe_cout("      Saved results to " + output_file + "\n");
@@ -2009,7 +2046,101 @@ void process_bounded_pareto_combination_random_folders_multimode_RF(MultiModeFun
 
 template<typename MultiModeFunc>
 void process_normal_combination_random_folders_multimode_RF(MultiModeFunc multi_mode_algo, const std::string& data_dir, const std::string& output_dir, int nJobsPerRound, const std::vector<int>& modes_to_run, std::mutex& cout_mutex) {
-    process_normal_combination_random_folders_multimode_DBAL(multi_mode_algo, data_dir, output_dir, nJobsPerRound, modes_to_run, cout_mutex);
+    std::string combination_random_result_dir = output_dir + "/normal_combination_random_result";
+    create_directory(combination_random_result_dir);
+    auto safe_cout = [&](const std::string& msg) {
+        std::lock_guard<std::mutex> lock(cout_mutex);
+        std::cout << msg << std::flush;
+    };
+    auto folders = list_directory(data_dir);
+    for (const auto& folder : folders) {
+        std::string basename = folder.substr(folder.find_last_of('/') + 1);
+        if (basename.find("normal_combination_random_") == std::string::npos ||
+            basename.find("softrandom") != std::string::npos ||
+            !directory_exists(folder)) continue;
+        int base_version = extract_version_from_path(basename);
+        safe_cout("Processing normal combination_random base: " + basename + "\n");
+        auto comb_subfolders = list_directory(folder);
+        for (const auto& comb_folder : comb_subfolders) {
+            std::string comb_basename = comb_folder.substr(comb_folder.find_last_of('/') + 1);
+            if (!directory_exists(comb_folder)) continue;
+            std::string comb_type = parse_combination_type_from_folder(comb_basename);
+            if (comb_type.empty()) continue;
+            std::string comb_params = parse_combination_params_from_folder(comb_basename);
+            std::string result_folder_name;
+            if (comb_type == "two_combination") result_folder_name = "two_result";
+            else if (comb_type == "three_combination") result_folder_name = "three_result";
+            else if (comb_type == "four_combination") result_folder_name = "four_result";
+            else continue;
+            safe_cout("  Processing " + comb_basename + " (params: " + comb_params + ")\n");
+            std::string result_dir = combination_random_result_dir + "/" + result_folder_name;
+            create_directory(result_dir);
+            std::map<std::string, std::vector<std::map<std::string, std::string>>> results_by_pair;
+            std::mutex results_mutex;
+            auto freq_folders = list_directory(comb_folder);
+            std::vector<std::thread> folder_threads;
+            for (const auto& freq_folder : freq_folders) {
+                std::string freq_basename = freq_folder.substr(freq_folder.find_last_of('/') + 1);
+                if (freq_basename.find("freq_") == std::string::npos || !directory_exists(freq_folder)) continue;
+                folder_threads.emplace_back([&, freq_folder, freq_basename]() {
+                    int frequency = parse_freq_from_folder(freq_basename);
+                    if (frequency < 0) return;
+                    auto files = list_directory(freq_folder);
+                    for (const auto& file : files) {
+                        std::string filename = file.substr(file.find_last_of('/') + 1);
+                        if (filename.find(".csv") == std::string::npos) continue;
+                        std::string pair_id;
+                        if (filename.find("pair_") != std::string::npos) {
+                            size_t start = filename.find("pair_");
+                            size_t end = filename.find("_freq_");
+                            if (end != std::string::npos) pair_id = filename.substr(start, end - start);
+                        } else if (filename.find("triplet_") != std::string::npos) {
+                            size_t start = filename.find("triplet_");
+                            size_t end = filename.find("_freq_");
+                            if (end != std::string::npos) pair_id = filename.substr(start, end - start);
+                        } else if (filename.find("quadruplet_") != std::string::npos) {
+                            size_t start = filename.find("quadruplet_");
+                            size_t end = filename.find("_freq_");
+                            if (end != std::string::npos) pair_id = filename.substr(start, end - start);
+                        }
+                        if (pair_id.empty()) continue;
+                        auto jobs = read_jobs_from_csv(file);
+                        if (jobs.empty()) continue;
+                        auto result_pair = multi_mode_algo(jobs, nJobsPerRound, modes_to_run);
+                        std::map<int, double> mode_l2_results = result_pair.first;
+                        std::map<int, double> mode_max_flow_results = result_pair.second;
+                        std::map<std::string, std::string> result_map;
+                        result_map["frequency"] = std::to_string(frequency);
+                        for (int mode : modes_to_run) {
+                            result_map["l2_mode_" + std::to_string(mode)] = std::to_string(mode_l2_results[mode]);
+                            result_map["max_mode_" + std::to_string(mode)] = std::to_string(mode_max_flow_results[mode]);
+                        }
+                        {
+                            std::lock_guard<std::mutex> lock(results_mutex);
+                            results_by_pair[pair_id].push_back(result_map);
+                        }
+                    }
+                });
+            }
+            for (auto& thread : folder_threads) thread.join();
+            for (auto& pair : results_by_pair) {
+                std::string output_file = result_dir + "/" + comb_type + "_" + comb_params + "_" + pair.first + "_RFDynamic_njobs" +
+                                         std::to_string(nJobsPerRound) + "_" + std::to_string(base_version) + ".csv";
+                std::ofstream out(output_file);
+                out << "frequency";
+                for (int mode : modes_to_run) out << ",RFDynamic_njobs" << nJobsPerRound << "_mode" << mode << "_L2_norm_flow_time";
+                for (int mode : modes_to_run) out << ",RFDynamic_njobs" << nJobsPerRound << "_mode" << mode << "_maximum_flow_time";
+                out << "\n";
+                for (const auto& result : pair.second) {
+                    out << result.at("frequency");
+                    for (int mode : modes_to_run) out << "," << result.at("l2_mode_" + std::to_string(mode));
+                    for (int mode : modes_to_run) out << "," << result.at("max_mode_" + std::to_string(mode));
+                    out << "\n";
+                }
+                safe_cout("      Saved results to " + output_file + "\n");
+            }
+        }
+    }
 }
 
 #endif // PROCESS_RANDOM_FOLDERS_H

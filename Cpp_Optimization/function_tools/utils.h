@@ -195,6 +195,38 @@ inline void create_directory(const std::string& path) {
     }
 }
 
+// Create directories recursively (like mkdir -p)
+inline bool create_directories_recursive(const std::string& path) {
+    if (path.empty()) return false;
+    if (directory_exists(path)) return true;
+
+    // Find parent directory
+    size_t pos = path.find_last_of('/');
+    if (pos == std::string::npos) {
+        // No parent, just create
+        create_directory(path);
+        return directory_exists(path);
+    }
+
+    // Handle trailing slash
+    if (pos == path.length() - 1) {
+        return create_directories_recursive(path.substr(0, pos));
+    }
+
+    std::string parent = path.substr(0, pos);
+
+    // Recursively create parent directories
+    if (!parent.empty() && parent != "." && parent != "/") {
+        if (!create_directories_recursive(parent)) {
+            return false;
+        }
+    }
+
+    // Create this directory
+    create_directory(path);
+    return directory_exists(path);
+}
+
 inline std::vector<std::string> list_directory(const std::string& path) {
     std::vector<std::string> files;
     DIR* dir = opendir(path.c_str());
