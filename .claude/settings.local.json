@@ -24,7 +24,8 @@
       "Bash(xargs cat:*)",
       "Bash(./Cpp_Optimization/algorithms/Dynamic_BAL/build/Dynamic_BAL:*)",
       "Bash(head:*)",
-      "Bash(xargs -I {} sh -c 'echo \"\"=== {} ===\"\" && head -1 {}')"
+      "Bash(xargs -I {} sh -c 'echo \"\"=== {} ===\"\" && head -1 {}')",
+      "Bash(python compare_plotter.py:*)"
     ],
     "deny": [],
     "ask": []
