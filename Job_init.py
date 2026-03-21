@@ -1654,7 +1654,7 @@ if __name__ == "__main__":
 
     if args.mode == 'generate':
         all_results = defaultdict(list)
-        for i in range(1, 6):
+        for i in range(1, 10):
             group_results = Save_file(args.num_jobs, i)
             # Merge results
             for key, results in group_results.items():

@@ -46,7 +46,7 @@ std::string get_analysis_base_dir() {
 }
 
 // Save analysis results for all file types (avg, random, softrandom, combination)
-void save_analysis_results(const std::string& input_file_path, int nJobsPerRound, int mode,
+void save_analysis_results(const std::string& input_file_path, int nJobsPerRound, int k,
                            const std::vector<std::string>& algorithm_history, int total_rounds) {
     if (input_file_path.empty() || algorithm_history.empty()) {
         return;
@@ -121,7 +121,7 @@ void save_analysis_results(const std::string& input_file_path, int nJobsPerRound
         return;  // Could not parse parameters
     }
 
-    std::string mode_folder = "mode_" + std::to_string(mode);
+    std::string mode_folder = "k_" + std::to_string(k);
     std::string folder_path = main_dir + "/" + sub_folder + "/" + mode_folder;
 
     // Create all directories recursively (like mkdir -p)
@@ -140,11 +140,11 @@ void save_analysis_results(const std::string& input_file_path, int nJobsPerRound
     std::string output_file;
     if (version >= 0) {
         output_file = folder_path + "/Dynamic_" + sub_folder + "_nJobsPerRound_" +
-                     std::to_string(nJobsPerRound) + "_mode_" + std::to_string(mode) +
+                     std::to_string(nJobsPerRound) + "_k_" + std::to_string(k) +
                      "_round_" + std::to_string(version) + ".csv";
     } else {
         output_file = folder_path + "/Dynamic_" + sub_folder + "_nJobsPerRound_" +
-                     std::to_string(nJobsPerRound) + "_mode_" + std::to_string(mode) + ".csv";
+                     std::to_string(nJobsPerRound) + "_k_" + std::to_string(k) + ".csv";
     }
 
     bool write_header = !std::ifstream(output_file).good();
@@ -160,7 +160,7 @@ void save_analysis_results(const std::string& input_file_path, int nJobsPerRound
 
 // Dynamic scheduling algorithm - CORRECT implementation matching your logic
 // Dynamic scheduling algorithm - ALL BUGS FIXED
-DynamicResult DYNAMIC(std::vector<Job>& jobs, int nJobsPerRound, int mode, 
+DynamicResult DYNAMIC(std::vector<Job>& jobs, int nJobsPerRound, int k,
                      const std::string& input_file_name = "") {
     int total_jobs = jobs.size();
     if (total_jobs == 0) {
@@ -247,53 +247,14 @@ DynamicResult DYNAMIC(std::vector<Job>& jobs, int nJobsPerRound, int mode,
                     is_srpt_better = true;
                     algorithm_history.push_back("SRPT");
                 } else {
-                    // Determine effective mode
-                    int effective_mode = mode;
-                    if (mode == 2 && current_round < 3) effective_mode = 1;
-                    else if (mode == 3 && current_round < 5) effective_mode = 1;
-                    else if (mode == 4 && current_round < 9) effective_mode = 1;
-                    else if (mode == 5 && current_round < 17) effective_mode = 1;
-                    
-                    // Collect jobs from previous rounds based on mode
+                    // k = number of past batches to look back (0 means all)
                     std::vector<Job> jobs_to_simulate;
-                    
-                    if (effective_mode == 1) {
-                        // Last 1 round
-                        jobs_to_simulate = round_jobs_history.back();
-                    } else if (effective_mode == 2) {
-                        // Last 2 rounds
-                        size_t start = (round_jobs_history.size() >= 2) ? round_jobs_history.size() - 2 : 0;
-                        for (size_t i = start; i < round_jobs_history.size(); i++) {
-                            jobs_to_simulate.insert(jobs_to_simulate.end(),
-                                round_jobs_history[i].begin(), round_jobs_history[i].end());
-                        }
-                    } else if (effective_mode == 3) {
-                        // Last 4 rounds
-                        size_t start = (round_jobs_history.size() >= 4) ? round_jobs_history.size() - 4 : 0;
-                        for (size_t i = start; i < round_jobs_history.size(); i++) {
-                            jobs_to_simulate.insert(jobs_to_simulate.end(),
-                                round_jobs_history[i].begin(), round_jobs_history[i].end());
-                        }
-                    } else if (effective_mode == 4) {
-                        // Last 8 rounds
-                        size_t start = (round_jobs_history.size() >= 8) ? round_jobs_history.size() - 8 : 0;
-                        for (size_t i = start; i < round_jobs_history.size(); i++) {
-                            jobs_to_simulate.insert(jobs_to_simulate.end(),
-                                round_jobs_history[i].begin(), round_jobs_history[i].end());
-                        }
-                    } else if (effective_mode == 5) {
-                        // Last 16 rounds
-                        size_t start = (round_jobs_history.size() >= 16) ? round_jobs_history.size() - 16 : 0;
-                        for (size_t i = start; i < round_jobs_history.size(); i++) {
-                            jobs_to_simulate.insert(jobs_to_simulate.end(),
-                                round_jobs_history[i].begin(), round_jobs_history[i].end());
-                        }
-                    } else if (effective_mode == 6) {
-                        // All history
-                        for (const auto& round : round_jobs_history) {
-                            jobs_to_simulate.insert(jobs_to_simulate.end(),
-                                round.begin(), round.end());
-                        }
+                    size_t lookback = (k <= 0) ? round_jobs_history.size() :
+                                     std::min(static_cast<size_t>(k), round_jobs_history.size());
+                    size_t start = round_jobs_history.size() - lookback;
+                    for (size_t i = start; i < round_jobs_history.size(); i++) {
+                        jobs_to_simulate.insert(jobs_to_simulate.end(),
+                            round_jobs_history[i].begin(), round_jobs_history[i].end());
                     }
                     
                     // Run simulations
@@ -312,7 +273,7 @@ DynamicResult DYNAMIC(std::vector<Job>& jobs, int nJobsPerRound, int mode,
                     algorithm_history.push_back(is_srpt_better ? "SRPT" : "FCFS");
                     
                     std::stringstream ss;
-                    ss << "[Round " << current_round << "] Mode: " 
+                    ss << "[Round " << current_round << "] "
                        << (is_srpt_better ? "SRPT" : "FCFS")
                        << " (SRPT L2=" << srpt_result.l2_norm_flow_time
                        << ", FCFS L2=" << fcfs_result.l2_norm_flow_time << ")\n";
@@ -492,7 +453,7 @@ DynamicResult DYNAMIC(std::vector<Job>& jobs, int nJobsPerRound, int mode,
     assert(!std::isnan(l2) && !std::isinf(l2) && "l2 must be valid");
     
     if (!input_file_name.empty()) {
-        save_analysis_results(input_file_name, nJobsPerRound, mode, 
+        save_analysis_results(input_file_name, nJobsPerRound, k,
                             algorithm_history, current_round - 1);
     }
     
@@ -502,31 +463,31 @@ DynamicResult DYNAMIC(std::vector<Job>& jobs, int nJobsPerRound, int mode,
 // Returns map<int, pair<double, double>> where pair = (L2_norm, max_flow_time)
 std::map<int, std::pair<double, double>> run_all_modes_for_file_normal(std::vector<Job> jobs, int nJobsPerRound,
                                                     const std::string& input_file_path,
-                                                    const std::vector<int>& modes_to_run) {
+                                                    const std::vector<int>& k_values) {
     std::map<int, std::pair<double, double>> mode_results;
     std::mutex results_mutex;
     std::vector<std::thread> threads;
 
-    // Process each mode in parallel
-    for (int mode : modes_to_run) {
-        threads.emplace_back([&, mode]() {
+    // Process each k value in parallel
+    for (int k_val : k_values) {
+        threads.emplace_back([&, k_val]() {
             std::vector<Job> jobs_copy = jobs;
-            DynamicResult result = DYNAMIC(jobs_copy, nJobsPerRound, mode, input_file_path);
+            DynamicResult result = DYNAMIC(jobs_copy, nJobsPerRound, k_val, input_file_path);
 
             {
                 std::lock_guard<std::mutex> lock(results_mutex);
-                mode_results[mode] = std::make_pair(result.l2_norm_flow_time, result.max_flow_time);
+                mode_results[k_val] = std::make_pair(result.l2_norm_flow_time, result.max_flow_time);
             }
 
             std::stringstream ss;
-            ss << "    Mode " << mode << ": L2 norm = " << std::fixed
+            ss << "    k=" << k_val << ": L2 norm = " << std::fixed
                << std::setprecision(4) << result.l2_norm_flow_time
                << ", Max flow = " << result.max_flow_time << std::endl;
             safe_cout(ss.str());
         });
     }
 
-    // Wait for all mode computations to finish
+    // Wait for all k value computations to finish
     for (auto& thread : threads) {
         thread.join();
     }
@@ -534,82 +495,80 @@ std::map<int, std::pair<double, double>> run_all_modes_for_file_normal(std::vect
     return mode_results;
 }
 
-// For random/softrandom folders: runs all modes and returns pair of maps
-std::pair<std::map<int, double>, std::map<int, double>> 
+// For random/softrandom folders: runs all k values and returns pair of maps
+std::pair<std::map<int, double>, std::map<int, double>>
 run_all_modes_for_file_frequency(std::vector<Job> jobs, int nJobsPerRound,
-                                 const std::vector<int>& modes_to_run) {
+                                 const std::vector<int>& k_values) {
     std::map<int, double> mode_results;
     std::map<int, double> max_flow_results;
     std::mutex results_mutex;
     std::vector<std::thread> threads;
-    
-    // Process each mode in parallel
-    for (int mode : modes_to_run) {
-        threads.emplace_back([&, mode]() {
+
+    // Process each k value in parallel
+    for (int k_val : k_values) {
+        threads.emplace_back([&, k_val]() {
             std::vector<Job> jobs_copy = jobs;
-            DynamicResult result = DYNAMIC(jobs_copy, nJobsPerRound, mode, "");
-            
+            DynamicResult result = DYNAMIC(jobs_copy, nJobsPerRound, k_val, "");
+
             {
                 std::lock_guard<std::mutex> lock(results_mutex);
-                mode_results[mode] = result.l2_norm_flow_time;
-                max_flow_results[mode] = result.max_flow_time;
+                mode_results[k_val] = result.l2_norm_flow_time;
+                max_flow_results[k_val] = result.max_flow_time;
             }
-            
+
             std::stringstream ss;
-            ss << "    Mode " << mode << ": L2 norm = " << std::fixed 
-               << std::setprecision(4) << result.l2_norm_flow_time 
+            ss << "    k=" << k_val << ": L2 norm = " << std::fixed
+               << std::setprecision(4) << result.l2_norm_flow_time
                << ", Max flow = " << result.max_flow_time << std::endl;
             safe_cout(ss.str());
         });
     }
-    
-    // Wait for all mode computations to finish
+
+    // Wait for all k value computations to finish
     for (auto& thread : threads) {
         thread.join();
     }
-    
+
     return std::make_pair(mode_results, max_flow_results);
 }
 
-// Parse comma-separated mode list
-std::vector<int> parse_modes(const std::string& mode_str) {
-    std::vector<int> modes;
-    std::stringstream ss(mode_str);
+// Parse comma-separated k values list
+std::vector<int> parse_k_values(const std::string& k_str) {
+    std::vector<int> k_values;
+    std::stringstream ss(k_str);
     std::string token;
-    
+
     while (std::getline(ss, token, ',')) {
-        // Trim whitespace
         token.erase(0, token.find_first_not_of(" \t"));
         token.erase(token.find_last_not_of(" \t") + 1);
-        
+
         try {
-            int mode = std::stoi(token);
-            if (mode >= 1 && mode <= 8) {
-                modes.push_back(mode);
+            int k = std::stoi(token);
+            if (k >= 0) {
+                k_values.push_back(k);
             } else {
-                std::cerr << "WARNING: Invalid mode " << mode << " (must be 1-7), skipping\n";
+                std::cerr << "WARNING: Invalid k=" << k << " (must be >= 0), skipping\n";
             }
         } catch (const std::exception& e) {
-            std::cerr << "WARNING: Invalid mode value '" << token << "', skipping\n";
+            std::cerr << "WARNING: Invalid k value '" << token << "', skipping\n";
         }
     }
-    
-    // Remove duplicates and sort
-    std::set<int> unique_modes(modes.begin(), modes.end());
-    modes.assign(unique_modes.begin(), unique_modes.end());
-    
-    return modes;
+
+    std::set<int> unique_k(k_values.begin(), k_values.end());
+    k_values.assign(unique_k.begin(), unique_k.end());
+
+    return k_values;
 }
 
 // Wrapper function for experiments (simple single-parameter interface)
 DynamicResult Dynamic(std::vector<Job> jobs) {
-    return DYNAMIC(jobs, 100, 1, "");  // Use default nJobsPerRound=100, mode=1
+    return DYNAMIC(jobs, 100, 1, "");  // Default B=100, k=1
 }
 
 int main(int argc, char* argv[]) {
     // Default values
-    int nJobsPerRound = 100;
-    std::vector<int> modes_to_run = {1, 2, 3, 4, 5, 6}; // All modes by default
+    int batch_size = 100;
+    std::vector<int> k_values = {1, 2, 4, 8, 16, 0};
     
     // Parse command-line arguments
     if (argc > 1) {
@@ -617,24 +576,24 @@ int main(int argc, char* argv[]) {
             return 0;
         }
         
-        // Parse nJobsPerRound
+        // Parse batch_size
         try {
-            nJobsPerRound = std::atoi(argv[1]);
-            if (nJobsPerRound <= 0) {
-                std::cerr << "ERROR: nJobsPerRound must be positive\n";
+            batch_size = std::atoi(argv[1]);
+            if (batch_size <= 0) {
+                std::cerr << "ERROR: batch_size must be positive\n";
                 return 1;
             }
         } catch (const std::exception& e) {
-            std::cerr << "ERROR: Invalid nJobsPerRound value\n";
+            std::cerr << "ERROR: Invalid batch_size value\n";
             return 1;
         }
     }
     
     if (argc > 2) {
-        // Parse modes
-        modes_to_run = parse_modes(argv[2]);
-        if (modes_to_run.empty()) {
-            std::cerr << "ERROR: No valid modes specified\n";
+        // Parse k values
+        k_values = parse_k_values(argv[2]);
+        if (k_values.empty()) {
+            std::cerr << "ERROR: No valid k values specified\n";
             return 1;
         }
     }
@@ -650,12 +609,13 @@ int main(int argc, char* argv[]) {
     std::cout << "Starting Dynamic batch processing with multi-threading:\n";
     std::cout << "  Data directory: " << data_dir << "\n";
     std::cout << "  Output directory: " << output_dir << "\n";
-    std::cout << "  nJobsPerRound: " << nJobsPerRound << "\n";
+    std::cout << "  Batch size (B): " << batch_size << "\n";
     std::cout << "  Hardware threads available: " << num_threads << "\n";
-    std::cout << "  Modes to run: ";
-    for (size_t i = 0; i < modes_to_run.size(); i++) {
-        std::cout << modes_to_run[i];
-        if (i < modes_to_run.size() - 1) std::cout << ", ";
+    std::cout << "  Lookback values (k): ";
+    for (size_t i = 0; i < k_values.size(); i++) {
+        if (k_values[i] == 0) std::cout << "all";
+        else std::cout << k_values[i];
+        if (i < k_values.size() - 1) std::cout << ", ";
     }
     std::cout << "\n";
     std::cout << "============================================================\n";
@@ -676,12 +636,12 @@ int main(int argc, char* argv[]) {
         // Lambda that wraps our function for the template
         auto avg_wrapper = [](std::vector<Job> jobs, int nJobsPerRound,
                              const std::string& input_file_path,
-                             const std::vector<int>& modes_to_run) {
-            return run_all_modes_for_file_normal(jobs, nJobsPerRound, input_file_path, modes_to_run);
+                             const std::vector<int>& k_values) {
+            return run_all_modes_for_file_normal(jobs, nJobsPerRound, input_file_path, k_values);
         };
 
         process_avg_folders_multimode(avg_wrapper, data_dir, output_dir,
-                                      nJobsPerRound, modes_to_run, cout_mutex);
+                                      batch_size, k_values, cout_mutex);
         safe_cout("\n[Thread 1] Avg files completed!\n\n");
     });
     
@@ -693,13 +653,13 @@ int main(int argc, char* argv[]) {
 
         // Lambda that wraps our function for the template
         auto random_wrapper = [](std::vector<Job> jobs, int nJobsPerRound,
-                                const std::vector<int>& modes_to_run) {
-            return run_all_modes_for_file_frequency(jobs, nJobsPerRound, modes_to_run);
+                                const std::vector<int>& k_values) {
+            return run_all_modes_for_file_frequency(jobs, nJobsPerRound, k_values);
         };
 
         process_bounded_pareto_random_folders_multimode(random_wrapper, data_dir, output_dir,
-                                        nJobsPerRound, modes_to_run, cout_mutex);
-        safe_cout("\n[Thread 2] ✓ Bounded Pareto random files completed!\n\n");
+                                        batch_size, k_values, cout_mutex);
+        safe_cout("\n[Thread 2] Bounded Pareto random files completed!\n\n");
     });
 
     // Thread 3: Process Normal random files using multimode function
@@ -710,13 +670,13 @@ int main(int argc, char* argv[]) {
 
         // Lambda that wraps our function for the template
         auto random_wrapper = [](std::vector<Job> jobs, int nJobsPerRound,
-                                const std::vector<int>& modes_to_run) {
-            return run_all_modes_for_file_frequency(jobs, nJobsPerRound, modes_to_run);
+                                const std::vector<int>& k_values) {
+            return run_all_modes_for_file_frequency(jobs, nJobsPerRound, k_values);
         };
 
         process_normal_random_folders_multimode(random_wrapper, data_dir, output_dir,
-                                        nJobsPerRound, modes_to_run, cout_mutex);
-        safe_cout("\n[Thread 3] ✓ Normal random files completed!\n\n");
+                                        batch_size, k_values, cout_mutex);
+        safe_cout("\n[Thread 3] Normal random files completed!\n\n");
     });
 
     // Thread 4: Process Bounded Pareto softrandom files using multimode function
@@ -727,13 +687,13 @@ int main(int argc, char* argv[]) {
 
         // Lambda that wraps our function for the template
         auto softrandom_wrapper = [](std::vector<Job> jobs, int nJobsPerRound,
-                                    const std::vector<int>& modes_to_run) {
-            return run_all_modes_for_file_frequency(jobs, nJobsPerRound, modes_to_run);
+                                    const std::vector<int>& k_values) {
+            return run_all_modes_for_file_frequency(jobs, nJobsPerRound, k_values);
         };
 
         process_bounded_pareto_softrandom_folders_multimode(softrandom_wrapper, data_dir, output_dir,
-                                            nJobsPerRound, modes_to_run, cout_mutex);
-        safe_cout("\n[Thread 4] ✓ Bounded Pareto softrandom files completed!\n\n");
+                                            batch_size, k_values, cout_mutex);
+        safe_cout("\n[Thread 4] Bounded Pareto softrandom files completed!\n\n");
     });
 
     // Thread 5: Process Normal softrandom files using multimode function
@@ -744,13 +704,13 @@ int main(int argc, char* argv[]) {
 
         // Lambda that wraps our function for the template
         auto softrandom_wrapper = [](std::vector<Job> jobs, int nJobsPerRound,
-                                    const std::vector<int>& modes_to_run) {
-            return run_all_modes_for_file_frequency(jobs, nJobsPerRound, modes_to_run);
+                                    const std::vector<int>& k_values) {
+            return run_all_modes_for_file_frequency(jobs, nJobsPerRound, k_values);
         };
 
         process_normal_softrandom_folders_multimode(softrandom_wrapper, data_dir, output_dir,
-                                            nJobsPerRound, modes_to_run, cout_mutex);
-        safe_cout("\n[Thread 5] ✓ Normal softrandom files completed!\n\n");
+                                            batch_size, k_values, cout_mutex);
+        safe_cout("\n[Thread 5] Normal softrandom files completed!\n\n");
     });
 
     // Thread 6: Process Bounded Pareto combination random files
@@ -761,13 +721,13 @@ int main(int argc, char* argv[]) {
 
         auto combination_random_wrapper = [](std::vector<Job> jobs, int nJobsPerRound,
                                             const std::string& input_file_path,
-                                            const std::vector<int>& modes_to_run) {
-            return run_all_modes_for_file_normal(jobs, nJobsPerRound, input_file_path, modes_to_run);
+                                            const std::vector<int>& k_values) {
+            return run_all_modes_for_file_normal(jobs, nJobsPerRound, input_file_path, k_values);
         };
 
         process_bounded_pareto_combination_random_folders_multimode(combination_random_wrapper, data_dir, output_dir,
-                                                    nJobsPerRound, modes_to_run, cout_mutex);
-        safe_cout("\n[Thread 6] ✓ Bounded Pareto combination random files completed!\n\n");
+                                                    batch_size, k_values, cout_mutex);
+        safe_cout("\n[Thread 6] Bounded Pareto combination random files completed!\n\n");
     });
 
     // Thread 7: Process Normal combination random files
@@ -778,13 +738,13 @@ int main(int argc, char* argv[]) {
 
         auto combination_random_wrapper = [](std::vector<Job> jobs, int nJobsPerRound,
                                             const std::string& input_file_path,
-                                            const std::vector<int>& modes_to_run) {
-            return run_all_modes_for_file_normal(jobs, nJobsPerRound, input_file_path, modes_to_run);
+                                            const std::vector<int>& k_values) {
+            return run_all_modes_for_file_normal(jobs, nJobsPerRound, input_file_path, k_values);
         };
 
         process_normal_combination_random_folders_multimode(combination_random_wrapper, data_dir, output_dir,
-                                                    nJobsPerRound, modes_to_run, cout_mutex);
-        safe_cout("\n[Thread 7] ✓ Normal combination random files completed!\n\n");
+                                                    batch_size, k_values, cout_mutex);
+        safe_cout("\n[Thread 7] Normal combination random files completed!\n\n");
     });
 
     // Thread 8: Process Bounded Pareto combination softrandom files
@@ -795,13 +755,13 @@ int main(int argc, char* argv[]) {
 
         auto combination_softrandom_wrapper = [](std::vector<Job> jobs, int nJobsPerRound,
                                                 const std::string& input_file_path,
-                                                const std::vector<int>& modes_to_run) {
-            return run_all_modes_for_file_frequency(jobs, nJobsPerRound, modes_to_run);
+                                                const std::vector<int>& k_values) {
+            return run_all_modes_for_file_frequency(jobs, nJobsPerRound, k_values);
         };
 
         process_bounded_pareto_combination_softrandom_folders_multimode(combination_softrandom_wrapper, data_dir, output_dir,
-                                                         nJobsPerRound, modes_to_run, cout_mutex);
-        safe_cout("\n[Thread 8] ✓ Bounded Pareto combination softrandom files completed!\n\n");
+                                                         batch_size, k_values, cout_mutex);
+        safe_cout("\n[Thread 8] Bounded Pareto combination softrandom files completed!\n\n");
     });
 
     // Thread 9: Process Normal combination softrandom files
@@ -812,13 +772,13 @@ int main(int argc, char* argv[]) {
 
         auto combination_softrandom_wrapper = [](std::vector<Job> jobs, int nJobsPerRound,
                                                 const std::string& input_file_path,
-                                                const std::vector<int>& modes_to_run) {
-            return run_all_modes_for_file_frequency(jobs, nJobsPerRound, modes_to_run);
+                                                const std::vector<int>& k_values) {
+            return run_all_modes_for_file_frequency(jobs, nJobsPerRound, k_values);
         };
 
         process_normal_combination_softrandom_folders_multimode(combination_softrandom_wrapper, data_dir, output_dir,
-                                                         nJobsPerRound, modes_to_run, cout_mutex);
-        safe_cout("\n[Thread 9] ✓ Normal combination softrandom files completed!\n\n");
+                                                         batch_size, k_values, cout_mutex);
+        safe_cout("\n[Thread 9] Normal combination softrandom files completed!\n\n");
     });
 
     // Wait for all main threads to complete

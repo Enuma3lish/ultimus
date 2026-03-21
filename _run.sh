@@ -6,20 +6,47 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="${SCRIPT_DIR}"
 VENV_PATH="${PROJECT_ROOT}/.venv"
 JOB_INIT_SCRIPT="${PROJECT_ROOT}/Job_init.py"
-PLOTTER_SCRIPT="${PROJECT_ROOT}/_plotter.py"
+PLOTTER_SCRIPT="${PROJECT_ROOT}/compare_plotter.py"
 
 # Result directories
 RESULT_BASE_DIR="${PROJECT_ROOT}"
 ALGORITHM_RESULT_DIR="${RESULT_BASE_DIR}/algorithm_result"
 
+# ======== Batch parameters (user-configurable) ========
+# B  = batch sizes (comma-separated, each run uses one B value)
+# k  = lookback values (how many past batches to consider, 0=all)
+# Override via environment or CLI:
+#   BATCH_SIZES=50,100,200 K_VALUES=8 ./_run.sh run
+#   ./_run.sh run 25,50,100,200,500 8
+BATCH_SIZES="${BATCH_SIZES:-25,50,100,200,500}"
+K_VALUES="${K_VALUES:-1,2,4,8,16,0}"
+
 # Algorithm executables with CPU allocation and optional parameters
 # Format: "NAME:PATH:CPU_LIST:FLAGS:PARAMETERS"
+# Parameters: <batch_size> <k_values>
 
-# Priority algorithms (run first with all 16 cores)
+# Priority algorithm paths
+DYNAMIC_BIN="${PROJECT_ROOT}/Cpp_Optimization/algorithms/Dynamic/build/Dynamic"
+DYNAMIC_BAL_BIN="${PROJECT_ROOT}/Cpp_Optimization/algorithms/Dynamic_BAL/build/Dynamic_BAL"
+RFDYNAMIC_BIN="${PROJECT_ROOT}/Cpp_Optimization/algorithms/RFDynamic/build/RFDynamic"
+
+# Build PRIORITY_ALGORITHMS for a given batch_size
+# Called before each run with: build_priority_algorithms <B>
+build_priority_algorithms() {
+  local B="$1"
+  PRIORITY_ALGORITHMS=(
+    "Dynamic:${DYNAMIC_BIN}:0,1,2,3,4,5:MULTITHREAD:${B} ${K_VALUES}"
+    "Dynamic_BAL:${DYNAMIC_BAL_BIN}:6,7,8,9,10:MULTITHREAD:${B} ${K_VALUES}"
+    "RFDynamic:${RFDYNAMIC_BIN}:11,12,13,14,15:MULTITHREAD:${B} ${K_VALUES}"
+  )
+  ALGORITHMS=("${PRIORITY_ALGORITHMS[@]}" "${REGULAR_ALGORITHMS[@]}")
+}
+
+# Initialize with first batch size for stop/status/check commands
 PRIORITY_ALGORITHMS=(
-  "Dynamic:${PROJECT_ROOT}/Cpp_Optimization/algorithms/Dynamic/build/Dynamic:0,1,2,3,4,5:MULTITHREAD:100 1,2,3,4,5,6"
-  "Dynamic_BAL:${PROJECT_ROOT}/Cpp_Optimization/algorithms/Dynamic_BAL/build/Dynamic_BAL:6,7,8,9,10:MULTITHREAD:100 1,2,3,4,5,6"
-  "RFDynamic:${PROJECT_ROOT}/Cpp_Optimization/algorithms/RFDynamic/build/RFDynamic:11,12,13,14,15:MULTITHREAD:100 1,2,3,4,5,6"
+  "Dynamic:${DYNAMIC_BIN}:0,1,2,3,4,5:MULTITHREAD:"
+  "Dynamic_BAL:${DYNAMIC_BAL_BIN}:6,7,8,9,10:MULTITHREAD:"
+  "RFDynamic:${RFDYNAMIC_BIN}:11,12,13,14,15:MULTITHREAD:"
 )
 
 # Regular algorithms (run after priority algorithms complete)
@@ -443,6 +470,8 @@ run_priority_algorithms() {
   echo "  - Dynamic (cores 0-5)"
   echo "  - Dynamic_BAL (cores 6-10)"
   echo "  - RFDynamic (cores 11-15)"
+  echo "Batch sizes (B): ${BATCH_SIZES}"
+  echo "Lookback values (k): ${K_VALUES}"
   echo "CPU resources will be redistributed as algorithms complete"
   echo "=========================================="
 
@@ -690,11 +719,11 @@ run_plotter() {
     return 1
   fi
 
-  local logf="${LOG_DIR}/_plotter.log"
-  echo "Running _plotter.py..."
+  local logf="${LOG_DIR}/compare_plotter.log"
+  echo "Running compare_plotter.py (B=${BATCH_SIZE})..."
   echo "Log: $logf"
 
-  if "${VENV_PATH}/bin/python" "$PLOTTER_SCRIPT" > "$logf" 2>&1; then
+  if "${VENV_PATH}/bin/python" "$PLOTTER_SCRIPT" --batch-size "$BATCH_SIZE" > "$logf" 2>&1; then
     echo "✓ Plotting completed successfully"
     return 0
   else
@@ -816,6 +845,8 @@ run_pipeline() {
   echo "Starting Full Pipeline"
   echo "========================================"
   echo "Start time: $(date)"
+  echo "Batch sizes (B): ${BATCH_SIZES}"
+  echo "Lookback values (k): ${K_VALUES}"
   echo ""
 
   # Step 1: Job initialization
@@ -828,38 +859,75 @@ run_pipeline() {
   echo "Waiting ${STEP_DELAY} seconds before next step..."
   sleep $STEP_DELAY
 
-  # Step 2: Run all algorithms in parallel
-  if ! run_all_algorithms; then
-    echo "✗ Pipeline failed at Algorithm Execution"
-    return 1
-  fi
+  # Step 2: For each batch size, run priority + regular algorithms
+  IFS=',' read -ra BATCH_SIZE_ARRAY <<< "$BATCH_SIZES"
+  local batch_count=${#BATCH_SIZE_ARRAY[@]}
+  local batch_idx=0
 
-  echo ""
-  echo "Waiting ${STEP_DELAY} seconds before moving results..."
-  sleep $STEP_DELAY
+  for B in "${BATCH_SIZE_ARRAY[@]}"; do
+    ((batch_idx++))
+    echo ""
+    echo "########################################################"
+    echo "  Batch size B=${B}  (${batch_idx}/${batch_count})"
+    echo "  Lookback k=${K_VALUES}"
+    echo "########################################################"
+    echo ""
 
-  # Step 3: Verify and move ALL results to algorithm_result
-  echo ""
-  if ! verify_result_folders "*_result" "algorithm"; then
-    echo "⚠ Warning: Some result folders are empty, but continuing..."
-  fi
-  
-  if ! move_result_folders "$ALGORITHM_RESULT_DIR" "Algorithm Results" "all"; then
-    echo "✗ Failed to move algorithm results"
-    return 1
-  fi
+    # Build algorithm configs for this batch size
+    build_priority_algorithms "$B"
 
-  echo ""
-  echo "Waiting ${STEP_DELAY} seconds before moving analysis..."
-  sleep $STEP_DELAY
+    # Run priority algorithms (Dynamic, Dynamic_BAL, RFDynamic)
+    if ! run_priority_algorithms; then
+      echo "✗ Pipeline failed at Priority Algorithm Execution (B=${B})"
+      return 1
+    fi
 
-  # Step 4: Move analysis folders to Analysis directory
-  if ! move_analysis_folders; then
-    echo "✗ Failed to move analysis folders"
-    return 1
-  fi
+    echo ""
+    echo "=========================================="
+    echo "Priority Phase Complete for B=${B}!"
+    echo "Starting Regular Algorithms Phase..."
+    echo "=========================================="
+    echo ""
+    sleep 5
 
-  # # Step 5: Run plotter
+    # Run regular algorithms (only on first batch size - baselines don't depend on B)
+    if [[ $batch_idx -eq 1 ]]; then
+      if ! run_regular_algorithms; then
+        echo "✗ Pipeline failed at Regular Algorithm Execution"
+        return 1
+      fi
+    else
+      echo "(Skipping regular/baseline algorithms - already run with first batch size)"
+    fi
+
+    echo ""
+    echo "Waiting ${STEP_DELAY} seconds before moving results for B=${B}..."
+    sleep $STEP_DELAY
+
+    # Move results for this batch size
+    if ! verify_result_folders "*_result" "algorithm"; then
+      echo "⚠ Warning: Some result folders are empty, but continuing..."
+    fi
+
+    if ! move_result_folders "$ALGORITHM_RESULT_DIR" "Algorithm Results (B=${B})" "all"; then
+      echo "✗ Failed to move algorithm results for B=${B}"
+      return 1
+    fi
+
+    echo ""
+    echo "Waiting ${STEP_DELAY} seconds before moving analysis for B=${B}..."
+    sleep $STEP_DELAY
+
+    if ! move_analysis_folders; then
+      echo "✗ Failed to move analysis folders for B=${B}"
+      return 1
+    fi
+
+    echo ""
+    echo "✓ Completed batch size B=${B} (${batch_idx}/${batch_count})"
+  done
+
+  # # Step 3: Run plotter
   # echo ""
   # echo "Waiting ${STEP_DELAY} seconds before plotting..."
   # sleep $STEP_DELAY
@@ -880,12 +948,14 @@ run_pipeline() {
   echo "========================================"
   echo "End time: $(date)"
   printf "Total duration: %dh %dm %ds\n" "$hours" "$minutes" "$seconds"
+  echo "Batch sizes run: ${BATCH_SIZES}"
+  echo "Lookback values: ${K_VALUES}"
   echo ""
   echo "Results organized in:"
   echo "  - Algorithm runs: ${ALGORITHM_RESULT_DIR}/"
   echo "  - Analysis:       ${PROJECT_ROOT}/Analysis/"
   echo "  - Logs:           ${LOG_DIR}/"
-  
+
   # Final verification
   echo ""
   echo "Final file counts:"
@@ -894,26 +964,57 @@ run_pipeline() {
 }
 
 usage() {
-  cat <<'EOF'
+  cat <<EOF
 Pipeline Management Script
 =========================
-Usage: $0 {run|stop-all|stop NAME|status|logs NAME [lines]|check|help}
+Usage: $0 {run [B_values] [k_values]|stop-all|stop NAME|status|logs NAME [lines]|check|help}
 
 Before first run:
-  sudo loginctl enable-linger $(whoami)
+  sudo loginctl enable-linger \$(whoami)
 
 Commands:
-  run     - Run full pipeline (no timeout - will wait indefinitely)
-  status  - Show process status
-  stop    - Stop processes
-  logs    - View logs
-  check   - Check executables
+  run [B] [k]  - Run full pipeline
+                   B = batch sizes, comma-separated (default: 100)
+                   k = lookback values, comma-separated, 0=all (default: 1,2,4,8,16,0)
+                   Multiple B values will run sequentially (one full run per B).
+                   Baseline algorithms only run once (with first B).
+  status       - Show process status
+  stop NAME    - Stop specific process
+  stop-all     - Stop all processes
+  logs NAME    - View logs
+  check        - Check executables
+
+Examples:
+  $0 run                              # Default: B=100, k=1,2,4,8,16,0
+  $0 run 100 8                        # B=100, k=8 only
+  $0 run 100 1,2,4,8,16,0            # §4.4 Lookback Sensitivity
+  $0 run 25,50,100,200,500 8          # §4.5 Batch Size Sensitivity (all B in one go)
+  BATCH_SIZES=100 K_VALUES=8 $0 run   # Via environment variables
+
+Thesis experiments:
+  # §4.4 Lookback Sensitivity (sweep k, fixed B=100):
+  $0 run 100 1,2,4,8,16,0
+
+  # §4.5 Batch Size Sensitivity (sweep B, fixed k=8):
+  $0 run 25,50,100,200,500 8
 EOF
 }
 
 main() {
-  case "${1:-help}" in
-    run) run_pipeline ;;
+  local cmd="${1:-help}"
+
+  case "$cmd" in
+    run)
+      # Parse optional B and k arguments: run [B_values] [k_values]
+      # B_values can be comma-separated: run 25,50,100,200,500 8
+      if [[ -n "${2:-}" ]]; then
+        BATCH_SIZES="$2"
+      fi
+      if [[ -n "${3:-}" ]]; then
+        K_VALUES="$3"
+      fi
+      run_pipeline
+      ;;
     stop-all) stop_all ;;
     stop) shift; stop_processes "$@" ;;
     status) status_all ;;

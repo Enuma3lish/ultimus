@@ -25,7 +25,11 @@
       "Bash(./Cpp_Optimization/algorithms/Dynamic_BAL/build/Dynamic_BAL:*)",
       "Bash(head:*)",
       "Bash(xargs -I {} sh -c 'echo \"\"=== {} ===\"\" && head -1 {}')",
-      "Bash(python compare_plotter.py:*)"
+      "Bash(python compare_plotter.py:*)",
+      "Bash(grep -E \"\\\\.py$\")",
+      "Bash(/home/melowu/Work/ultimus/Cpp_Optimization/algorithms/RFDynamic/build/RFDynamic -h)",
+      "Bash(git checkout:*)",
+      "Bash(bash -n /home/melowu/Work/ultimus/_run.sh)"
     ],
     "deny": [],
     "ask": []

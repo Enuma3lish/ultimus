@@ -65,11 +65,12 @@ DYNAMIC_ALGORITHMS = {
 CLAIRVOYANT_BASELINES = ['BAL', 'SRPT', 'FCFS', 'SJF', 'RR']
 NON_CLAIRVOYANT_BASELINES = ['RMLF', 'MLFQ', 'FCFS', 'SETF', 'RR']
 
-MODES = [1, 2, 3, 4, 5]
-MODE_ALL = 6
-ALL_MODES = MODES + [MODE_ALL]
+LOOKBACKS = [1, 2, 4, 8, 16]
+LOOKBACK_ALL = 0
+ALL_LOOKBACKS = LOOKBACKS + [LOOKBACK_ALL]
 NUM_ROUNDS = 5
 INTER_ARRIVAL_TIMES = list(range(20, 42, 2))
+DEFAULT_BATCH_SIZE = 100
 
 # ============================================================================
 # AVG30 DISTRIBUTION CONFIGURATIONS
@@ -244,16 +245,16 @@ def load_baseline_l2norm(algorithm: str) -> Optional[pd.DataFrame]:
     return result
 
 
-def load_dynamic_l2norm(algorithm: str, mode: int) -> Optional[pd.DataFrame]:
+def load_dynamic_l2norm(algorithm: str, k: int, batch_size: int = DEFAULT_BATCH_SIZE) -> Optional[pd.DataFrame]:
     """Load L2-norm data for Dynamic algorithm from avg30_result."""
     algo_dir = os.path.join(ALGORITHM_RESULT_PATH, f"{algorithm}_result", "avg30_result")
     if not os.path.exists(algo_dir):
         return None
-    
+
     all_files = glob.glob(os.path.join(algo_dir, "*.csv"))
     if not all_files:
         return None
-    
+
     all_data = []
     for f in sorted(all_files):
         try:
@@ -261,34 +262,36 @@ def load_dynamic_l2norm(algorithm: str, mode: int) -> Optional[pd.DataFrame]:
             all_data.append(df)
         except:
             pass
-    
+
     if not all_data:
         return None
-    
+
     combined = pd.concat(all_data, ignore_index=True)
-    
-    # Find L2 column for mode
+
+    # Find L2 column for k (lookback) - try new k-based naming first, then legacy mode naming
     l2_col = None
     patterns = [
-        f'{algorithm}_njobs100_mode{mode}_L2_norm_flow_time',
-        f'{algorithm}_mode{mode}_L2_norm_flow_time',
+        f'{algorithm}_njobs{batch_size}_k{k}_L2_norm_flow_time',
+        f'{algorithm}_k{k}_L2_norm_flow_time',
+        f'{algorithm}_njobs{batch_size}_mode{k}_L2_norm_flow_time',
+        f'{algorithm}_mode{k}_L2_norm_flow_time',
     ]
     for p in patterns:
         if p in combined.columns:
             l2_col = p
             break
-    
+
     if l2_col is None:
-        l2_cols = [c for c in combined.columns if 'l2' in c.lower() and f'mode{mode}' in c.lower()]
+        l2_cols = [c for c in combined.columns if 'l2' in c.lower() and (f'k{k}' in c.lower() or f'mode{k}' in c.lower())]
         if l2_cols:
             l2_col = l2_cols[0]
         else:
             return None
-    
+
     required = ['Mean_inter_arrival_time', 'bp_parameter_L', 'bp_parameter_H']
     if not all(c in combined.columns for c in required):
         return None
-    
+
     result = combined.groupby(['Mean_inter_arrival_time', 'bp_parameter_L', 'bp_parameter_H'])[l2_col].mean().reset_index()
     result = result.rename(columns={
         'Mean_inter_arrival_time': 'arrival_rate',
@@ -296,29 +299,41 @@ def load_dynamic_l2norm(algorithm: str, mode: int) -> Optional[pd.DataFrame]:
         'bp_parameter_H': 'bp_H',
         l2_col: 'L2_norm'
     })
-    
-    logger.info(f"Loaded avg30: {algorithm} mode {mode} ({len(result)} rows)")
+
+    logger.info(f"Loaded avg30: {algorithm} k={k} B={batch_size} ({len(result)} rows)")
     return result
 
 
-def load_selection_data(algorithm: str, mode: int) -> Optional[pd.DataFrame]:
+def load_selection_data(algorithm: str, k: int, batch_size: int = DEFAULT_BATCH_SIZE) -> Optional[pd.DataFrame]:
     """Load algorithm selection data from Analysis folder."""
     config = DYNAMIC_ALGORITHMS[algorithm]
-    mode_dir = os.path.join(ANALYSIS_PATH, config['analysis_dir'], 'avg_30', f'mode_{mode}')
-    if not os.path.exists(mode_dir):
+
+    # Try new k-based path first, then legacy mode-based path
+    k_dir = os.path.join(ANALYSIS_PATH, config['analysis_dir'], 'avg_30', f'k_{k}')
+    mode_dir = os.path.join(ANALYSIS_PATH, config['analysis_dir'], 'avg_30', f'mode_{k}')
+    analysis_dir = k_dir if os.path.exists(k_dir) else mode_dir
+    if not os.path.exists(analysis_dir):
         return None
-    
-    pattern = os.path.join(mode_dir, f"{config['file_prefix']}_avg_30_nJobsPerRound_100_mode_{mode}_round_*.csv")
-    files = sorted(glob.glob(pattern))[:NUM_ROUNDS]
+
+    # Try new k-based filename first, then legacy mode-based
+    patterns_to_try = [
+        os.path.join(analysis_dir, f"{config['file_prefix']}_avg_30_nJobsPerRound_{batch_size}_k_{k}_round_*.csv"),
+        os.path.join(analysis_dir, f"{config['file_prefix']}_avg_30_nJobsPerRound_{batch_size}_mode_{k}_round_*.csv"),
+    ]
+    files = []
+    for pat in patterns_to_try:
+        files = sorted(glob.glob(pat))[:NUM_ROUNDS]
+        if files:
+            break
     if not files:
         return None
-    
+
     try:
         combined = pd.concat([pd.read_csv(f) for f in files], ignore_index=True)
         eff_col, fair_col = config['efficiency_col'], config['fairness_col']
         if eff_col not in combined.columns:
             return None
-        
+
         result = combined.groupby(['arrival_rate', 'bp_L', 'bp_H']).agg({eff_col: 'mean', fair_col: 'mean'}).reset_index()
         result = result.rename(columns={eff_col: 'efficiency_pct', fair_col: 'fairness_pct'})
         return result
@@ -382,10 +397,10 @@ def load_baseline_softrandom(algorithm: str, combo_name: str) -> Optional[pd.Dat
     return result
 
 
-def load_dynamic_softrandom(algorithm: str, combo_name: str, mode: int) -> Optional[pd.DataFrame]:
+def load_dynamic_softrandom(algorithm: str, combo_name: str, k: int, batch_size: int = DEFAULT_BATCH_SIZE) -> Optional[pd.DataFrame]:
     """Load Dynamic algorithm data for soft random combination with 5-round averaging."""
     folder = 'Bounded_Pareto_combination_softrandom_result'
-    
+
     if combo_name.startswith('two_'):
         subfolder = 'two_result'
     elif combo_name.startswith('three_'):
@@ -394,18 +409,18 @@ def load_dynamic_softrandom(algorithm: str, combo_name: str, mode: int) -> Optio
         subfolder = 'four_result'
     else:
         return None
-    
+
     base_dir = os.path.join(ALGORITHM_RESULT_PATH, f"{algorithm}_result", folder, subfolder)
     if not os.path.exists(base_dir):
         return None
-    
+
     all_data = []
     for round_num in range(1, 6):
-        patterns = [
-            f"{combo_name}_{algorithm}_njobs100_{round_num}.csv",
+        file_patterns = [
+            f"{combo_name}_{algorithm}_njobs{batch_size}_{round_num}.csv",
             f"{combo_name}_{algorithm}_{round_num}.csv",
         ]
-        for pat in patterns:
+        for pat in file_patterns:
             fpath = os.path.join(base_dir, pat)
             if os.path.exists(fpath):
                 try:
@@ -414,45 +429,48 @@ def load_dynamic_softrandom(algorithm: str, combo_name: str, mode: int) -> Optio
                 except:
                     pass
                 break
-    
+
     if not all_data:
         return None
-    
+
     combined = pd.concat(all_data, ignore_index=True)
-    
+
+    # Try new k-based column naming first, then legacy mode-based
     l2_col = None
-    patterns = [
-        f'{algorithm}_njobs100_mode{mode}_L2_norm_flow_time',
-        f'{algorithm}_mode{mode}_L2_norm_flow_time',
+    col_patterns = [
+        f'{algorithm}_njobs{batch_size}_k{k}_L2_norm_flow_time',
+        f'{algorithm}_k{k}_L2_norm_flow_time',
+        f'{algorithm}_njobs{batch_size}_mode{k}_L2_norm_flow_time',
+        f'{algorithm}_mode{k}_L2_norm_flow_time',
     ]
-    for p in patterns:
+    for p in col_patterns:
         if p in combined.columns:
             l2_col = p
             break
-    
+
     if l2_col is None:
-        l2_cols = [c for c in combined.columns if 'l2' in c.lower() and f'mode{mode}' in c.lower()]
+        l2_cols = [c for c in combined.columns if 'l2' in c.lower() and (f'k{k}' in c.lower() or f'mode{k}' in c.lower())]
         if l2_cols:
             l2_col = l2_cols[0]
         else:
             return None
-    
+
     result = combined.groupby('frequency')[l2_col].mean().reset_index()
     result = result.rename(columns={'frequency': 'arrival_rate', l2_col: 'L2_norm'})
-    
-    logger.info(f"Loaded softrandom: {algorithm} mode {mode} {combo_name} ({len(result)} rows)")
+
+    logger.info(f"Loaded softrandom: {algorithm} k={k} {combo_name} ({len(result)} rows)")
     return result
 
 
-def load_dynamic_softrandom_all_modes(algorithm: str, combo_name: str) -> Dict[int, pd.DataFrame]:
-    """Load all modes for Dynamic algorithm."""
-    return {m: df for m in ALL_MODES if (df := load_dynamic_softrandom(algorithm, combo_name, m)) is not None}
+def load_dynamic_softrandom_all_lookbacks(algorithm: str, combo_name: str) -> Dict[int, pd.DataFrame]:
+    """Load all lookback values for Dynamic algorithm."""
+    return {k: df for k in ALL_LOOKBACKS if (df := load_dynamic_softrandom(algorithm, combo_name, k)) is not None}
 
 
-def load_selection_data_softrandom(algorithm: str, combo_name: str, mode: int) -> Optional[pd.DataFrame]:
+def load_selection_data_softrandom(algorithm: str, combo_name: str, k: int, batch_size: int = DEFAULT_BATCH_SIZE) -> Optional[pd.DataFrame]:
     """Load algorithm selection data for soft random combination."""
     config = DYNAMIC_ALGORITHMS[algorithm]
-    
+
     if combo_name.startswith('two_'):
         subfolder = 'two_result'
     elif combo_name.startswith('three_'):
@@ -461,40 +479,43 @@ def load_selection_data_softrandom(algorithm: str, combo_name: str, mode: int) -
         subfolder = 'four_result'
     else:
         return None
-    
-    # Try Analysis path first
-    analysis_dir = os.path.join(ANALYSIS_PATH, config['analysis_dir'], 
-                                'Bounded_Pareto_combination_softrandom_result', subfolder, f'mode_{mode}')
-    
-    if os.path.exists(analysis_dir):
-        pattern = os.path.join(analysis_dir, f"{combo_name}_{config['file_prefix']}*mode_{mode}*.csv")
-        files = sorted(glob.glob(pattern))[:NUM_ROUNDS]
-        if files:
-            try:
-                combined = pd.concat([pd.read_csv(f) for f in files], ignore_index=True)
-                eff_col, fair_col = config['efficiency_col'], config['fairness_col']
-                if eff_col in combined.columns and fair_col in combined.columns:
-                    if 'frequency' in combined.columns:
-                        result = combined.groupby('frequency').agg({eff_col: 'mean', fair_col: 'mean'}).reset_index()
-                        result = result.rename(columns={'frequency': 'arrival_rate', eff_col: 'efficiency_pct', fair_col: 'fairness_pct'})
-                        logger.info(f"Loaded selection softrandom: {algorithm} {combo_name} mode {mode}")
-                        return result
-            except Exception as e:
-                logger.warning(f"Failed to load selection data: {e}")
-    
+
+    # Try k-based path first, then legacy mode-based
+    for folder_name in [f'k_{k}', f'mode_{k}']:
+        analysis_dir = os.path.join(ANALYSIS_PATH, config['analysis_dir'],
+                                    'Bounded_Pareto_combination_softrandom_result', subfolder, folder_name)
+        if not os.path.exists(analysis_dir):
+            continue
+
+        for file_tag in [f'k_{k}', f'mode_{k}']:
+            pattern = os.path.join(analysis_dir, f"{combo_name}_{config['file_prefix']}*{file_tag}*.csv")
+            files = sorted(glob.glob(pattern))[:NUM_ROUNDS]
+            if files:
+                try:
+                    combined = pd.concat([pd.read_csv(f) for f in files], ignore_index=True)
+                    eff_col, fair_col = config['efficiency_col'], config['fairness_col']
+                    if eff_col in combined.columns and fair_col in combined.columns:
+                        if 'frequency' in combined.columns:
+                            result = combined.groupby('frequency').agg({eff_col: 'mean', fair_col: 'mean'}).reset_index()
+                            result = result.rename(columns={'frequency': 'arrival_rate', eff_col: 'efficiency_pct', fair_col: 'fairness_pct'})
+                            logger.info(f"Loaded selection softrandom: {algorithm} {combo_name} k={k}")
+                            return result
+                except Exception as e:
+                    logger.warning(f"Failed to load selection data: {e}")
+
     # Try loading from result files and computing selection percentages
-    base_dir = os.path.join(ALGORITHM_RESULT_PATH, f"{algorithm}_result", 
+    base_dir = os.path.join(ALGORITHM_RESULT_PATH, f"{algorithm}_result",
                            'Bounded_Pareto_combination_softrandom_result', subfolder)
     if not os.path.exists(base_dir):
         return None
-    
+
     all_data = []
     for round_num in range(1, 6):
-        patterns = [
-            f"{combo_name}_{algorithm}_njobs100_{round_num}.csv",
+        file_patterns = [
+            f"{combo_name}_{algorithm}_njobs{batch_size}_{round_num}.csv",
             f"{combo_name}_{algorithm}_{round_num}.csv",
         ]
-        for pat in patterns:
+        for pat in file_patterns:
             fpath = os.path.join(base_dir, pat)
             if os.path.exists(fpath):
                 try:
@@ -503,32 +524,32 @@ def load_selection_data_softrandom(algorithm: str, combo_name: str, mode: int) -
                 except:
                     pass
                 break
-    
+
     if not all_data:
         return None
-    
+
     combined = pd.concat(all_data, ignore_index=True)
-    
-    # Look for selection columns
     eff_col, fair_col = config['efficiency_col'], config['fairness_col']
-    
-    # Try different column patterns
+
+    # Try k-based and legacy mode-based column patterns
     col_patterns = [
         (eff_col, fair_col),
-        (f'{algorithm}_njobs100_mode{mode}_SRPT_pct', f'{algorithm}_njobs100_mode{mode}_FCFS_pct'),
-        (f'{algorithm}_mode{mode}_SRPT_pct', f'{algorithm}_mode{mode}_FCFS_pct'),
-        (f'{algorithm}_njobs100_mode{mode}_BAL_pct', f'{algorithm}_njobs100_mode{mode}_FCFS_pct'),
-        (f'{algorithm}_njobs100_mode{mode}_RMLF_pct', f'{algorithm}_njobs100_mode{mode}_FCFS_pct'),
+        (f'{algorithm}_njobs{batch_size}_k{k}_SRPT_pct', f'{algorithm}_njobs{batch_size}_k{k}_FCFS_pct'),
+        (f'{algorithm}_k{k}_SRPT_pct', f'{algorithm}_k{k}_FCFS_pct'),
+        (f'{algorithm}_njobs{batch_size}_mode{k}_SRPT_pct', f'{algorithm}_njobs{batch_size}_mode{k}_FCFS_pct'),
+        (f'{algorithm}_mode{k}_SRPT_pct', f'{algorithm}_mode{k}_FCFS_pct'),
+        (f'{algorithm}_njobs{batch_size}_k{k}_BAL_pct', f'{algorithm}_njobs{batch_size}_k{k}_FCFS_pct'),
+        (f'{algorithm}_njobs{batch_size}_k{k}_RMLF_pct', f'{algorithm}_njobs{batch_size}_k{k}_FCFS_pct'),
     ]
-    
+
     for eff_try, fair_try in col_patterns:
         if eff_try in combined.columns and fair_try in combined.columns:
             if 'frequency' in combined.columns:
                 result = combined.groupby('frequency').agg({eff_try: 'mean', fair_try: 'mean'}).reset_index()
                 result = result.rename(columns={'frequency': 'arrival_rate', eff_try: 'efficiency_pct', fair_try: 'fairness_pct'})
-                logger.info(f"Loaded selection softrandom: {algorithm} {combo_name} mode {mode}")
+                logger.info(f"Loaded selection softrandom: {algorithm} {combo_name} k={k}")
                 return result
-    
+
     return None
 
 
@@ -551,58 +572,58 @@ def _get_short_name(combo_name: str) -> str:
 # ============================================================================
 # FIND BEST MODE
 # ============================================================================
-def find_common_best_mode() -> int:
-    """Find common best mode using softrandom data."""
+def find_common_best_k() -> int:
+    """Find common best lookback k using softrandom data."""
     test_combo = SOFTRANDOM_COMBINATION_CONFIGS['two'][0]['name']
-    
-    best_modes = {}
+
+    best_ks = {}
     for algo in DYNAMIC_ALGORITHMS:
-        mode_data = load_dynamic_softrandom_all_modes(algo, test_combo)
-        
-        if MODE_ALL not in mode_data:
-            best_modes[algo] = 5
+        k_data = load_dynamic_softrandom_all_lookbacks(algo, test_combo)
+
+        if LOOKBACK_ALL not in k_data:
+            best_ks[algo] = 16
             continue
-        
-        mode_all_df = mode_data[MODE_ALL]
-        best, min_diff = 5, float('inf')
-        
-        for mode in MODES:
-            if mode not in mode_data:
+
+        k_all_df = k_data[LOOKBACK_ALL]
+        best, min_diff = 16, float('inf')
+
+        for k in LOOKBACKS:
+            if k not in k_data:
                 continue
-            merged = mode_all_df.merge(mode_data[mode], on='arrival_rate', suffixes=('_all', '_m'))
+            merged = k_all_df.merge(k_data[k], on='arrival_rate', suffixes=('_all', '_k'))
             if len(merged) > 0:
-                diff = np.mean(np.abs(merged['L2_norm_all'] - merged['L2_norm_m']))
+                diff = np.mean(np.abs(merged['L2_norm_all'] - merged['L2_norm_k']))
                 if diff < min_diff:
-                    min_diff, best = diff, mode
-        
-        best_modes[algo] = best
-        logger.info(f"Best mode for {algo}: {best}")
-    
+                    min_diff, best = diff, k
+
+        best_ks[algo] = best
+        logger.info(f"Best k for {algo}: {best}")
+
     # Majority vote
     from collections import Counter
-    votes = Counter(best_modes.values())
-    common_mode = votes.most_common(1)[0][0]
-    
-    logger.info(f"Common mode selected: {common_mode}")
-    return common_mode
+    votes = Counter(best_ks.values())
+    common_k = votes.most_common(1)[0][0]
+
+    logger.info(f"Common k selected: {common_k}")
+    return common_k
 
 
 # ============================================================================
 # AVG30 - ALGORITHM SELECTION FIGURES (Clearer visualization)
 # ============================================================================
-def generate_avg30_algorithm_selection_figures(common_mode: int):
+def generate_avg30_algorithm_selection_figures(common_k: int):
     """Generate algorithm selection figures for avg30 data - clearer visualization."""
     setup_plot_style()
     output_dir = os.path.join(OUTPUT_PATH, "sec4_algorithm_selection")
     os.makedirs(output_dir, exist_ok=True)
-    
+
     logger.info("\n=== Generating avg30 Algorithm Selection Figures ===")
-    
+
     # Load data
-    data_c = {algo: load_selection_data(algo, common_mode) for algo in ['Dynamic', 'Dynamic_BAL']}
+    data_c = {algo: load_selection_data(algo, common_k) for algo in ['Dynamic', 'Dynamic_BAL']}
     data_c = {k: v for k, v in data_c.items() if v is not None}
-    
-    data_nc = load_selection_data('RFDynamic', common_mode)
+
+    data_nc = load_selection_data('RFDynamic', common_k)
     
     # Bounded Pareto
     for config in BP_CONFIGS:
@@ -814,29 +835,29 @@ def _gen_nonclairvoyant_selection_normal(data: Optional[pd.DataFrame], config: d
 # ============================================================================
 # SOFT RANDOM - ALGORITHM SELECTION FIGURES
 # ============================================================================
-def generate_softrandom_algorithm_selection_figures(common_mode: int):
+def generate_softrandom_algorithm_selection_figures(common_k: int):
     """Generate algorithm selection figures for soft random combinations."""
     setup_plot_style()
     output_dir = os.path.join(OUTPUT_PATH, "sec4_algorithm_selection_softrandom")
     os.makedirs(output_dir, exist_ok=True)
-    
+
     logger.info("\n=== Generating Soft Random Algorithm Selection Figures ===")
-    
+
     for combo_type, configs in SOFTRANDOM_COMBINATION_CONFIGS.items():
         for config in configs:
             combo_name = config['name']
             title = config['title']
             short_name = _get_short_name(combo_name)
-            
+
             # Load clairvoyant selection data
             data_c = {}
             for algo in ['Dynamic', 'Dynamic_BAL']:
-                df = load_selection_data_softrandom(algo, combo_name, common_mode)
+                df = load_selection_data_softrandom(algo, combo_name, common_k)
                 if df is not None:
                     data_c[algo] = df
-            
+
             # Load non-clairvoyant selection data
-            data_nc = load_selection_data_softrandom('RFDynamic', combo_name, common_mode)
+            data_nc = load_selection_data_softrandom('RFDynamic', combo_name, common_k)
             
             # Generate figures
             if data_c:
@@ -936,102 +957,100 @@ def _gen_softrandom_nonclairvoyant_selection(data: pd.DataFrame, title: str, sho
 # ============================================================================
 # SOFT RANDOM - MODE COMPARISON FIGURES
 # ============================================================================
-def generate_softrandom_mode_comparison_figures():
-    """Generate mode comparison figures for each algorithm in each soft random combination.
+def generate_softrandom_lookback_comparison_figures():
+    """Generate lookback (k) comparison figures for each algorithm in each soft random combination.
     X-axis: Coherence time (2 to 2^16), Y-axis: L²-norm
-    One figure per algorithm per combination, showing all modes.
+    One figure per algorithm per combination, showing all k values.
     """
     setup_plot_style()
-    output_dir = os.path.join(OUTPUT_PATH, "sec4_mode_comparison_softrandom")
+    output_dir = os.path.join(OUTPUT_PATH, "sec4_lookback_comparison_softrandom")
     os.makedirs(output_dir, exist_ok=True)
-    
-    logger.info("\n=== Generating Soft Random Mode Comparison Figures ===")
-    
-    # Mode colors and styles (mode 1-5 + mode all)
-    mode_colors = {
-        1: '#1f77b4',  # Blue
-        2: '#ff7f0e',  # Orange
-        3: '#2ca02c',  # Green
-        4: '#d62728',  # Red
-        5: '#9467bd',  # Purple
-        MODE_ALL: '#8c564b',  # Brown - Mode All
+
+    logger.info("\n=== Generating Soft Random Lookback Comparison Figures ===")
+
+    # Lookback colors and styles
+    k_colors = {
+        1: '#1f77b4',   # Blue
+        2: '#ff7f0e',   # Orange
+        4: '#2ca02c',   # Green
+        8: '#d62728',   # Red
+        16: '#9467bd',  # Purple
+        LOOKBACK_ALL: '#8c564b',  # Brown - k=all
     }
-    mode_markers = {1: 'o', 2: 's', 3: '^', 4: 'D', 5: 'v', MODE_ALL: 'p'}
-    mode_labels = {1: 'Mode 1', 2: 'Mode 2', 3: 'Mode 3', 4: 'Mode 4', 5: 'Mode 5', MODE_ALL: 'Mode All'}
-    
+    k_markers = {1: 'o', 2: 's', 4: '^', 8: 'D', 16: 'v', LOOKBACK_ALL: 'p'}
+    k_labels = {1: '$k=1$', 2: '$k=2$', 4: '$k=4$', 8: '$k=8$', 16: '$k=16$', LOOKBACK_ALL: '$k=\\mathrm{all}$'}
+
     for combo_type, configs in SOFTRANDOM_COMBINATION_CONFIGS.items():
         for config in configs:
             combo_name = config['name']
             title = config['title']
             short_name = _get_short_name(combo_name)
-            
+
             for algo in DYNAMIC_ALGORITHMS.keys():
-                # Load all modes for this algorithm
-                mode_data = load_dynamic_softrandom_all_modes(algo, combo_name)
-                
-                if not mode_data:
+                k_data = load_dynamic_softrandom_all_lookbacks(algo, combo_name)
+
+                if not k_data:
                     logger.warning(f"No data for {algo} {combo_name}")
                     continue
-                
+
                 fig, ax = plt.subplots(figsize=(12, 7))
-                
-                for mode in sorted(mode_data.keys()):
-                    df = mode_data[mode]
+
+                for k_val in sorted(k_data.keys()):
+                    df = k_data[k_val]
                     if df is None or len(df) == 0:
                         continue
-                    
-                    color = mode_colors.get(mode, 'gray')
-                    marker = mode_markers.get(mode, 'o')
-                    label = mode_labels.get(mode, f'Mode {mode}')
-                    
+
+                    color = k_colors.get(k_val, 'gray')
+                    marker = k_markers.get(k_val, 'o')
+                    label = k_labels.get(k_val, f'$k={k_val}$')
+
                     ax.plot(df['arrival_rate'], df['L2_norm'],
                             marker=marker, color=color,
                             linestyle='-', linewidth=2.5, markersize=8,
                             markerfacecolor=color, markeredgecolor='black', markeredgewidth=0.8,
                             label=label)
-                
+
                 ax.set_xlabel('Coherence Time', fontweight='bold', fontsize=12)
                 ax.set_ylabel('$L^2$-norm of Flow Time', fontweight='bold', fontsize=12)
-                ax.set_title(f'{algo} Mode Comparison\n{title}', fontweight='bold', fontsize=13)
+                ax.set_title(f'{algo} Lookback Comparison\n{title}', fontweight='bold', fontsize=13)
                 ax.legend(loc='best', framealpha=0.95, fontsize=10, edgecolor='black')
                 ax.grid(True, alpha=0.3)
                 ax.set_xscale('log', base=2)
-                
-                # X-axis: 2 to 2^16
+
                 x_ticks = [2**i for i in range(1, 17)]
                 ax.set_xticks(x_ticks)
                 ax.set_xticklabels([f'$2^{{{i}}}$' for i in range(1, 17)])
                 ax.set_xlim(2, 2**16)
-                
+
                 plt.tight_layout()
-                plt.savefig(os.path.join(output_dir, f"fig_mode_comparison_{algo}_{short_name}.pdf"), dpi=300)
+                plt.savefig(os.path.join(output_dir, f"fig_lookback_comparison_{algo}_{short_name}.pdf"), dpi=300)
                 plt.close()
-                logger.info(f"Generated: fig_mode_comparison_{algo}_{short_name}.pdf")
+                logger.info(f"Generated: fig_lookback_comparison_{algo}_{short_name}.pdf")
 
 
 # ============================================================================
 # AVG30 - L2-NORM FIGURES
 # ============================================================================
-def generate_avg30_l2norm_figures(common_mode: int):
+def generate_avg30_l2norm_figures(common_k: int):
     """Generate L2-norm figures for avg30 data."""
     setup_plot_style()
     output_dir = os.path.join(OUTPUT_PATH, "sec4_l2norm_avg30")
     os.makedirs(output_dir, exist_ok=True)
-    
+
     logger.info("\n=== Generating avg30 L²-norm Figures ===")
-    
+
     # Load baselines
     baseline_c = {algo: load_baseline_l2norm(algo) for algo in CLAIRVOYANT_BASELINES}
     baseline_c = {k: v for k, v in baseline_c.items() if v is not None}
-    
+
     baseline_nc = {algo: load_baseline_l2norm(algo) for algo in NON_CLAIRVOYANT_BASELINES}
     baseline_nc = {k: v for k, v in baseline_nc.items() if v is not None}
-    
+
     # Load Dynamic
-    dynamic_c = {algo: load_dynamic_l2norm(algo, common_mode) for algo in ['Dynamic', 'Dynamic_BAL']}
+    dynamic_c = {algo: load_dynamic_l2norm(algo, common_k) for algo in ['Dynamic', 'Dynamic_BAL']}
     dynamic_c = {k: v for k, v in dynamic_c.items() if v is not None}
-    
-    dynamic_nc = load_dynamic_l2norm('RFDynamic', common_mode)
+
+    dynamic_nc = load_dynamic_l2norm('RFDynamic', common_k)
     
     # Generate BP figures
     for config in BP_CONFIGS:
@@ -1410,43 +1429,43 @@ def generate_combination_comparison_figures(analysis_path: str = None, output_pa
 # ============================================================================
 # SOFT RANDOM COMBINATION - L2-NORM FIGURES
 # ============================================================================
-def generate_softrandom_l2norm_figures(common_mode: int):
+def generate_softrandom_l2norm_figures(common_k: int):
     """Generate L2-norm figures for soft random combination data."""
     setup_plot_style()
     output_dir = os.path.join(OUTPUT_PATH, "sec4_l2norm_softrandom")
     os.makedirs(output_dir, exist_ok=True)
-    
+
     logger.info("\n=== Generating Soft Random L²-norm Figures ===")
-    
+
     for combo_type, configs in SOFTRANDOM_COMBINATION_CONFIGS.items():
         for config in configs:
             combo_name = config['name']
             title = config['title']
-            
-            _gen_clairvoyant_softrandom(combo_name, title, common_mode, output_dir)
-            _gen_nonclairvoyant_softrandom(combo_name, title, common_mode, output_dir)
+
+            _gen_clairvoyant_softrandom(combo_name, title, common_k, output_dir)
+            _gen_nonclairvoyant_softrandom(combo_name, title, common_k, output_dir)
 
 
-def _gen_clairvoyant_softrandom(combo_name: str, title: str, mode: int, output_dir: str):
+def _gen_clairvoyant_softrandom(combo_name: str, title: str, k: int, output_dir: str):
     """Clairvoyant L2-norm - Soft Random"""
     fig, ax = plt.subplots(figsize=(11, 7))
-    
+
     # Secondary baselines
     for algo in ['BAL', 'FCFS', 'SJF', 'RR']:
         df = load_baseline_softrandom(algo, combo_name)
         if df is not None and len(df) > 0:
             ax.plot(df['arrival_rate'], df['L2_norm'], marker=MARKERS[algo],
                     color=COLORS[algo], label=algo, zorder=1, **get_secondary_style())
-    
+
     # Primary baseline SRPT
     df_srpt = load_baseline_softrandom('SRPT', combo_name)
     if df_srpt is not None and len(df_srpt) > 0:
         ax.plot(df_srpt['arrival_rate'], df_srpt['L2_norm'], marker=MARKERS['SRPT'],
                 color=COLORS['SRPT'], label='SRPT', zorder=5, **get_primary_style())
-    
+
     # Our algorithms
     for algo in ['Dynamic', 'Dynamic_BAL']:
-        df = load_dynamic_softrandom(algo, combo_name, mode)
+        df = load_dynamic_softrandom(algo, combo_name, k)
         if df is not None and len(df) > 0:
             x_data = apply_offset(df['arrival_rate'].values, algo)
             ax.plot(x_data, df['L2_norm'], marker=MARKERS[algo],
@@ -1472,25 +1491,25 @@ def _gen_clairvoyant_softrandom(combo_name: str, title: str, mode: int, output_d
     logger.info(f"Generated: fig_l2norm_clairvoyant_{short_name}.pdf")
 
 
-def _gen_nonclairvoyant_softrandom(combo_name: str, title: str, mode: int, output_dir: str):
+def _gen_nonclairvoyant_softrandom(combo_name: str, title: str, k: int, output_dir: str):
     """Non-clairvoyant L2-norm - Soft Random"""
     fig, ax = plt.subplots(figsize=(11, 7))
-    
+
     # Secondary baselines
     for algo in ['MLFQ', 'FCFS', 'SETF', 'RR']:
         df = load_baseline_softrandom(algo, combo_name)
         if df is not None and len(df) > 0:
             ax.plot(df['arrival_rate'], df['L2_norm'], marker=MARKERS[algo],
                     color=COLORS[algo], label=algo, zorder=1, **get_secondary_style())
-    
+
     # Primary baseline RMLF
     df_rmlf = load_baseline_softrandom('RMLF', combo_name)
     if df_rmlf is not None and len(df_rmlf) > 0:
         ax.plot(df_rmlf['arrival_rate'], df_rmlf['L2_norm'], marker=MARKERS['RMLF'],
                 color=COLORS['RMLF'], label='RMLF', zorder=5, **get_primary_style())
-    
+
     # Our algorithm
-    df = load_dynamic_softrandom('RFDynamic', combo_name, mode)
+    df = load_dynamic_softrandom('RFDynamic', combo_name, k)
     if df is not None and len(df) > 0:
         x_data = apply_offset(df['arrival_rate'].values, 'RFDynamic')
         ax.plot(x_data, df['L2_norm'], marker=MARKERS['RFDynamic'],
@@ -1516,42 +1535,199 @@ def _gen_nonclairvoyant_softrandom(combo_name: str, title: str, mode: int, outpu
 
 
 # ============================================================================
+# §4.4 LOOKBACK SENSITIVITY FIGURES
+# ============================================================================
+def generate_lookback_sensitivity_figures(batch_size: int = DEFAULT_BATCH_SIZE):
+    """
+    §4.4 Lookback Sensitivity: sweep k ∈ {1, 2, 4, 8, 16, all}
+    Fixed BP-H262144, ρ=1.00, B=batch_size.
+    One figure per algorithm showing L2-norm vs arrival rate for each k.
+    """
+    setup_plot_style()
+    output_dir = os.path.join(OUTPUT_PATH, "sec4_lookback_sensitivity")
+    os.makedirs(output_dir, exist_ok=True)
+
+    logger.info("\n=== Generating §4.4 Lookback Sensitivity Figures ===")
+
+    k_values = ALL_LOOKBACKS  # [1, 2, 4, 8, 16, 0]
+    k_colors = {1: '#1f77b4', 2: '#ff7f0e', 4: '#2ca02c', 8: '#d62728', 16: '#9467bd', 0: '#8c564b'}
+    k_markers = {1: 'o', 2: 's', 4: '^', 8: 'D', 16: 'v', 0: 'p'}
+    k_labels = {1: '$k=1$', 2: '$k=2$', 4: '$k=4$', 8: '$k=8$', 16: '$k=16$', 0: '$k=\\mathrm{all}$'}
+
+    # Fixed config: BP-H262144
+    target_H = 262144
+    bp_config = next((c for c in BP_CONFIGS if c['H'] == target_H), BP_CONFIGS[-1])
+
+    for algo in DYNAMIC_ALGORITHMS.keys():
+        fig, ax = plt.subplots(figsize=(11, 7))
+        has_data = False
+
+        for k_val in k_values:
+            df = load_dynamic_l2norm(algo, k_val, batch_size)
+            if df is None:
+                continue
+            df_filtered = filter_bp(df, bp_config['H'])
+            if len(df_filtered) == 0:
+                continue
+
+            has_data = True
+            color = k_colors.get(k_val, 'gray')
+            marker = k_markers.get(k_val, 'o')
+            label = k_labels.get(k_val, f'$k={k_val}$')
+
+            ax.plot(df_filtered['arrival_rate'], df_filtered['L2_norm'],
+                    marker=marker, color=color,
+                    linestyle='-', linewidth=2.5, markersize=9,
+                    markerfacecolor=color, markeredgecolor='black', markeredgewidth=0.8,
+                    label=label)
+
+        if not has_data:
+            plt.close()
+            logger.warning(f"No lookback sensitivity data for {algo}")
+            continue
+
+        ax.set_xlabel('Mean Inter-arrival Time', fontweight='bold', fontsize=12)
+        ax.set_ylabel('$\\ell_2$-Norm Flow Time', fontweight='bold', fontsize=12)
+        ax.set_title(f'{algo} Lookback Sensitivity ($B={batch_size}$)\n{bp_config["title"]}',
+                     fontweight='bold', fontsize=13)
+        ax.legend(loc='upper right', framealpha=0.95, fontsize=10, edgecolor='black')
+        ax.grid(True, alpha=0.3)
+        ax.set_yscale('log')
+        ax.set_xticks(X_TICKS)
+        ax.set_xlim(X_LIMITS)
+
+        plt.tight_layout()
+        plt.savefig(os.path.join(output_dir, f"fig_lookback_sensitivity_{algo}_B{batch_size}.pdf"), dpi=300)
+        plt.close()
+        logger.info(f"Generated: fig_lookback_sensitivity_{algo}_B{batch_size}.pdf")
+
+
+# ============================================================================
+# §4.5 BATCH SIZE SENSITIVITY FIGURES
+# ============================================================================
+def generate_batch_size_sensitivity_figures(fixed_k: int = 8):
+    """
+    §4.5 Batch Size Sensitivity: sweep B ∈ {25, 50, 100, 200, 500}
+    Fixed k=fixed_k, BP-H262144.
+    One figure per algorithm showing L2-norm vs arrival rate for each B.
+    """
+    setup_plot_style()
+    output_dir = os.path.join(OUTPUT_PATH, "sec4_batch_size_sensitivity")
+    os.makedirs(output_dir, exist_ok=True)
+
+    logger.info("\n=== Generating §4.5 Batch Size Sensitivity Figures ===")
+
+    batch_sizes = [25, 50, 100, 200, 500]
+    b_colors = {25: '#1f77b4', 50: '#ff7f0e', 100: '#2ca02c', 200: '#d62728', 500: '#9467bd'}
+    b_markers = {25: 'o', 50: 's', 100: '^', 200: 'D', 500: 'v'}
+
+    # Fixed config: BP-H262144
+    target_H = 262144
+    bp_config = next((c for c in BP_CONFIGS if c['H'] == target_H), BP_CONFIGS[-1])
+
+    for algo in DYNAMIC_ALGORITHMS.keys():
+        fig, ax = plt.subplots(figsize=(11, 7))
+        has_data = False
+
+        for B in batch_sizes:
+            df = load_dynamic_l2norm(algo, fixed_k, B)
+            if df is None:
+                continue
+            df_filtered = filter_bp(df, bp_config['H'])
+            if len(df_filtered) == 0:
+                continue
+
+            has_data = True
+            color = b_colors.get(B, 'gray')
+            marker = b_markers.get(B, 'o')
+
+            ax.plot(df_filtered['arrival_rate'], df_filtered['L2_norm'],
+                    marker=marker, color=color,
+                    linestyle='-', linewidth=2.5, markersize=9,
+                    markerfacecolor=color, markeredgecolor='black', markeredgewidth=0.8,
+                    label=f'$B={B}$')
+
+        if not has_data:
+            plt.close()
+            logger.warning(f"No batch size sensitivity data for {algo}")
+            continue
+
+        ax.set_xlabel('Mean Inter-arrival Time', fontweight='bold', fontsize=12)
+        ax.set_ylabel('$\\ell_2$-Norm Flow Time', fontweight='bold', fontsize=12)
+        ax.set_title(f'{algo} Batch Size Sensitivity ($k={fixed_k}$)\n{bp_config["title"]}',
+                     fontweight='bold', fontsize=13)
+        ax.legend(loc='upper right', framealpha=0.95, fontsize=10, edgecolor='black')
+        ax.grid(True, alpha=0.3)
+        ax.set_yscale('log')
+        ax.set_xticks(X_TICKS)
+        ax.set_xlim(X_LIMITS)
+
+        plt.tight_layout()
+        plt.savefig(os.path.join(output_dir, f"fig_batch_size_sensitivity_{algo}_k{fixed_k}.pdf"), dpi=300)
+        plt.close()
+        logger.info(f"Generated: fig_batch_size_sensitivity_{algo}_k{fixed_k}.pdf")
+
+
+# ============================================================================
 # MAIN
 # ============================================================================
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description='Chapter 4 Figure Generator')
+    parser.add_argument('--batch-size', '-B', type=int, default=DEFAULT_BATCH_SIZE,
+                        help=f'Batch size for experiments (default: {DEFAULT_BATCH_SIZE})')
+    parser.add_argument('--lookback', '-k', type=int, default=None,
+                        help='Override common best k (default: auto-detect)')
+    args = parser.parse_args()
+
     logger.info("=" * 70)
     logger.info("Chapter 4 Figure Generator - avg30 + Soft Random")
+    logger.info(f"  Batch size (B): {args.batch_size}")
     logger.info("=" * 70)
-    
-    # Step 1: Find common best mode
-    logger.info("\n=== Finding Common Best Mode ===")
-    common_mode = find_common_best_mode()
-    logger.info(f"\n>>> Using COMMON MODE {common_mode} <<<\n")
-    
+
+    # Step 1: Find common best lookback k
+    logger.info("\n=== Finding Common Best Lookback k ===")
+    if args.lookback is not None:
+        common_k = args.lookback
+        logger.info(f"Using user-specified k={common_k}")
+    else:
+        common_k = find_common_best_k()
+    logger.info(f"\n>>> Using COMMON k={common_k} <<<\n")
+
     # Step 2: avg30 Algorithm Selection
     logger.info("\n=== avg30 Algorithm Selection Figures ===")
-    generate_avg30_algorithm_selection_figures(common_mode)
-    
-    # Step 3: Soft Random Mode Comparison (all modes per algorithm per combination)
-    logger.info("\n=== Soft Random Mode Comparison Figures ===")
-    generate_softrandom_mode_comparison_figures()
-    
+    generate_avg30_algorithm_selection_figures(common_k)
+
+    # Step 3: Soft Random Lookback Comparison (all k values per algorithm per combination)
+    logger.info("\n=== Soft Random Lookback Comparison Figures ===")
+    generate_softrandom_lookback_comparison_figures()
+
     # Step 4: avg30 L2-norm
     logger.info("\n=== avg30 L²-norm Figures ===")
-    generate_avg30_l2norm_figures(common_mode)
-    
+    generate_avg30_l2norm_figures(common_k)
+
     # Step 5: Soft Random L2-norm
     logger.info("\n=== Soft Random L²-norm Figures ===")
-    generate_softrandom_l2norm_figures(common_mode)
-    
+    generate_softrandom_l2norm_figures(common_k)
+
     # Step 6: Combination Comparison (Longest H Duration Ratio)
     logger.info("\n=== Combination Comparison Figures ===")
     generate_combination_comparison_figures()
-    
+
+    # Step 7: §4.4 Lookback Sensitivity
+    logger.info("\n=== §4.4 Lookback Sensitivity Figures ===")
+    generate_lookback_sensitivity_figures(args.batch_size)
+
+    # Step 8: §4.5 Batch Size Sensitivity
+    logger.info("\n=== §4.5 Batch Size Sensitivity Figures ===")
+    generate_batch_size_sensitivity_figures(fixed_k=8)
+
     # Summary
     logger.info("\n" + "=" * 70)
-    logger.info(f"All figures generated using COMMON MODE {common_mode}")
-    for subdir in ['sec4_algorithm_selection', 'sec4_mode_comparison_softrandom', 'sec4_l2norm_avg30', 'sec4_l2norm_softrandom', 'figures']:
+    logger.info(f"All figures generated using common k={common_k}, B={args.batch_size}")
+    for subdir in ['sec4_algorithm_selection', 'sec4_lookback_comparison_softrandom',
+                    'sec4_l2norm_avg30', 'sec4_l2norm_softrandom',
+                    'sec4_lookback_sensitivity', 'sec4_batch_size_sensitivity', 'figures']:
         path = os.path.join(OUTPUT_PATH, subdir)
         if os.path.exists(path):
             count = len([f for f in os.listdir(path) if f.endswith('.pdf')])
