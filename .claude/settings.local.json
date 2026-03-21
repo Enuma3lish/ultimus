@@ -29,7 +29,8 @@
       "Bash(grep -E \"\\\\.py$\")",
       "Bash(/home/melowu/Work/ultimus/Cpp_Optimization/algorithms/RFDynamic/build/RFDynamic -h)",
       "Bash(git checkout:*)",
-      "Bash(bash -n /home/melowu/Work/ultimus/_run.sh)"
+      "Bash(bash -n /home/melowu/Work/ultimus/_run.sh)",
+      "Bash(systemctl --user is-system-running)"
     ],
     "deny": [],
     "ask": []

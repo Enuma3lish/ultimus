@@ -865,7 +865,7 @@ run_pipeline() {
   local batch_idx=0
 
   for B in "${BATCH_SIZE_ARRAY[@]}"; do
-    ((batch_idx++))
+    ((batch_idx++)) || true
     echo ""
     echo "########################################################"
     echo "  Batch size B=${B}  (${batch_idx}/${batch_count})"
