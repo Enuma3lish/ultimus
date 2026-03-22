@@ -29,7 +29,7 @@ struct MLFQJobEntry {
 // Non-clairvoyant Multi-Level Feedback Queue Scheduler
 // Queue numbering starts at 1
 // Queue i has time quantum 2^(i-1): Queue 1 = 1, Queue 2 = 2, Queue 3 = 4, etc.
-MLFQResult MLFQ(std::vector<Job> jobs, int num_queues = 100) {
+MLFQResult MLFQ(std::vector<Job>& jobs, int num_queues = 100) {
     // Initialize queues (indexed 1 to num_queues)
     std::vector<std::deque<MLFQJobEntry>> queues(num_queues + 1);
     

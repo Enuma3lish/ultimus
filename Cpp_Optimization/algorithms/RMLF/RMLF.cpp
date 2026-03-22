@@ -10,7 +10,7 @@
 #include "process_fix_combination_folders.h"
 
 // Wrapper function for average data processing
-RMLFResult RMLF_wrapper(std::vector<Job> jobs) {
+RMLFResult RMLF_wrapper(std::vector<Job>& jobs) {
     return RMLF_algorithm(jobs);
 }
 

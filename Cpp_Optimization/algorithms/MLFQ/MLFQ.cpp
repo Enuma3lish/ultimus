@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
     create_directory(output_dir);
     
     // Create lambda wrapper for MLFQ algorithm with configurable num_queues
-    auto mlfq_algo = [num_queues](std::vector<Job> jobs) -> MLFQResult {
+    auto mlfq_algo = [num_queues](std::vector<Job>& jobs) -> MLFQResult {
         return MLFQ(jobs, num_queues);
     };
     

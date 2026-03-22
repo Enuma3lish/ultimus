@@ -20,6 +20,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import re
 import glob
 import logging
 from typing import Dict, Optional
@@ -268,25 +269,34 @@ def load_dynamic_l2norm(algorithm: str, k: int, batch_size: int = DEFAULT_BATCH_
 
     combined = pd.concat(all_data, ignore_index=True)
 
-    # Find L2 column for k (lookback) - try new k-based naming first, then legacy mode naming
+    # Find L2 column for k (lookback) - try exact batch_size first, then any njobs
     l2_col = None
     patterns = [
-        f'{algorithm}_njobs{batch_size}_k{k}_L2_norm_flow_time',
-        f'{algorithm}_k{k}_L2_norm_flow_time',
         f'{algorithm}_njobs{batch_size}_mode{k}_L2_norm_flow_time',
-        f'{algorithm}_mode{k}_L2_norm_flow_time',
+        f'{algorithm}_njobs{batch_size}_k{k}_L2_norm_flow_time',
     ]
     for p in patterns:
         if p in combined.columns:
             l2_col = p
             break
 
+    # Fallback: try any njobs value with exact mode/k match
     if l2_col is None:
-        l2_cols = [c for c in combined.columns if 'l2' in c.lower() and (f'k{k}' in c.lower() or f'mode{k}' in c.lower())]
-        if l2_cols:
-            l2_col = l2_cols[0]
-        else:
-            return None
+
+        # Match _mode{k}_ exactly (not mode16 when k=1)
+        mode_pattern = re.compile(
+            rf'^{re.escape(algorithm)}_njobs\d+_mode{k}_L2_norm_flow_time$'
+        )
+        k_pattern = re.compile(
+            rf'^{re.escape(algorithm)}_njobs\d+_k{k}_L2_norm_flow_time$'
+        )
+        for c in combined.columns:
+            if mode_pattern.match(c) or k_pattern.match(c):
+                l2_col = c
+                break
+
+    if l2_col is None:
+        return None
 
     required = ['Mean_inter_arrival_time', 'bp_parameter_L', 'bp_parameter_H']
     if not all(c in combined.columns for c in required):
@@ -435,13 +445,11 @@ def load_dynamic_softrandom(algorithm: str, combo_name: str, k: int, batch_size:
 
     combined = pd.concat(all_data, ignore_index=True)
 
-    # Try new k-based column naming first, then legacy mode-based
+    # Find L2 column: try exact batch_size first, then any njobs
     l2_col = None
     col_patterns = [
-        f'{algorithm}_njobs{batch_size}_k{k}_L2_norm_flow_time',
-        f'{algorithm}_k{k}_L2_norm_flow_time',
         f'{algorithm}_njobs{batch_size}_mode{k}_L2_norm_flow_time',
-        f'{algorithm}_mode{k}_L2_norm_flow_time',
+        f'{algorithm}_njobs{batch_size}_k{k}_L2_norm_flow_time',
     ]
     for p in col_patterns:
         if p in combined.columns:
@@ -449,11 +457,17 @@ def load_dynamic_softrandom(algorithm: str, combo_name: str, k: int, batch_size:
             break
 
     if l2_col is None:
-        l2_cols = [c for c in combined.columns if 'l2' in c.lower() and (f'k{k}' in c.lower() or f'mode{k}' in c.lower())]
-        if l2_cols:
-            l2_col = l2_cols[0]
-        else:
-            return None
+
+        mode_pattern = re.compile(
+            rf'^{re.escape(algorithm)}_njobs\d+_mode{k}_L2_norm_flow_time$'
+        )
+        for c in combined.columns:
+            if mode_pattern.match(c):
+                l2_col = c
+                break
+
+    if l2_col is None:
+        return None
 
     result = combined.groupby('frequency')[l2_col].mean().reset_index()
     result = result.rename(columns={'frequency': 'arrival_rate', l2_col: 'L2_norm'})
@@ -1278,50 +1292,73 @@ def get_combination_style(color):
 def load_combination_h_duration_data(analysis_path: str, dist_type: str) -> Dict[str, pd.DataFrame]:
     """
     Load combination data for Longest H Duration Ratio comparison.
-    
+
+    Reads BAL result CSVs from algorithm_result/BAL_result/ and extracts
+    the BAL_longest_H_L2_norm column, averaging across rounds.
+
     Args:
-        analysis_path: Path to Analysis folder
+        analysis_path: Path to Analysis folder (unused, kept for API compat)
         dist_type: 'Bounded_Pareto' or 'normal'
-    
+
     Returns:
         Dict mapping combination_name -> DataFrame with columns ['freq', 'percentage']
     """
     if dist_type == 'Bounded_Pareto':
-        combo_folder = os.path.join(analysis_path, 'Bounded_Pareto_combination_softrandom')
+        combo_folder = os.path.join(ALGORITHM_RESULT_PATH, 'BAL_result',
+                                    'Bounded_Pareto_combination_softrandom_result')
     else:
-        combo_folder = os.path.join(analysis_path, 'normal_combination_softrandom')
-    
+        combo_folder = os.path.join(ALGORITHM_RESULT_PATH, 'BAL_result',
+                                    'normal_combination_softrandom_result')
+
     if not os.path.exists(combo_folder):
         logger.warning(f"Combination folder not found: {combo_folder}")
         return {}
-    
+
     result = {}
-    freq_values = [2**i for i in range(1, 17)]  # 2, 4, 8, ..., 65536
-    
-    # Find all combination subfolders
-    for combo_name in os.listdir(combo_folder):
-        combo_path = os.path.join(combo_folder, combo_name)
-        if not os.path.isdir(combo_path) or 'combination' not in combo_name:
+
+    # Iterate over sub-folders: two_result, three_result, four_result
+    for subfolder in ['two_result', 'three_result', 'four_result']:
+        sub_path = os.path.join(combo_folder, subfolder)
+        if not os.path.exists(sub_path):
             continue
-        
-        data_points = []
-        for freq in freq_values:
-            csv_path = os.path.join(combo_path, f'freq_{freq}', 'analysis.csv')
-            if os.path.exists(csv_path):
+
+        # Group CSV files by combination name (strip _BAL_{round}_result.csv)
+        combo_files: Dict[str, list] = {}
+        for fname in os.listdir(sub_path):
+            if not fname.endswith('_result.csv') or 'combination' not in fname:
+                continue
+            # e.g. two_combination_H64_H512_pair_1_BAL_1_result.csv
+            # strip _BAL_{round}_result.csv to get the combo name
+            m = re.match(r'^(.+)_BAL_\d+_result\.csv$', fname)
+            if m:
+                combo_name = m.group(1)
+                combo_files.setdefault(combo_name, []).append(
+                    os.path.join(sub_path, fname))
+
+        for combo_name, files in combo_files.items():
+            all_dfs = []
+            for fpath in sorted(files):
                 try:
-                    # Read CSV with BOM handling
-                    df = pd.read_csv(csv_path, encoding='utf-8-sig')
-                    # Extract percentage value (second row, second column)
-                    if len(df) > 0 and len(df.columns) >= 2:
-                        pct_value = df.iloc[0, 1]
-                        data_points.append({'freq': freq, 'percentage': float(pct_value)})
+                    all_dfs.append(pd.read_csv(fpath))
                 except Exception as e:
-                    logger.debug(f"Error reading {csv_path}: {e}")
-        
-        if data_points:
-            result[combo_name] = pd.DataFrame(data_points).sort_values('freq')
-            logger.info(f"Loaded {dist_type}: {combo_name} ({len(data_points)} points)")
-    
+                    logger.debug(f"Error reading {fpath}: {e}")
+
+            if not all_dfs:
+                continue
+
+            combined = pd.concat(all_dfs, ignore_index=True)
+            if 'BAL_longest_H_L2_norm' not in combined.columns:
+                continue
+
+            avg = combined.groupby('frequency')['BAL_longest_H_L2_norm'].mean().reset_index()
+            avg = avg.rename(columns={'frequency': 'freq',
+                                      'BAL_longest_H_L2_norm': 'percentage'})
+            avg = avg.sort_values('freq')
+
+            if len(avg) > 0:
+                result[combo_name] = avg
+                logger.info(f"Loaded {dist_type}: {combo_name} ({len(avg)} points)")
+
     return result
 
 
@@ -1535,13 +1572,97 @@ def _gen_nonclairvoyant_softrandom(combo_name: str, title: str, k: int, output_d
 
 
 # ============================================================================
+# DATA LOADING - SINGLE-DISTRIBUTION SOFTRANDOM (for sensitivity analysis)
+# ============================================================================
+BATCH_SIZES = [25, 50, 100, 200, 500]
+
+def load_dynamic_softrandom_single_dist(algorithm: str, batch_size: int, k: int,
+                                         dist_type: str = 'Bounded_Pareto') -> Optional[pd.DataFrame]:
+    """
+    Load single-distribution softrandom data for a specific algorithm, batch size, and k.
+
+    Files: {dist_type}_softrandom_result_{algo}_njobs{B}_{round}.csv
+    Columns: frequency, {algo}_njobs{B}_mode{k}_L2_norm_flow_time, ...
+    Returns DataFrame with columns ['frequency', 'L2_norm'].
+    """
+    folder = f"{dist_type}_softrandom_result"
+    base_dir = os.path.join(ALGORITHM_RESULT_PATH, f"{algorithm}_result", folder)
+    if not os.path.exists(base_dir):
+        return None
+
+    all_data = []
+    for round_num in range(1, 10):  # up to 9 rounds
+        fname = f"{folder}_{algorithm}_njobs{batch_size}_{round_num}.csv"
+        fpath = os.path.join(base_dir, fname)
+        if os.path.exists(fpath):
+            try:
+                all_data.append(pd.read_csv(fpath))
+            except:
+                pass
+
+    if not all_data:
+        return None
+
+    combined = pd.concat(all_data, ignore_index=True)
+
+    # Find L2 column: {algo}_njobs{B}_mode{k}_L2_norm_flow_time
+    l2_col = f'{algorithm}_njobs{batch_size}_mode{k}_L2_norm_flow_time'
+    if l2_col not in combined.columns:
+        # Fallback search
+        l2_cols = [c for c in combined.columns if 'L2_norm' in c and f'mode{k}_' in c]
+        if l2_cols:
+            l2_col = l2_cols[0]
+        else:
+            return None
+
+    if 'frequency' not in combined.columns:
+        return None
+
+    result = combined.groupby('frequency')[l2_col].mean().reset_index()
+    result = result.rename(columns={'frequency': 'frequency', l2_col: 'L2_norm'})
+    return result
+
+
+def load_baseline_softrandom_single_dist(algorithm: str,
+                                          dist_type: str = 'Bounded_Pareto') -> Optional[pd.DataFrame]:
+    """Load baseline (non-dynamic) single-distribution softrandom data."""
+    folder = f"{dist_type}_softrandom_result"
+    base_dir = os.path.join(ALGORITHM_RESULT_PATH, f"{algorithm}_result", folder)
+    if not os.path.exists(base_dir):
+        return None
+
+    all_data = []
+    for round_num in range(1, 10):
+        fname = f"{folder}_{algorithm}_{round_num}.csv"
+        fpath = os.path.join(base_dir, fname)
+        if os.path.exists(fpath):
+            try:
+                all_data.append(pd.read_csv(fpath))
+            except:
+                pass
+
+    if not all_data:
+        return None
+
+    combined = pd.concat(all_data, ignore_index=True)
+    l2_col = f'{algorithm}_L2_norm_flow_time'
+    if l2_col not in combined.columns:
+        return None
+
+    result = combined.groupby('frequency')[l2_col].mean().reset_index()
+    result = result.rename(columns={l2_col: 'L2_norm'})
+    return result
+
+
+# ============================================================================
 # §4.4 LOOKBACK SENSITIVITY FIGURES
 # ============================================================================
 def generate_lookback_sensitivity_figures(batch_size: int = DEFAULT_BATCH_SIZE):
     """
-    §4.4 Lookback Sensitivity: sweep k ∈ {1, 2, 4, 8, 16, all}
-    Fixed BP-H262144, ρ=1.00, B=batch_size.
-    One figure per algorithm showing L2-norm vs arrival rate for each k.
+    §4.4 Lookback Sensitivity: sweep k in {1, 2, 4, 8, 16, all(0)}
+    Fixed B=batch_size, using Bounded Pareto softrandom data.
+    X-axis: coherence time, Y-axis: L2-norm, one line per k.
+    One figure per algorithm.
     """
     setup_plot_style()
     output_dir = os.path.join(OUTPUT_PATH, "sec4_lookback_sensitivity")
@@ -1554,20 +1675,13 @@ def generate_lookback_sensitivity_figures(batch_size: int = DEFAULT_BATCH_SIZE):
     k_markers = {1: 'o', 2: 's', 4: '^', 8: 'D', 16: 'v', 0: 'p'}
     k_labels = {1: '$k=1$', 2: '$k=2$', 4: '$k=4$', 8: '$k=8$', 16: '$k=16$', 0: '$k=\\mathrm{all}$'}
 
-    # Fixed config: BP-H262144
-    target_H = 262144
-    bp_config = next((c for c in BP_CONFIGS if c['H'] == target_H), BP_CONFIGS[-1])
-
     for algo in DYNAMIC_ALGORITHMS.keys():
         fig, ax = plt.subplots(figsize=(11, 7))
         has_data = False
 
         for k_val in k_values:
-            df = load_dynamic_l2norm(algo, k_val, batch_size)
+            df = load_dynamic_softrandom_single_dist(algo, batch_size, k_val)
             if df is None:
-                continue
-            df_filtered = filter_bp(df, bp_config['H'])
-            if len(df_filtered) == 0:
                 continue
 
             has_data = True
@@ -1575,7 +1689,8 @@ def generate_lookback_sensitivity_figures(batch_size: int = DEFAULT_BATCH_SIZE):
             marker = k_markers.get(k_val, 'o')
             label = k_labels.get(k_val, f'$k={k_val}$')
 
-            ax.plot(df_filtered['arrival_rate'], df_filtered['L2_norm'],
+            df_sorted = df.sort_values('frequency')
+            ax.plot(df_sorted['frequency'], df_sorted['L2_norm'],
                     marker=marker, color=color,
                     linestyle='-', linewidth=2.5, markersize=9,
                     markerfacecolor=color, markeredgecolor='black', markeredgewidth=0.8,
@@ -1586,20 +1701,23 @@ def generate_lookback_sensitivity_figures(batch_size: int = DEFAULT_BATCH_SIZE):
             logger.warning(f"No lookback sensitivity data for {algo}")
             continue
 
-        ax.set_xlabel('Mean Inter-arrival Time', fontweight='bold', fontsize=12)
+        ax.set_xlabel('Coherence Time', fontweight='bold', fontsize=12)
         ax.set_ylabel('$\\ell_2$-Norm Flow Time', fontweight='bold', fontsize=12)
-        ax.set_title(f'{algo} Lookback Sensitivity ($B={batch_size}$)\n{bp_config["title"]}',
+        ax.set_title(f'{algo} Lookback Sensitivity ($B={batch_size}$)',
                      fontweight='bold', fontsize=13)
-        ax.legend(loc='upper right', framealpha=0.95, fontsize=10, edgecolor='black')
+        ax.legend(loc='best', framealpha=0.95, fontsize=10, edgecolor='black')
         ax.grid(True, alpha=0.3)
         ax.set_yscale('log')
-        ax.set_xticks(X_TICKS)
-        ax.set_xlim(X_LIMITS)
+        ax.set_xscale('log', base=2)
+        x_ticks = [2**i for i in range(1, 17)]
+        ax.set_xticks(x_ticks)
+        ax.set_xticklabels([f'$2^{{{i}}}$' for i in range(1, 17)])
+        ax.set_xlim(2, 2**16)
 
         plt.tight_layout()
-        plt.savefig(os.path.join(output_dir, f"fig_lookback_sensitivity_{algo}_B{batch_size}.pdf"), dpi=300)
+        plt.savefig(os.path.join(output_dir, f"fig_lookback_sensitivity_{algo}.pdf"), dpi=300)
         plt.close()
-        logger.info(f"Generated: fig_lookback_sensitivity_{algo}_B{batch_size}.pdf")
+        logger.info(f"Generated: fig_lookback_sensitivity_{algo}.pdf")
 
 
 # ============================================================================
@@ -1607,9 +1725,10 @@ def generate_lookback_sensitivity_figures(batch_size: int = DEFAULT_BATCH_SIZE):
 # ============================================================================
 def generate_batch_size_sensitivity_figures(fixed_k: int = 8):
     """
-    §4.5 Batch Size Sensitivity: sweep B ∈ {25, 50, 100, 200, 500}
-    Fixed k=fixed_k, BP-H262144.
-    One figure per algorithm showing L2-norm vs arrival rate for each B.
+    §4.5 Batch Size Sensitivity: sweep B in {25, 50, 100, 200, 500}
+    Fixed k=fixed_k, using Bounded Pareto softrandom data.
+    X-axis: coherence time, Y-axis: L2-norm, one line per B.
+    One figure per algorithm.
     """
     setup_plot_style()
     output_dir = os.path.join(OUTPUT_PATH, "sec4_batch_size_sensitivity")
@@ -1617,31 +1736,24 @@ def generate_batch_size_sensitivity_figures(fixed_k: int = 8):
 
     logger.info("\n=== Generating §4.5 Batch Size Sensitivity Figures ===")
 
-    batch_sizes = [25, 50, 100, 200, 500]
     b_colors = {25: '#1f77b4', 50: '#ff7f0e', 100: '#2ca02c', 200: '#d62728', 500: '#9467bd'}
     b_markers = {25: 'o', 50: 's', 100: '^', 200: 'D', 500: 'v'}
-
-    # Fixed config: BP-H262144
-    target_H = 262144
-    bp_config = next((c for c in BP_CONFIGS if c['H'] == target_H), BP_CONFIGS[-1])
 
     for algo in DYNAMIC_ALGORITHMS.keys():
         fig, ax = plt.subplots(figsize=(11, 7))
         has_data = False
 
-        for B in batch_sizes:
-            df = load_dynamic_l2norm(algo, fixed_k, B)
+        for B in BATCH_SIZES:
+            df = load_dynamic_softrandom_single_dist(algo, B, fixed_k)
             if df is None:
-                continue
-            df_filtered = filter_bp(df, bp_config['H'])
-            if len(df_filtered) == 0:
                 continue
 
             has_data = True
             color = b_colors.get(B, 'gray')
             marker = b_markers.get(B, 'o')
 
-            ax.plot(df_filtered['arrival_rate'], df_filtered['L2_norm'],
+            df_sorted = df.sort_values('frequency')
+            ax.plot(df_sorted['frequency'], df_sorted['L2_norm'],
                     marker=marker, color=color,
                     linestyle='-', linewidth=2.5, markersize=9,
                     markerfacecolor=color, markeredgecolor='black', markeredgewidth=0.8,
@@ -1652,20 +1764,222 @@ def generate_batch_size_sensitivity_figures(fixed_k: int = 8):
             logger.warning(f"No batch size sensitivity data for {algo}")
             continue
 
-        ax.set_xlabel('Mean Inter-arrival Time', fontweight='bold', fontsize=12)
+        ax.set_xlabel('Coherence Time', fontweight='bold', fontsize=12)
         ax.set_ylabel('$\\ell_2$-Norm Flow Time', fontweight='bold', fontsize=12)
-        ax.set_title(f'{algo} Batch Size Sensitivity ($k={fixed_k}$)\n{bp_config["title"]}',
+        ax.set_title(f'{algo} Batch Size Sensitivity ($k={fixed_k}$)',
                      fontweight='bold', fontsize=13)
-        ax.legend(loc='upper right', framealpha=0.95, fontsize=10, edgecolor='black')
+        ax.legend(loc='best', framealpha=0.95, fontsize=10, edgecolor='black')
         ax.grid(True, alpha=0.3)
         ax.set_yscale('log')
-        ax.set_xticks(X_TICKS)
-        ax.set_xlim(X_LIMITS)
+        ax.set_xscale('log', base=2)
+        x_ticks = [2**i for i in range(1, 17)]
+        ax.set_xticks(x_ticks)
+        ax.set_xticklabels([f'$2^{{{i}}}$' for i in range(1, 17)])
+        ax.set_xlim(2, 2**16)
 
         plt.tight_layout()
-        plt.savefig(os.path.join(output_dir, f"fig_batch_size_sensitivity_{algo}_k{fixed_k}.pdf"), dpi=300)
+        plt.savefig(os.path.join(output_dir, f"fig_batch_sensitivity_{algo}.pdf"), dpi=300)
         plt.close()
-        logger.info(f"Generated: fig_batch_size_sensitivity_{algo}_k{fixed_k}.pdf")
+        logger.info(f"Generated: fig_batch_sensitivity_{algo}.pdf")
+
+
+# ============================================================================
+# §4.6 TIME-VARYING WORKLOAD FIGURES
+# ============================================================================
+TIMEVARYING_RESULT_PATH = os.path.join(ALGORITHM_RESULT_PATH, "time_varying_result")
+
+def load_timevarying_baseline(algorithm: str) -> Optional[pd.DataFrame]:
+    """
+    Load time-varying workload baseline results.
+    Expected file: time_varying_result/{algo}_time_varying_{round}.csv
+    Columns: job_index, {algo}_L2_norm_flow_time
+    Returns DataFrame with columns ['job_index', 'L2_norm'].
+    """
+    base_dir = os.path.join(ALGORITHM_RESULT_PATH, f"{algorithm}_result", "time_varying_result")
+    if not os.path.exists(base_dir):
+        return None
+
+    all_data = []
+    for round_num in range(1, 10):
+        for pat in [f"{algorithm}_time_varying_{round_num}.csv",
+                    f"time_varying_{algorithm}_{round_num}.csv"]:
+            fpath = os.path.join(base_dir, pat)
+            if os.path.exists(fpath):
+                try:
+                    all_data.append(pd.read_csv(fpath))
+                except:
+                    pass
+                break
+
+    if not all_data:
+        return None
+
+    combined = pd.concat(all_data, ignore_index=True)
+    l2_col = f'{algorithm}_L2_norm_flow_time'
+    if l2_col not in combined.columns:
+        l2_cols = [c for c in combined.columns if 'L2_norm' in c]
+        if l2_cols:
+            l2_col = l2_cols[0]
+        else:
+            return None
+
+    idx_col = 'job_index' if 'job_index' in combined.columns else 'batch_index'
+    if idx_col not in combined.columns:
+        # Use row index
+        combined[idx_col] = range(len(combined))
+
+    result = combined.groupby(idx_col)[l2_col].mean().reset_index()
+    result = result.rename(columns={idx_col: 'index', l2_col: 'L2_norm'})
+    return result
+
+
+def load_timevarying_dynamic(algorithm: str, k: int, batch_size: int = DEFAULT_BATCH_SIZE) -> Optional[pd.DataFrame]:
+    """
+    Load time-varying workload dynamic algorithm results.
+    Expected file: time_varying_result/{algo}_time_varying_njobs{B}_{round}.csv
+    Columns: job_index/batch_index, {algo}_njobs{B}_mode{k}_L2_norm_flow_time
+    """
+    base_dir = os.path.join(ALGORITHM_RESULT_PATH, f"{algorithm}_result", "time_varying_result")
+    if not os.path.exists(base_dir):
+        return None
+
+    all_data = []
+    for round_num in range(1, 10):
+        for pat in [f"{algorithm}_time_varying_njobs{batch_size}_{round_num}.csv",
+                    f"time_varying_{algorithm}_njobs{batch_size}_{round_num}.csv"]:
+            fpath = os.path.join(base_dir, pat)
+            if os.path.exists(fpath):
+                try:
+                    all_data.append(pd.read_csv(fpath))
+                except:
+                    pass
+                break
+
+    if not all_data:
+        return None
+
+    combined = pd.concat(all_data, ignore_index=True)
+
+    l2_col = None
+    for p in [f'{algorithm}_njobs{batch_size}_mode{k}_L2_norm_flow_time',
+              f'{algorithm}_mode{k}_L2_norm_flow_time']:
+        if p in combined.columns:
+            l2_col = p
+            break
+    if l2_col is None:
+        l2_cols = [c for c in combined.columns if 'L2_norm' in c and f'mode{k}' in c]
+        if l2_cols:
+            l2_col = l2_cols[0]
+        else:
+            return None
+
+    idx_col = 'job_index' if 'job_index' in combined.columns else 'batch_index'
+    if idx_col not in combined.columns:
+        combined[idx_col] = range(len(combined))
+
+    result = combined.groupby(idx_col)[l2_col].mean().reset_index()
+    result = result.rename(columns={idx_col: 'index', l2_col: 'L2_norm'})
+    return result
+
+
+def generate_timevarying_figures(common_k: int, batch_size: int = DEFAULT_BATCH_SIZE):
+    """
+    §4.6 Time-Varying Workload: piecewise-stationary distribution.
+    First 5,000 jobs: BP-H64, Last 5,000 jobs: BP-H262144.
+
+    Generates:
+      - fig_timevarying_l2norm_clairvoyant.pdf
+        (Dynamic, Dynamic_BAL vs SRPT, FCFS, BAL, RR)
+      - fig_timevarying_l2norm_nonclairvoyant.pdf
+        (RFDynamic vs RMLF, MLFQ, SETF, RR)
+    """
+    setup_plot_style()
+    output_dir = os.path.join(OUTPUT_PATH, "sec4_timevarying")
+    os.makedirs(output_dir, exist_ok=True)
+
+    logger.info("\n=== Generating §4.6 Time-Varying Workload Figures ===")
+
+    switch_point = 5000  # job index where distribution changes
+
+    # --- Clairvoyant figure ---
+    fig, ax = plt.subplots(figsize=(12, 7))
+    has_data = False
+
+    # Baselines
+    for algo in CLAIRVOYANT_BASELINES:
+        df = load_timevarying_baseline(algo)
+        if df is not None and len(df) > 0:
+            has_data = True
+            ax.plot(df['index'], df['L2_norm'], marker=MARKERS[algo],
+                    color=COLORS[algo], label=algo, zorder=1, markevery=max(1, len(df)//20),
+                    **get_secondary_style())
+
+    # Our algorithms
+    for algo in ['Dynamic', 'Dynamic_BAL']:
+        df = load_timevarying_dynamic(algo, common_k, batch_size)
+        if df is not None and len(df) > 0:
+            has_data = True
+            ax.plot(df['index'], df['L2_norm'], marker=MARKERS[algo],
+                    color=COLORS[algo], label=algo, zorder=10, markevery=max(1, len(df)//20),
+                    **get_our_algo_style(COLORS[algo]))
+
+    if has_data:
+        ax.axvline(x=switch_point, color='gray', linestyle=':', linewidth=2, alpha=0.7,
+                   label='Distribution switch')
+        ax.set_xlabel('Job Index', fontweight='bold', fontsize=12)
+        ax.set_ylabel('$\\ell_2$-Norm Flow Time', fontweight='bold', fontsize=12)
+        ax.set_title('Clairvoyant Time-Varying Workload\n'
+                     'BP-$H=2^6$ (first 5k) $\\rightarrow$ BP-$H=2^{18}$ (last 5k)',
+                     fontweight='bold', fontsize=13)
+        ax.legend(loc='best', framealpha=0.95, fontsize=10, edgecolor='black')
+        ax.grid(True, alpha=0.3)
+        ax.set_yscale('log')
+        plt.tight_layout()
+        plt.savefig(os.path.join(output_dir, "fig_timevarying_l2norm_clairvoyant.pdf"), dpi=300)
+        logger.info("Generated: fig_timevarying_l2norm_clairvoyant.pdf")
+    else:
+        logger.warning("No clairvoyant time-varying data found. "
+                       "Run time-varying experiments first.")
+    plt.close()
+
+    # --- Non-clairvoyant figure ---
+    fig, ax = plt.subplots(figsize=(12, 7))
+    has_data = False
+
+    for algo in NON_CLAIRVOYANT_BASELINES:
+        df = load_timevarying_baseline(algo)
+        if df is not None and len(df) > 0:
+            has_data = True
+            ax.plot(df['index'], df['L2_norm'], marker=MARKERS[algo],
+                    color=COLORS[algo], label=algo, zorder=1, markevery=max(1, len(df)//20),
+                    **get_secondary_style())
+
+    df = load_timevarying_dynamic('RFDynamic', common_k, batch_size)
+    if df is not None and len(df) > 0:
+        has_data = True
+        ax.plot(df['index'], df['L2_norm'], marker=MARKERS['RFDynamic'],
+                color=COLORS['RFDynamic'], label='RFDynamic', zorder=10,
+                markevery=max(1, len(df)//20),
+                **get_our_algo_style(COLORS['RFDynamic']))
+
+    if has_data:
+        ax.axvline(x=switch_point, color='gray', linestyle=':', linewidth=2, alpha=0.7,
+                   label='Distribution switch')
+        ax.set_xlabel('Job Index', fontweight='bold', fontsize=12)
+        ax.set_ylabel('$\\ell_2$-Norm Flow Time', fontweight='bold', fontsize=12)
+        ax.set_title('Non-Clairvoyant Time-Varying Workload\n'
+                     'BP-$H=2^6$ (first 5k) $\\rightarrow$ BP-$H=2^{18}$ (last 5k)',
+                     fontweight='bold', fontsize=13)
+        ax.legend(loc='best', framealpha=0.95, fontsize=10, edgecolor='black')
+        ax.grid(True, alpha=0.3)
+        ax.set_yscale('log')
+        plt.tight_layout()
+        plt.savefig(os.path.join(output_dir, "fig_timevarying_l2norm_nonclairvoyant.pdf"), dpi=300)
+        logger.info("Generated: fig_timevarying_l2norm_nonclairvoyant.pdf")
+    else:
+        logger.warning("No non-clairvoyant time-varying data found. "
+                       "Run time-varying experiments first.")
+    plt.close()
 
 
 # ============================================================================
@@ -1720,14 +2034,19 @@ def main():
 
     # Step 8: §4.5 Batch Size Sensitivity
     logger.info("\n=== §4.5 Batch Size Sensitivity Figures ===")
-    generate_batch_size_sensitivity_figures(fixed_k=8)
+    generate_batch_size_sensitivity_figures(fixed_k=common_k)
+
+    # Step 9: §4.6 Time-Varying Workload
+    logger.info("\n=== §4.6 Time-Varying Workload Figures ===")
+    generate_timevarying_figures(common_k, args.batch_size)
 
     # Summary
     logger.info("\n" + "=" * 70)
     logger.info(f"All figures generated using common k={common_k}, B={args.batch_size}")
     for subdir in ['sec4_algorithm_selection', 'sec4_lookback_comparison_softrandom',
                     'sec4_l2norm_avg30', 'sec4_l2norm_softrandom',
-                    'sec4_lookback_sensitivity', 'sec4_batch_size_sensitivity', 'figures']:
+                    'sec4_lookback_sensitivity', 'sec4_batch_size_sensitivity',
+                    'sec4_timevarying', 'figures']:
         path = os.path.join(OUTPUT_PATH, subdir)
         if os.path.exists(path):
             count = len([f for f in os.listdir(path) if f.endswith('.pdf')])

@@ -16,7 +16,7 @@ struct BALResult {
 };
 
 // BAL implementation using optimized selector
-inline BALResult Bal(std::vector<Job> jobs, double starvation_threshold) {
+inline BALResult Bal(std::vector<Job>& jobs, double starvation_threshold) {
     if (jobs.empty()) {
         return {0.0, 0.0};
     }

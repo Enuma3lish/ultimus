@@ -31,7 +31,7 @@ struct SETFJobComparator {
     }
 };
 
-inline SETFResult Setf(std::vector<Job> jobs) {
+inline SETFResult Setf(std::vector<Job>& jobs) {
     int n_jobs = jobs.size();
     if (n_jobs == 0) {
         return {0.0, 0.0, 0.0};

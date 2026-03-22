@@ -9,7 +9,7 @@
 #include "process_fix_combination_folders.h"
 
 // Wrapper function for BAL that calculates starvation threshold automatically
-BALResult BalWrapper(std::vector<Job> jobs) {
+BALResult BalWrapper(std::vector<Job>& jobs) {
     int njob = jobs.size();
     double starvation_threshold = pow(njob, 2.0/3.0);
     return Bal(jobs, starvation_threshold);
