@@ -1347,12 +1347,14 @@ def load_combination_h_duration_data(analysis_path: str, dist_type: str) -> Dict
                 continue
 
             combined = pd.concat(all_dfs, ignore_index=True)
-            if 'BAL_longest_H_L2_norm' not in combined.columns:
+            if 'BAL_longest_H_L2_norm' not in combined.columns or 'BAL_L2_norm_flow_time' not in combined.columns:
                 continue
 
-            avg = combined.groupby('frequency')['BAL_longest_H_L2_norm'].mean().reset_index()
+            combined['Longest_H_Ratio'] = (combined['BAL_longest_H_L2_norm'] / combined['BAL_L2_norm_flow_time']) * 100
+
+            avg = combined.groupby('frequency')['Longest_H_Ratio'].mean().reset_index()
             avg = avg.rename(columns={'frequency': 'freq',
-                                      'BAL_longest_H_L2_norm': 'percentage'})
+                                      'Longest_H_Ratio': 'percentage'})
             avg = avg.sort_values('freq')
 
             if len(avg) > 0:

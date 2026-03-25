@@ -1,0 +1,90 @@
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/arima/model.py:218:        unused = ['measurement_error', 'time_varying_regression',
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/sarimax.py:71:    time_varying_regression : bool, optional
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/sarimax.py:79:        `time_varying_regression` is True, this must be set to False. Default
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/sarimax.py:132:    time_varying_regression : bool
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/sarimax.py:320:                 measurement_error=False, time_varying_regression=False,
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/sarimax.py:344:        self.time_varying_regression = time_varying_regression
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/sarimax.py:355:        if self.time_varying_regression and self.mle_regression:
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/sarimax.py:429:            if self.time_varying_regression:
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/sarimax.py:465:        if self.state_regression and self.time_varying_regression:
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/sarimax.py:536:                            'measurement_error', 'time_varying_regression',
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/sarimax.py:640:        if self.state_regression and self.time_varying_regression:
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/sarimax.py:790:        if not (self.state_regression and self.time_varying_regression):
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/sarimax.py:1015:        if self.state_regression and self.time_varying_regression:
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/sarimax.py:1153:                self.state_regression and self.time_varying_regression) else 0,
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/sarimax.py:1256:        if self.state_regression and self.time_varying_regression:
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/sarimax.py:1375:        if self.state_regression and self.time_varying_regression:
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/sarimax.py:1479:        if self.state_regression and self.time_varying_regression:
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/sarimax.py:1572:        if self.state_regression and self.time_varying_regression:
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/sarimax.py:1703:            if self.state_regression and self.time_varying_regression:
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/sarimax.py:1708:    def _get_extension_time_varying_matrices(
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/sarimax.py:1821:            'time_varying_regression': self.model.time_varying_regression,
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_impulse_responses.py:342:def test_time_varying_ssm():
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_impulse_responses.py:423:def test_time_varying_in_sample(reset_randomstate):
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_impulse_responses.py:462:def test_time_varying_out_of_sample(reset_randomstate):
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_impulse_responses.py:514:def test_time_varying_in_sample_anchored(reset_randomstate):
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_impulse_responses.py:557:def test_time_varying_out_of_sample_anchored(reset_randomstate):
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_impulse_responses.py:609:def test_time_varying_out_of_sample_anchored_end(reset_randomstate):
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_mlemodel.py:60:        time_varying_regression=True, mle_regression=False,
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_mlemodel.py:106:def test_init_matrices_time_varying():
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_simulate.py:707:def test_sarimax_time_varying_trend_noshocks():
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_simulate.py:743:def test_sarimax_simple_differencing_time_varying_trend_noshocks():
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_simulate.py:781:def test_sarimax_time_varying_trend_shocks(reset_randomstate):
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_simulate.py:812:def test_sarimax_simple_differencing_time_varying_trend_shocks(
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_simulate.py:847:def test_sarimax_time_varying_exog_noshocks():
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_simulate.py:885:def test_sarimax_simple_differencing_time_varying_exog_noshocks():
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_simulate.py:924:def test_sarimax_time_varying_exog_shocks(reset_randomstate):
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_simulate.py:956:def test_sarimax_simple_differencing_time_varying_exog_shocks(
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_simulate.py:1059:def test_unobserved_components_end_time_varying_exog_noshocks():
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_simulate.py:1096:def test_unobserved_components_end_time_varying_exog_shocks(reset_randomstate):
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_simulate.py:1196:def test_varmax_end_time_varying_trend_noshocks():
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_simulate.py:1240:def test_varmax_end_time_varying_trend_shocks(reset_randomstate):
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_simulate.py:1279:def test_varmax_end_time_varying_exog_noshocks():
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_simulate.py:1324:def test_varmax_end_time_varying_exog_shocks(reset_randomstate):
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_simulate.py:1449:def test_dynamic_factor_end_time_varying_exog_noshocks():
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_simulate.py:1493:def test_dynamic_factor_end_time_varying_exog_shocks(reset_randomstate):
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_simulate.py:1756:def test_time_varying(reset_randomstate):
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_simulate.py:1761:def test_time_varying_obs_cov(reset_randomstate):
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_simulate.py:1775:def test_time_varying_state_cov(reset_randomstate):
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_simulate.py:1789:def test_time_varying_selection(reset_randomstate):
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_news.py:387:def test_sarimax_time_varying(revisions, updates, which):
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_news.py:447:def test_unobserved_components_time_varying(revisions, updates):
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_news.py:627:def test_varmax_time_varying(revisions, updates, which):
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_news.py:694:def test_dynamic_factor_time_varying(revisions, updates):
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_sarimax.py:1966:def test_simple_time_varying():
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_sarimax.py:1975:        time_varying_regression=True,
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_sarimax.py:1992:def test_invalid_time_varying():
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_sarimax.py:1998:        time_varying_regression=True)
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_sarimax.py:2207:                          mle_regression=False, time_varying_regression=True)
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_sarimax.py:2225:    time_varying_regressions = [True, False]
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_sarimax.py:2230:             'time_varying_regression', 'simple_differencing']
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_sarimax.py:2233:                                     time_varying_regressions,
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_sarimax.py:2236:        if kwargs.get('time_varying_regression', False):
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_sarimax.py:2268:        if kwargs['time_varying_regression'] and kwargs['exog'] is not None:
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_sarimax.py:2283:        if kwargs['measurement_error'] or kwargs['time_varying_regression']:
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_sarimax.py:2319:        # when time_varying_regression is True
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_sarimax.py:2331:                    kwargs['time_varying_regression']):
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_sarimax.py:2351:                    kwargs['time_varying_regression']):
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_sarimax.py:2450:        'state_regression', 'time_varying_regression', 'simple_differencing',
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_sarimax.py:2485:    time_varying_regressions = [True, False]
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_sarimax.py:2490:             'time_varying_regression', 'simple_differencing']
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_sarimax.py:2493:                                     time_varying_regressions,
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_sarimax.py:2496:        if kwargs.get('time_varying_regression', False):
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_univariate.py:684:def test_time_varying_transition():
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_multivariate_switch_univariate.py:432:def test_time_varying_model(reset_randomstate):
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/tests/test_representation.py:737:def test_init_matrices_time_varying():
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/mlemodel.py:1791:    def _get_extension_time_varying_matrices(
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/mlemodel.py:1991:            kwargs = self._get_extension_time_varying_matrices(
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/mlemodel.py:2197:            kwargs = self._get_extension_time_varying_matrices(
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/mlemodel.py:3356:            kwargs = self.model._get_extension_time_varying_matrices(
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/mlemodel.py:4042:        time_varying = not (previous.filter_results.time_invariant or
+./.venv/lib/python3.13/site-packages/statsmodels/tsa/statespace/mlemodel.py:4044:        if time_varying and end >= updated.nobs:
+./compare_plotter.py:1791:TIMEVARYING_RESULT_PATH = os.path.join(ALGORITHM_RESULT_PATH, "time_varying_result")
+./compare_plotter.py:1796:    Expected file: time_varying_result/{algo}_time_varying_{round}.csv
+./compare_plotter.py:1800:    base_dir = os.path.join(ALGORITHM_RESULT_PATH, f"{algorithm}_result", "time_varying_result")
+./compare_plotter.py:1806:        for pat in [f"{algorithm}_time_varying_{round_num}.csv",
+./compare_plotter.py:1807:                    f"time_varying_{algorithm}_{round_num}.csv"]:
+./compare_plotter.py:1841:    Expected file: time_varying_result/{algo}_time_varying_njobs{B}_{round}.csv
+./compare_plotter.py:1844:    base_dir = os.path.join(ALGORITHM_RESULT_PATH, f"{algorithm}_result", "time_varying_result")
+./compare_plotter.py:1850:        for pat in [f"{algorithm}_time_varying_njobs{batch_size}_{round_num}.csv",
+./compare_plotter.py:1851:                    f"time_varying_{algorithm}_njobs{batch_size}_{round_num}.csv"]:
