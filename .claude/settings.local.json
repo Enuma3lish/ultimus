@@ -35,7 +35,12 @@
       "Bash(grep -r \"Dynamic\\\\|Dynamic_BAL\\\\|RFDynamic\" /home/melowu/Work/ultimus/Design_Py_version/*.py)",
       "Bash(xargs -I {} basename {})",
       "Bash(grep -r \"sensitivity\\\\|time_varying\\\\|timevarying\" /home/melowu/Work/ultimus --include=*.py --include=*.sh)",
-      "Bash(grep -r \"lookback\\\\|batch_size\" /home/melowu/Work/ultimus/*.py)"
+      "Bash(grep -r \"lookback\\\\|batch_size\" /home/melowu/Work/ultimus/*.py)",
+      "Bash(grep -n \"def DYNAMIC\\\\|def RFdynamic\\\\|modes\\\\|checkpoint\\\\|nJobsPerRound\" /Users/mailungwu/Desktop/ultimus/Design_Py_version/*.py)",
+      "Bash(grep -A 5 \"mode.*1.*2.*3.*4.*5.*6\\\\|six modes\\\\|6 modes\" /Users/mailungwu/Desktop/ultimus/Design_Py_version/*.py)",
+      "Bash(grep -r \"soft.*random\\\\|mixed.*distribution\\\\|combination\" /Users/mailungwu/Desktop/ultimus/Design_Py_version/*.py)",
+      "Read(//opt/homebrew/bin/**)",
+      "Read(//usr/local/bin/**)"
     ],
     "deny": [],
     "ask": []

@@ -1987,6 +1987,155 @@ def generate_timevarying_figures(common_k: int, batch_size: int = DEFAULT_BATCH_
 # ============================================================================
 # MAIN
 # ============================================================================
+# =============================================================================
+# §4.6 Distribution Shift Experiment
+# =============================================================================
+
+def plot_distribution_shift():
+    """
+    Plot per-batch L2-norm over time for the distribution shift experiment.
+    Reads algorithm_result/distribution_shift_result/per_batch_l2.csv
+    and algorithm_result/distribution_shift_result/algorithm_selection.csv.
+    Generates clairvoyant, non-clairvoyant, and algorithm-selection figures.
+    """
+    setup_plot_style()
+
+    shift_dir = os.path.join(ALGORITHM_RESULT_PATH, "distribution_shift_result")
+    l2_csv = os.path.join(shift_dir, "per_batch_l2.csv")
+    sel_csv = os.path.join(shift_dir, "algorithm_selection.csv")
+
+    if not os.path.exists(l2_csv):
+        logger.warning(f"Distribution shift CSV not found: {l2_csv}")
+        return
+
+    df = pd.read_csv(l2_csv)
+    out_dir = os.path.join(OUTPUT_PATH, "sec4_distribution_shift")
+    os.makedirs(out_dir, exist_ok=True)
+
+    batches = df['batch'].values
+
+    # ---- Helper to draw vertical shift line ----
+    def add_shift_line(ax):
+        ax.axvline(x=50, color='gray', linestyle=':', linewidth=2, alpha=0.7)
+        ymin, ymax = ax.get_ylim()
+        ax.text(50.5, ymax * 0.85, r'BP-$H{=}2^6$ $\rightarrow$ BP-$H{=}2^{18}$',
+                fontsize=9, color='gray', ha='left', va='top',
+                bbox=dict(boxstyle='round,pad=0.2', facecolor='white', alpha=0.8, edgecolor='gray'))
+
+    # ========== Clairvoyant Plot ==========
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    # Our algorithms (thick solid)
+    for algo in ['Dynamic', 'Dynamic_BAL']:
+        if algo in df.columns:
+            color = COLORS[algo]
+            ax.plot(batches, df[algo], marker=MARKERS[algo], color=color,
+                    label=algo, zorder=10, markevery=5, **get_our_algo_style(color))
+
+    # Primary baseline SRPT
+    if 'SRPT' in df.columns:
+        ax.plot(batches, df['SRPT'], marker=MARKERS['SRPT'], color=COLORS['SRPT'],
+                label='SRPT', zorder=5, markevery=5,
+                markerfacecolor=COLORS['SRPT'], **get_primary_style())
+
+    # Secondary baselines
+    for algo in ['BAL', 'FCFS', 'SJF', 'RR']:
+        if algo in df.columns:
+            ax.plot(batches, df[algo], marker=MARKERS[algo], color=COLORS[algo],
+                    label=algo, zorder=1, markevery=5,
+                    markeredgecolor=COLORS[algo], **get_secondary_style())
+
+    ax.set_xlabel('Batch Index', fontweight='bold', fontsize=12)
+    ax.set_ylabel(r'Per-Batch $\ell_2$-Norm of Flow Time', fontweight='bold', fontsize=12)
+    ax.set_title(r'Clairvoyant: Distribution Shift (BP-$H{=}2^6 \rightarrow$ BP-$H{=}2^{18}$)',
+                 fontweight='bold', fontsize=13)
+    ax.set_yscale('log')
+    ax.legend(loc='upper left', framealpha=0.95, fontsize=10, edgecolor='black', ncol=2)
+    ax.grid(True, alpha=0.3)
+    add_shift_line(ax)
+
+    plt.tight_layout()
+    fig.savefig(os.path.join(out_dir, 'clairvoyant_shift.pdf'), dpi=300, bbox_inches='tight')
+    plt.close(fig)
+    logger.info(f"  Saved clairvoyant_shift.pdf")
+
+    # ========== Non-Clairvoyant Plot ==========
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    # Our algorithm
+    if 'RFDynamic' in df.columns:
+        color = COLORS['RFDynamic']
+        ax.plot(batches, df['RFDynamic'], marker=MARKERS['RFDynamic'], color=color,
+                label='RFDynamic', zorder=10, markevery=5, **get_our_algo_style(color))
+
+    # Primary baseline RMLF
+    if 'RMLF' in df.columns:
+        ax.plot(batches, df['RMLF'], marker=MARKERS['RMLF'], color=COLORS['RMLF'],
+                label='RMLF', zorder=5, markevery=5,
+                markerfacecolor=COLORS['RMLF'], **get_primary_style())
+
+    # Secondary baselines
+    for algo in ['MLFQ', 'SETF', 'FCFS', 'RR']:
+        if algo in df.columns:
+            ax.plot(batches, df[algo], marker=MARKERS[algo], color=COLORS[algo],
+                    label=algo, zorder=1, markevery=5,
+                    markeredgecolor=COLORS[algo], **get_secondary_style())
+
+    ax.set_xlabel('Batch Index', fontweight='bold', fontsize=12)
+    ax.set_ylabel(r'Per-Batch $\ell_2$-Norm of Flow Time', fontweight='bold', fontsize=12)
+    ax.set_title(r'Non-Clairvoyant: Distribution Shift (BP-$H{=}2^6 \rightarrow$ BP-$H{=}2^{18}$)',
+                 fontweight='bold', fontsize=13)
+    ax.set_yscale('log')
+    ax.legend(loc='upper left', framealpha=0.95, fontsize=10, edgecolor='black', ncol=2)
+    ax.grid(True, alpha=0.3)
+    add_shift_line(ax)
+
+    plt.tight_layout()
+    fig.savefig(os.path.join(out_dir, 'non_clairvoyant_shift.pdf'), dpi=300, bbox_inches='tight')
+    plt.close(fig)
+    logger.info(f"  Saved non_clairvoyant_shift.pdf")
+
+    # ========== Algorithm Selection Plot ==========
+    if os.path.exists(sel_csv):
+        sel_df = pd.read_csv(sel_csv)
+        fig, axes = plt.subplots(1, 3, figsize=(18, 4), sharey=True)
+
+        algo_configs = [
+            ('Dynamic_choice', 'Dynamic', 'SRPT', COLORS['Dynamic']),
+            ('Dynamic_BAL_choice', 'Dynamic_BAL', 'BAL', COLORS['Dynamic_BAL']),
+            ('RFDynamic_choice', 'RFDynamic', 'RMLF', COLORS['RFDynamic']),
+        ]
+
+        for ax, (col, title, eff_name, color) in zip(axes, algo_configs):
+            if col not in sel_df.columns:
+                continue
+            rounds = sel_df['round'].values
+            choices = sel_df[col].values
+
+            # Convert to binary: 1 = efficiency algo, 0 = FCFS
+            binary = [1 if c == eff_name else 0 for c in choices]
+
+            ax.fill_between(rounds, binary, step='mid', alpha=0.4, color=color)
+            ax.step(rounds, binary, where='mid', color=color, linewidth=1.5)
+            ax.axvline(x=50, color='gray', linestyle=':', linewidth=2, alpha=0.7)
+            ax.set_xlabel('Round', fontweight='bold', fontsize=11)
+            ax.set_title(title, fontweight='bold', fontsize=12)
+            ax.set_yticks([0, 1])
+            ax.set_yticklabels(['FCFS', eff_name])
+            ax.set_xlim(1, len(rounds))
+            ax.grid(True, alpha=0.3, axis='x')
+
+        axes[0].set_ylabel('Selected Algorithm', fontweight='bold', fontsize=11)
+        plt.suptitle(r'Algorithm Selection Over Time (Distribution Shift at Batch 50)',
+                     fontweight='bold', fontsize=13)
+        plt.tight_layout()
+        fig.savefig(os.path.join(out_dir, 'algorithm_selection_shift.pdf'), dpi=300, bbox_inches='tight')
+        plt.close(fig)
+        logger.info(f"  Saved algorithm_selection_shift.pdf")
+
+    logger.info(f"  Distribution shift figures saved to {out_dir}/")
+
+
 def main():
     import argparse
     parser = argparse.ArgumentParser(description='Chapter 4 Figure Generator')
@@ -1994,7 +2143,14 @@ def main():
                         help=f'Batch size for experiments (default: {DEFAULT_BATCH_SIZE})')
     parser.add_argument('--lookback', '-k', type=int, default=None,
                         help='Override common best k (default: auto-detect)')
+    parser.add_argument('--distribution-shift', action='store_true',
+                        help='Generate only the distribution shift figures')
     args = parser.parse_args()
+
+    if args.distribution_shift:
+        logger.info("Generating distribution shift figures only...")
+        plot_distribution_shift()
+        return
 
     logger.info("=" * 70)
     logger.info("Chapter 4 Figure Generator - avg30 + Soft Random")
@@ -2042,13 +2198,17 @@ def main():
     logger.info("\n=== §4.6 Time-Varying Workload Figures ===")
     generate_timevarying_figures(common_k, args.batch_size)
 
+    # Step 10: §4.6 Distribution Shift
+    logger.info("\n=== §4.6 Distribution Shift Figures ===")
+    plot_distribution_shift()
+
     # Summary
     logger.info("\n" + "=" * 70)
     logger.info(f"All figures generated using common k={common_k}, B={args.batch_size}")
     for subdir in ['sec4_algorithm_selection', 'sec4_lookback_comparison_softrandom',
                     'sec4_l2norm_avg30', 'sec4_l2norm_softrandom',
                     'sec4_lookback_sensitivity', 'sec4_batch_size_sensitivity',
-                    'sec4_timevarying', 'figures']:
+                    'sec4_timevarying', 'sec4_distribution_shift', 'figures']:
         path = os.path.join(OUTPUT_PATH, subdir)
         if os.path.exists(path):
             count = len([f for f in os.listdir(path) if f.endswith('.pdf')])

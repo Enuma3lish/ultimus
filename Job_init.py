@@ -1058,6 +1058,46 @@ def combination_softrandom_job_init(num_jobs, param_set, coherence_time=1) -> Tu
 
 
 # =============================================================================
+# Distribution Shift Job Generation
+# =============================================================================
+
+def distribution_shift_job_init(num_jobs: int = 10000, avg_inter_arrival_time: int = 30) -> List[Dict]:
+    """
+    Generate a distribution-shift workload for the 4.6 experiment.
+
+    First half of jobs use BP-H64 (light tail), second half use BP-H262144
+    (heavy tail). Both halves share the same mean job size (avg_30 parameters)
+    and the same inter-arrival rate, so rho stays constant across the shift.
+
+    Args:
+        num_jobs: Total number of jobs (default 10000)
+        avg_inter_arrival_time: Mean inter-arrival time (default 30 for rho=1.0)
+
+    Returns:
+        List of job dicts with arrival_time and job_size
+    """
+    half = num_jobs // 2
+    bp_light = bp_parameter_30[0]   # L=16.772, H=64
+    bp_heavy = bp_parameter_30[4]   # L=4.073,  H=262144
+
+    # Generate job sizes: first half light-tail, second half heavy-tail
+    sizes_light = [math.ceil(s) for s in generate_job_size(bp_light, size=half)]
+    sizes_heavy = [math.ceil(s) for s in generate_job_size(bp_heavy, size=num_jobs - half)]
+    job_sizes = sizes_light + sizes_heavy
+
+    # Generate cumulative arrival times (no reset at the shift boundary)
+    samples = []
+    current_time = 0
+    for k in range(num_jobs):
+        inter_arrival = round(np.random.exponential(scale=avg_inter_arrival_time))
+        inter_arrival = max(1, inter_arrival)
+        current_time += inter_arrival
+        samples.append({"arrival_time": current_time, "job_size": job_sizes[k]})
+
+    return samples
+
+
+# =============================================================================
 # Avg Job Generation (Fixed parameters per file)
 # =============================================================================
 
@@ -1595,6 +1635,17 @@ def Save_file(num_jobs, i):
             group_results[group_key].append(result)
 
             del period_records
+
+    # ==========================================================================
+    # Generate distribution shift workload (4.6 experiment)
+    # ==========================================================================
+    shift_folder = f"data/distribution_shift_{i}"
+    os.makedirs(shift_folder, exist_ok=True)
+
+    samples = distribution_shift_job_init(num_jobs=10000, avg_inter_arrival_time=30)
+    filepath = f"{shift_folder}/shift_H64_H262144.csv"
+    Write_csv.Write_raw(filepath, samples)
+    print(f"  Generated distribution shift file in {shift_folder}")
 
     return group_results
 
