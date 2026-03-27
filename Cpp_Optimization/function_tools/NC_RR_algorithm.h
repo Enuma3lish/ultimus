@@ -8,16 +8,19 @@
 #include <cmath>
 #include "Job.h"
 
+#ifndef SCHEDULING_RESULT_DEFINED
+#define SCHEDULING_RESULT_DEFINED
 // Result structure to match your existing interface
 struct SchedulingResult {
     double avg_flow_time;
     double l2_norm_flow_time;
     double max_flow_time;
-    
+
     SchedulingResult() : avg_flow_time(0.0), l2_norm_flow_time(0.0), max_flow_time(0.0) {}
-    SchedulingResult(double avg, double l2, double max_f) 
+    SchedulingResult(double avg, double l2, double max_f)
         : avg_flow_time(avg), l2_norm_flow_time(l2), max_flow_time(max_f) {}
 };
+#endif
 
 // Non-Clairvoyant Round Robin Algorithm
 class NonClairvoyantRR {

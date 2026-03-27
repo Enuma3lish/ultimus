@@ -33,6 +33,26 @@ for algo in "${ALGORITHMS[@]}"; do
     fi
 done
 
+# Build experiments
+EXPERIMENT_DIR="${PROJECT_ROOT}/Cpp_Optimization/experiments"
+
+echo ""
+echo "=========================================="
+echo "Building experiment: distribution_shift"
+echo "=========================================="
+
+cd "${EXPERIMENT_DIR}/distribution_shift"
+mkdir -p build
+cd build
+
+if cmake .. && make -j4; then
+    echo "✓ distribution_shift built successfully"
+    chmod +x DistributionShift
+    ls -l DistributionShift
+else
+    echo "✗ distribution_shift build failed"
+fi
+
 echo ""
 echo "=========================================="
 echo "Build process complete"

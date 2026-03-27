@@ -1991,147 +1991,176 @@ def generate_timevarying_figures(common_k: int, batch_size: int = DEFAULT_BATCH_
 # §4.6 Distribution Shift Experiment
 # =============================================================================
 
+def _load_distribution_shift_data():
+    """
+    Load per-seed distribution shift CSVs (B=100, k=16).
+    Returns:
+        baselines: dict[algo_name] -> np.array shape (num_seeds, 100)
+        framework: dict[algo_name] -> np.array shape (num_seeds, 100)
+    """
+    shift_dir = os.path.join(ALGORITHM_RESULT_PATH, "distribution_shift_result")
+    seeds = range(1, 11)
+
+    baseline_algos = ['SRPT', 'FCFS', 'BAL', 'SJF', 'RR', 'RMLF', 'MLFQ', 'SETF']
+    framework_algos = ['Dynamic', 'Dynamic_BAL', 'RFDynamic']
+
+    baselines = {}
+    framework = {}
+
+    for seed in seeds:
+        bl_csv = os.path.join(shift_dir, f"seed_{seed}", "baselines", "per_batch_l2.csv")
+        if os.path.exists(bl_csv):
+            df = pd.read_csv(bl_csv)
+            for algo in baseline_algos:
+                if algo in df.columns:
+                    baselines.setdefault(algo, []).append(df[algo].values)
+
+        fw_csv = os.path.join(shift_dir, f"seed_{seed}", "B_100", "per_batch_l2.csv")
+        if os.path.exists(fw_csv):
+            df = pd.read_csv(fw_csv)
+            for algo in framework_algos:
+                if algo in df.columns:
+                    framework.setdefault(algo, []).append(df[algo].values)
+
+    for k in baselines:
+        baselines[k] = np.array(baselines[k])
+    for k in framework:
+        framework[k] = np.array(framework[k])
+
+    return baselines, framework
+
+
 def plot_distribution_shift():
     """
-    Plot per-batch L2-norm over time for the distribution shift experiment.
-    Reads algorithm_result/distribution_shift_result/per_batch_l2.csv
-    and algorithm_result/distribution_shift_result/algorithm_selection.csv.
-    Generates clairvoyant, non-clairvoyant, and algorithm-selection figures.
+    §4.6 Distribution Shift: aggregate across 10 seeds, B=100, k=16.
+    Produces 2 figures: clairvoyant + non-clairvoyant.
+    Style matches generate_timevarying_figures().
     """
     setup_plot_style()
 
-    shift_dir = os.path.join(ALGORITHM_RESULT_PATH, "distribution_shift_result")
-    l2_csv = os.path.join(shift_dir, "per_batch_l2.csv")
-    sel_csv = os.path.join(shift_dir, "algorithm_selection.csv")
+    baselines, framework = _load_distribution_shift_data()
 
-    if not os.path.exists(l2_csv):
-        logger.warning(f"Distribution shift CSV not found: {l2_csv}")
+    if not baselines and not framework:
+        logger.warning("No distribution shift data found.")
         return
 
-    df = pd.read_csv(l2_csv)
-    out_dir = os.path.join(OUTPUT_PATH, "sec4_distribution_shift")
+    out_dir = os.path.join(OUTPUT_PATH, "sec4_timevarying")
     os.makedirs(out_dir, exist_ok=True)
 
-    batches = df['batch'].values
+    EVAL_WINDOW = 100
+    switch_point = 5000
 
-    # ---- Helper to draw vertical shift line ----
-    def add_shift_line(ax):
-        ax.axvline(x=50, color='gray', linestyle=':', linewidth=2, alpha=0.7)
-        ymin, ymax = ax.get_ylim()
-        ax.text(50.5, ymax * 0.85, r'BP-$H{=}2^6$ $\rightarrow$ BP-$H{=}2^{18}$',
-                fontsize=9, color='gray', ha='left', va='top',
-                bbox=dict(boxstyle='round,pad=0.2', facecolor='white', alpha=0.8, edgecolor='gray'))
+    def make_job_index(n_batches):
+        return np.arange(1, n_batches + 1) * EVAL_WINDOW - EVAL_WINDOW // 2
 
-    # ========== Clairvoyant Plot ==========
-    fig, ax = plt.subplots(figsize=(12, 6))
-
-    # Our algorithms (thick solid)
-    for algo in ['Dynamic', 'Dynamic_BAL']:
-        if algo in df.columns:
-            color = COLORS[algo]
-            ax.plot(batches, df[algo], marker=MARKERS[algo], color=color,
-                    label=algo, zorder=10, markevery=5, **get_our_algo_style(color))
-
-    # Primary baseline SRPT
-    if 'SRPT' in df.columns:
-        ax.plot(batches, df['SRPT'], marker=MARKERS['SRPT'], color=COLORS['SRPT'],
-                label='SRPT', zorder=5, markevery=5,
-                markerfacecolor=COLORS['SRPT'], **get_primary_style())
+    # ---- Clairvoyant figure ----
+    fig, ax = plt.subplots(figsize=(12, 7))
+    has_data = False
 
     # Secondary baselines
     for algo in ['BAL', 'FCFS', 'SJF', 'RR']:
-        if algo in df.columns:
-            ax.plot(batches, df[algo], marker=MARKERS[algo], color=COLORS[algo],
-                    label=algo, zorder=1, markevery=5,
+        if algo in baselines and len(baselines[algo]) > 0:
+            mean = np.mean(baselines[algo], axis=0)
+            x = make_job_index(len(mean))
+            ax.plot(x, mean, marker=MARKERS[algo], color=COLORS[algo],
+                    label=algo, zorder=1, markevery=max(1, len(mean) // 20),
                     markeredgecolor=COLORS[algo], **get_secondary_style())
+            has_data = True
 
-    ax.set_xlabel('Batch Index', fontweight='bold', fontsize=12)
-    ax.set_ylabel(r'Per-Batch $\ell_2$-Norm of Flow Time', fontweight='bold', fontsize=12)
-    ax.set_title(r'Clairvoyant: Distribution Shift (BP-$H{=}2^6 \rightarrow$ BP-$H{=}2^{18}$)',
-                 fontweight='bold', fontsize=13)
-    ax.set_yscale('log')
-    ax.legend(loc='upper left', framealpha=0.95, fontsize=10, edgecolor='black', ncol=2)
-    ax.grid(True, alpha=0.3)
-    add_shift_line(ax)
+    # Primary baseline: SRPT
+    if 'SRPT' in baselines and len(baselines['SRPT']) > 0:
+        mean = np.mean(baselines['SRPT'], axis=0)
+        x = make_job_index(len(mean))
+        ax.plot(x, mean, marker=MARKERS['SRPT'], color=COLORS['SRPT'],
+                label='SRPT', zorder=5, markevery=max(1, len(mean) // 20),
+                markerfacecolor=COLORS['SRPT'], **get_primary_style())
+        has_data = True
 
-    plt.tight_layout()
-    fig.savefig(os.path.join(out_dir, 'clairvoyant_shift.pdf'), dpi=300, bbox_inches='tight')
+    # Our algorithms: Dynamic, Dynamic_BAL
+    for algo in ['Dynamic', 'Dynamic_BAL']:
+        if algo in framework and len(framework[algo]) > 0:
+            data = framework[algo]
+            mean = np.mean(data, axis=0)
+            std = np.std(data, axis=0)
+            x = make_job_index(len(mean))
+            color = COLORS[algo]
+            ax.plot(x, mean, marker=MARKERS[algo], color=color,
+                    label=algo, zorder=10, markevery=max(1, len(mean) // 20),
+                    **get_our_algo_style(color))
+            lower = np.maximum(mean - std, mean / 3.0)
+            ax.fill_between(x, lower, mean + std, color=color, alpha=0.12, zorder=5)
+            has_data = True
+
+    if has_data:
+        ax.axvline(x=switch_point, color='gray', linestyle=':', linewidth=2, alpha=0.7,
+                   label='Distribution switch')
+        ax.set_xlabel('Job Index', fontweight='bold', fontsize=12)
+        ax.set_ylabel('$\\ell_2$-Norm Flow Time', fontweight='bold', fontsize=12)
+        ax.set_title('Clairvoyant Distribution Shift\n'
+                     'BP-$H=2^6$ (first 5k) $\\rightarrow$ BP-$H=2^{18}$ (last 5k)',
+                     fontweight='bold', fontsize=13)
+        ax.legend(loc='best', framealpha=0.95, fontsize=10, edgecolor='black')
+        ax.grid(True, alpha=0.3)
+        ax.set_yscale('log')
+        plt.tight_layout()
+        fig.savefig(os.path.join(out_dir, 'fig_timevarying_clairvoyant.pdf'),
+                    dpi=300, bbox_inches='tight')
+        logger.info("  Saved fig_timevarying_clairvoyant.pdf")
     plt.close(fig)
-    logger.info(f"  Saved clairvoyant_shift.pdf")
 
-    # ========== Non-Clairvoyant Plot ==========
-    fig, ax = plt.subplots(figsize=(12, 6))
-
-    # Our algorithm
-    if 'RFDynamic' in df.columns:
-        color = COLORS['RFDynamic']
-        ax.plot(batches, df['RFDynamic'], marker=MARKERS['RFDynamic'], color=color,
-                label='RFDynamic', zorder=10, markevery=5, **get_our_algo_style(color))
-
-    # Primary baseline RMLF
-    if 'RMLF' in df.columns:
-        ax.plot(batches, df['RMLF'], marker=MARKERS['RMLF'], color=COLORS['RMLF'],
-                label='RMLF', zorder=5, markevery=5,
-                markerfacecolor=COLORS['RMLF'], **get_primary_style())
+    # ---- Non-clairvoyant figure ----
+    fig, ax = plt.subplots(figsize=(12, 7))
+    has_data = False
 
     # Secondary baselines
-    for algo in ['MLFQ', 'SETF', 'FCFS', 'RR']:
-        if algo in df.columns:
-            ax.plot(batches, df[algo], marker=MARKERS[algo], color=COLORS[algo],
-                    label=algo, zorder=1, markevery=5,
+    for algo in ['MLFQ', 'FCFS', 'SETF', 'RR']:
+        if algo in baselines and len(baselines[algo]) > 0:
+            mean = np.mean(baselines[algo], axis=0)
+            x = make_job_index(len(mean))
+            ax.plot(x, mean, marker=MARKERS[algo], color=COLORS[algo],
+                    label=algo, zorder=1, markevery=max(1, len(mean) // 20),
                     markeredgecolor=COLORS[algo], **get_secondary_style())
+            has_data = True
 
-    ax.set_xlabel('Batch Index', fontweight='bold', fontsize=12)
-    ax.set_ylabel(r'Per-Batch $\ell_2$-Norm of Flow Time', fontweight='bold', fontsize=12)
-    ax.set_title(r'Non-Clairvoyant: Distribution Shift (BP-$H{=}2^6 \rightarrow$ BP-$H{=}2^{18}$)',
-                 fontweight='bold', fontsize=13)
-    ax.set_yscale('log')
-    ax.legend(loc='upper left', framealpha=0.95, fontsize=10, edgecolor='black', ncol=2)
-    ax.grid(True, alpha=0.3)
-    add_shift_line(ax)
+    # Primary baseline: RMLF
+    if 'RMLF' in baselines and len(baselines['RMLF']) > 0:
+        mean = np.mean(baselines['RMLF'], axis=0)
+        x = make_job_index(len(mean))
+        ax.plot(x, mean, marker=MARKERS['RMLF'], color=COLORS['RMLF'],
+                label='RMLF', zorder=5, markevery=max(1, len(mean) // 20),
+                markerfacecolor=COLORS['RMLF'], **get_primary_style())
+        has_data = True
 
-    plt.tight_layout()
-    fig.savefig(os.path.join(out_dir, 'non_clairvoyant_shift.pdf'), dpi=300, bbox_inches='tight')
-    plt.close(fig)
-    logger.info(f"  Saved non_clairvoyant_shift.pdf")
+    # Our algorithm: RFDynamic
+    if 'RFDynamic' in framework and len(framework['RFDynamic']) > 0:
+        data = framework['RFDynamic']
+        mean = np.mean(data, axis=0)
+        std = np.std(data, axis=0)
+        x = make_job_index(len(mean))
+        color = COLORS['RFDynamic']
+        ax.plot(x, mean, marker=MARKERS['RFDynamic'], color=color,
+                label='RFDynamic', zorder=10, markevery=max(1, len(mean) // 20),
+                **get_our_algo_style(color))
+        lower = np.maximum(mean - std, mean / 3.0)
+        ax.fill_between(x, lower, mean + std, color=color, alpha=0.12, zorder=5)
+        has_data = True
 
-    # ========== Algorithm Selection Plot ==========
-    if os.path.exists(sel_csv):
-        sel_df = pd.read_csv(sel_csv)
-        fig, axes = plt.subplots(1, 3, figsize=(18, 4), sharey=True)
-
-        algo_configs = [
-            ('Dynamic_choice', 'Dynamic', 'SRPT', COLORS['Dynamic']),
-            ('Dynamic_BAL_choice', 'Dynamic_BAL', 'BAL', COLORS['Dynamic_BAL']),
-            ('RFDynamic_choice', 'RFDynamic', 'RMLF', COLORS['RFDynamic']),
-        ]
-
-        for ax, (col, title, eff_name, color) in zip(axes, algo_configs):
-            if col not in sel_df.columns:
-                continue
-            rounds = sel_df['round'].values
-            choices = sel_df[col].values
-
-            # Convert to binary: 1 = efficiency algo, 0 = FCFS
-            binary = [1 if c == eff_name else 0 for c in choices]
-
-            ax.fill_between(rounds, binary, step='mid', alpha=0.4, color=color)
-            ax.step(rounds, binary, where='mid', color=color, linewidth=1.5)
-            ax.axvline(x=50, color='gray', linestyle=':', linewidth=2, alpha=0.7)
-            ax.set_xlabel('Round', fontweight='bold', fontsize=11)
-            ax.set_title(title, fontweight='bold', fontsize=12)
-            ax.set_yticks([0, 1])
-            ax.set_yticklabels(['FCFS', eff_name])
-            ax.set_xlim(1, len(rounds))
-            ax.grid(True, alpha=0.3, axis='x')
-
-        axes[0].set_ylabel('Selected Algorithm', fontweight='bold', fontsize=11)
-        plt.suptitle(r'Algorithm Selection Over Time (Distribution Shift at Batch 50)',
+    if has_data:
+        ax.axvline(x=switch_point, color='gray', linestyle=':', linewidth=2, alpha=0.7,
+                   label='Distribution switch')
+        ax.set_xlabel('Job Index', fontweight='bold', fontsize=12)
+        ax.set_ylabel('$\\ell_2$-Norm Flow Time', fontweight='bold', fontsize=12)
+        ax.set_title('Non-Clairvoyant Distribution Shift\n'
+                     'BP-$H=2^6$ (first 5k) $\\rightarrow$ BP-$H=2^{18}$ (last 5k)',
                      fontweight='bold', fontsize=13)
+        ax.legend(loc='best', framealpha=0.95, fontsize=10, edgecolor='black')
+        ax.grid(True, alpha=0.3)
+        ax.set_yscale('log')
         plt.tight_layout()
-        fig.savefig(os.path.join(out_dir, 'algorithm_selection_shift.pdf'), dpi=300, bbox_inches='tight')
-        plt.close(fig)
-        logger.info(f"  Saved algorithm_selection_shift.pdf")
+        fig.savefig(os.path.join(out_dir, 'fig_timevarying_nonclairvoyant.pdf'),
+                    dpi=300, bbox_inches='tight')
+        logger.info("  Saved fig_timevarying_nonclairvoyant.pdf")
+    plt.close(fig)
 
     logger.info(f"  Distribution shift figures saved to {out_dir}/")
 

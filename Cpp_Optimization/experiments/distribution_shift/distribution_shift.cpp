@@ -2,7 +2,7 @@
 // Distribution Shift Experiment (4.6)
 //
 // N=10000 jobs: first 5000 BP-H64, last 5000 BP-H262144
-// rho=1.00  B=100  k=8
+// rho=1.00  B=100  k=16
 // Runs all 3 framework instances + all baselines
 // Outputs per-batch L2-norm CSV for plotting
 // =============================================================================
@@ -33,14 +33,8 @@
 #include "Optimized_FCFS_algorithm.h"
 #include "BAL_algorithm.h"
 
-// SJF defines SchedulingResult — include it first
 #include "SJF_algorithm.h"
-// Save the SJF function pointer before NC_RR re-defines SchedulingResult
-// Workaround: NC_RR_algorithm.h also defines SchedulingResult identically.
-// Since both structs are identical, we suppress the redefinition by guarding.
-#define SchedulingResult SchedulingResult
 #include "NC_RR_algorithm.h"
-#undef SchedulingResult
 
 #include "RMLF_algorithm.h"
 #include "MLFQ_algorithm.h"
@@ -372,150 +366,182 @@ DynamicResult DYNAMIC_BAL(std::vector<Job>& jobs, int nJobsPerRound, int k) {
 }
 
 // =============================================================================
-// DYNAMIC_RF (RMLF / FCFS) — copied from RFDynamic.cpp
+// DYNAMIC_RF (RMLF / FCFS) — incremental event-driven scheduling
+// Mirrors DYNAMIC/DYNAMIC_BAL structure, with RMLF multi-level feedback
+// when the framework selects RMLF, and non-preemptive FCFS otherwise.
 // =============================================================================
 
-class JobSizePool {
-    std::vector<int> pool;
-    std::mt19937 rng;
-public:
-    JobSizePool() { std::random_device rd; rng.seed(rd()); }
-    void add_job_size(int s) { pool.push_back(s); }
-    size_t size() const { return pool.size(); }
-    std::vector<int> sample_random(int n) {
-        if (pool.empty() || n <= 0) return {};
-        std::vector<int> out;
-        std::uniform_int_distribution<size_t> dist(0, pool.size()-1);
-        for (int i = 0; i < n; i++) out.push_back(pool[dist(rng)]);
-        return out;
+DynamicResult DYNAMIC_RF(std::vector<Job>& jobs, int nJobsPerRound, int k) {
+    int total_jobs = jobs.size();
+    if (total_jobs == 0) return {0,0,0,{}};
+
+    std::sort(jobs.begin(), jobs.end(), [](const Job& a, const Job& b) {
+        if (a.arrival_time != b.arrival_time) return a.arrival_time < b.arrival_time;
+        if (a.job_size != b.job_size) return a.job_size < b.job_size;
+        return a.job_index < b.job_index;
+    });
+
+    long long current_time = 0;
+    std::vector<Job*> active_jobs;
+    std::vector<Job*> completed_jobs;
+    int n_arrival_jobs = 0, n_completed_jobs = 0;
+    bool use_rmlf = false;
+    int jobs_pointer = 0;
+    std::vector<Job> jobs_in_current_round;
+    std::vector<std::vector<Job>> round_jobs_history;
+    int current_round = 1;
+    std::vector<std::string> algorithm_history;
+    Job* currently_executing_job = nullptr;
+
+    // RMLF level tracking (indexed by job_index)
+    std::vector<int> rmlf_level(total_jobs, 0);
+    std::vector<int> rmlf_quantum_left(total_jobs, 1); // 2^0 = 1
+
+    for (size_t idx = 0; idx < jobs.size(); idx++) {
+        jobs[idx].remaining_time = jobs[idx].job_size;
+        jobs[idx].completion_time = -1;
+        jobs[idx].start_time = -1;
     }
-    std::vector<int> get_simulation_set(int target, const std::vector<int>& recent) {
-        if (target <= 0) return {};
-        std::vector<int> res;
-        int take = std::min((int)recent.size(), target);
-        if (take > 0) res.insert(res.end(), recent.begin(), recent.begin()+take);
-        int need = target - (int)res.size();
-        if (need > 0 && !pool.empty()) { auto s = sample_random(need); res.insert(res.end(), s.begin(), s.end()); }
-        return res;
-    }
-};
 
-static double sim_fcfs_l2(const std::vector<int>& sizes) {
-    if (sizes.empty()) return 0;
-    std::vector<Job> sj;
-    for (size_t i = 0; i < sizes.size(); i++) {
-        Job j; j.arrival_time = 0; j.job_size = sizes[i]; j.job_index = (int)i; j.remaining_time = sizes[i];
-        sj.push_back(j);
-    }
-    return Fcfs_Optimized(sj).l2_norm_flow_time;
-}
-static double sim_rmlf_l2(const std::vector<int>& sizes) {
-    if (sizes.empty()) return 0;
-    std::vector<Job> sj;
-    for (size_t i = 0; i < sizes.size(); i++) {
-        Job j; j.arrival_time = 0; j.job_size = sizes[i]; j.job_index = (int)i; j.remaining_time = sizes[i];
-        sj.push_back(j);
-    }
-    return RMLF_algorithm(sj).l2_norm_flow_time;
-}
+    while (n_completed_jobs < total_jobs) {
+        long long prev_time = current_time;
+        int prev_completed = n_completed_jobs;
+        int prev_jp = jobs_pointer;
 
-DynamicResult DYNAMIC_RF(std::vector<Job> jobs, int nJobsPerRound, int k) {
-    const size_t INIT_FCFS = 100;
-    if (jobs.empty()) return {0,0,0,{}};
-
-    std::stable_sort(jobs.begin(), jobs.end(), [](const Job& a, const Job& b) { return a.arrival_time < b.arrival_time; });
-    std::vector<Job> tracking = jobs;
-    for (auto& j : tracking) j.completion_time = -1;
-
-    JobSizePool pool;
-    std::vector<std::string> algo_hist;
-    std::vector<int> completed_this_round;
-    std::vector<std::vector<int>> round_hist;
-    size_t cc = 0, next_idx = 0;
-    int cur_round = 0;
-
-    // Phase 1: FCFS warmup
-    {
-        std::vector<Job> p1 = jobs;
-        Fcfs_Optimized(p1);
-        std::vector<std::pair<long long, size_t>> ct;
-        for (size_t i = 0; i < p1.size(); i++)
-            if (p1[i].completion_time > 0) ct.push_back({p1[i].completion_time, i});
-        std::sort(ct.begin(), ct.end());
-        long long end_t = 0;
-        completed_this_round.clear();
-        for (size_t i = 0; i < std::min(INIT_FCFS, ct.size()); i++) {
-            auto& j = p1[ct[i].second];
-            tracking[j.job_index] = j;
-            pool.add_job_size(j.job_size);
-            completed_this_round.push_back(j.job_size);
-            cc++; end_t = j.completion_time;
+        // Admit new arrivals
+        bool new_arrivals = false;
+        while (jobs_pointer < total_jobs && jobs[jobs_pointer].arrival_time <= current_time) {
+            Job* job = &jobs[jobs_pointer];
+            active_jobs.push_back(job);
+            Job hj; hj.arrival_time = job->arrival_time; hj.job_size = job->job_size; hj.job_index = job->job_index;
+            jobs_in_current_round.push_back(hj);
+            n_arrival_jobs++; jobs_pointer++;
+            new_arrivals = true;
         }
-        round_hist.push_back(completed_this_round);
-        for (size_t i = 0; i < jobs.size(); i++) {
-            if (jobs[i].arrival_time > end_t) { next_idx = i; break; }
-            if (i == jobs.size()-1) next_idx = jobs.size();
+
+        // RMLF preempts on new arrivals (lower-level job may have arrived)
+        if (new_arrivals && use_rmlf && currently_executing_job != nullptr) {
+            active_jobs.push_back(currently_executing_job);
+            currently_executing_job = nullptr;
         }
-        algo_hist.push_back("FCFS");
-        cur_round = 1;
-    }
 
-    // Phase 2: Dynamic switching
-    std::vector<Job> acc;
-    bool use_fcfs = true;
-    while (next_idx < jobs.size()) {
-        cur_round++;
-        completed_this_round.clear();
-        size_t batch_end = std::min(next_idx + (size_t)nJobsPerRound, jobs.size());
-
-        int rn = (k <= 0) ? (int)round_hist.size() : k;
-        int ts = (k <= 0) ? (int)pool.size() : rn * nJobsPerRound;
-        std::vector<int> recent;
-        int rg = std::min((int)round_hist.size(), rn);
-        for (int i = 0; i < rg; i++) {
-            const auto& rd = round_hist[round_hist.size()-1-i];
-            recent.insert(recent.end(), rd.begin(), rd.end());
-        }
-        auto sim_set = pool.get_simulation_set(ts, recent);
-        if (!sim_set.empty()) {
-            double fl = sim_fcfs_l2(sim_set), rl = sim_rmlf_l2(sim_set);
-            use_fcfs = (fl <= rl);
-        } else { use_fcfs = true; }
-        algo_hist.push_back(use_fcfs ? "FCFS" : "RMLF");
-
-        acc.clear();
-        for (size_t i = 0; i < batch_end; i++) acc.push_back(jobs[i]);
-        if (use_fcfs) Fcfs_Optimized(acc); else RMLF_algorithm(acc);
-
-        for (size_t i = 0; i < acc.size(); i++) {
-            if (acc[i].completion_time > 0 && tracking[acc[i].job_index].completion_time <= 0) {
-                tracking[acc[i].job_index] = acc[i];
-                pool.add_job_size(acc[i].job_size);
-                completed_this_round.push_back(acc[i].job_size);
-                cc++;
+        // Batch boundary: evaluate FCFS vs RMLF
+        while (n_arrival_jobs >= nJobsPerRound) {
+            std::vector<Job> jfr(jobs_in_current_round.begin(), jobs_in_current_round.begin() + nJobsPerRound);
+            if (!jfr.empty()) {
+                round_jobs_history.push_back(jfr);
+                if (currently_executing_job) { active_jobs.push_back(currently_executing_job); currently_executing_job = nullptr; }
+                if (current_round == 1) {
+                    use_rmlf = false;
+                    algorithm_history.push_back("FCFS");
+                } else {
+                    std::vector<Job> sim_jobs;
+                    size_t lb = (k <= 0) ? round_jobs_history.size() : std::min((size_t)k, round_jobs_history.size());
+                    for (size_t i = round_jobs_history.size() - lb; i < round_jobs_history.size(); i++)
+                        sim_jobs.insert(sim_jobs.end(), round_jobs_history[i].begin(), round_jobs_history[i].end());
+                    std::vector<Job> fc = sim_jobs;
+                    FCFSResult fr = Fcfs(fc);
+                    std::vector<Job> rc = sim_jobs;
+                    for (auto& j : rc) { j.remaining_time = j.job_size; j.completion_time = -1; j.start_time = -1; }
+                    auto rr = RMLF_algorithm(rc);
+                    use_rmlf = !(std::isnan(rr.l2_norm_flow_time) || std::isnan(fr.l2_norm_flow_time))
+                               ? rr.l2_norm_flow_time < fr.l2_norm_flow_time : false;
+                    algorithm_history.push_back(use_rmlf ? "RMLF" : "FCFS");
+                }
+                current_round++;
             }
+            jobs_in_current_round.erase(jobs_in_current_round.begin(), jobs_in_current_round.begin() + nJobsPerRound);
+            n_arrival_jobs -= nJobsPerRound;
         }
-        round_hist.push_back(completed_this_round);
-        next_idx = batch_end;
+
+        // Select next job
+        if (!currently_executing_job && !active_jobs.empty()) {
+            if (use_rmlf) {
+                // RMLF: select job with lowest level, FIFO within same level
+                Job* best = active_jobs[0];
+                int best_level = rmlf_level[best->job_index];
+                for (size_t i = 1; i < active_jobs.size(); i++) {
+                    int lvl = rmlf_level[active_jobs[i]->job_index];
+                    if (lvl < best_level || (lvl == best_level && active_jobs[i]->arrival_time < best->arrival_time)) {
+                        best = active_jobs[i];
+                        best_level = lvl;
+                    }
+                }
+                currently_executing_job = best;
+            } else {
+                currently_executing_job = fcfs_select_next_job_fast(active_jobs);
+            }
+            active_jobs.erase(std::find(active_jobs.begin(), active_jobs.end(), currently_executing_job));
+            if (currently_executing_job && currently_executing_job->remaining_time <= 0) { currently_executing_job = nullptr; continue; }
+            if (currently_executing_job && currently_executing_job->start_time == -1) currently_executing_job->start_time = current_time;
+        }
+
+        // Execute
+        if (currently_executing_job) {
+            long long next_arr = (jobs_pointer < total_jobs) ? (long long)jobs[jobs_pointer].arrival_time : LLONG_MAX;
+            int delta;
+
+            if (use_rmlf) {
+                // RMLF: preemptive at quantum boundary and new arrivals
+                int idx = currently_executing_job->job_index;
+                int q_left = rmlf_quantum_left[idx];
+
+                if (next_arr <= current_time) {
+                    active_jobs.push_back(currently_executing_job);
+                    currently_executing_job = nullptr;
+                    continue;
+                }
+                delta = std::min((int)currently_executing_job->remaining_time, q_left);
+                if (next_arr != LLONG_MAX)
+                    delta = std::min(delta, (int)(next_arr - current_time));
+                if (delta <= 0) delta = 1;
+            } else {
+                // FCFS: non-preemptive, run to completion
+                delta = currently_executing_job->remaining_time;
+            }
+
+            if (delta <= 0) { std::cerr << "FATAL delta<=0 in DYNAMIC_RF\n"; std::abort(); }
+            current_time += delta;
+            currently_executing_job->remaining_time -= delta;
+
+            if (use_rmlf) {
+                int idx = currently_executing_job->job_index;
+                rmlf_quantum_left[idx] -= delta;
+            }
+
+            if (currently_executing_job->remaining_time == 0) {
+                currently_executing_job->completion_time = current_time;
+                completed_jobs.push_back(currently_executing_job);
+                n_completed_jobs++;
+                currently_executing_job = nullptr;
+            } else if (use_rmlf) {
+                // Quantum exhausted: promote to next level
+                int idx = currently_executing_job->job_index;
+                if (rmlf_quantum_left[idx] <= 0) {
+                    rmlf_level[idx]++;
+                    rmlf_quantum_left[idx] = 1 << std::min(rmlf_level[idx], 30);
+                    active_jobs.push_back(currently_executing_job);
+                    currently_executing_job = nullptr;
+                }
+            }
+        } else {
+            if (jobs_pointer < total_jobs) current_time = jobs[jobs_pointer].arrival_time;
+            else break;
+        }
+        assert(current_time > prev_time || n_completed_jobs > prev_completed || jobs_pointer > prev_jp);
     }
 
-    long double sf = 0, ssq = 0; long long mf = 0; int vj = 0;
-    for (auto& j : tracking) {
-        if (j.completion_time > 0) {
-            long long f = j.completion_time - j.arrival_time;
-            if (f >= j.job_size) { sf += f; ssq += (long double)f*f; mf = std::max(mf, f); vj++; }
-        }
+    if (!jobs_in_current_round.empty() && n_arrival_jobs > 0) {
+        round_jobs_history.push_back(jobs_in_current_round);
+        algorithm_history.push_back(use_rmlf ? "RMLF" : "FCFS");
     }
-    // Copy completion times back to jobs for per-batch extraction
-    for (auto& j : tracking) {
-        if (j.completion_time > 0) {
-            for (auto& orig : jobs) {
-                if (orig.job_index == j.job_index) { orig.completion_time = j.completion_time; break; }
-            }
-        }
+
+    long double sf = 0, ssq = 0; long long mf = 0;
+    for (Job* c : completed_jobs) {
+        long long f = c->completion_time - c->arrival_time;
+        sf += f; ssq += (long double)f*f; mf = std::max(mf, f);
     }
-    double avg = vj > 0 ? (double)(sf/vj) : 0;
-    return {avg, std::sqrt((double)ssq), (double)mf, algo_hist};
+    return {(double)(sf/total_jobs), std::sqrt((double)ssq), (double)mf, algorithm_history};
 }
 
 // =============================================================================
@@ -554,20 +580,32 @@ std::vector<double> compute_per_batch_l2(const std::vector<Job>& jobs, int batch
 // =============================================================================
 int main(int argc, char* argv[]) {
     // --- Parameters ---
-    const int BATCH_SIZE = 100;
-    const int K_LOOKBACK = 8;
+    const int EVAL_WINDOW = 100;   // fixed 100-job evaluation window
+    const int K_LOOKBACK = 16;
     const int N_JOBS = 10000;
-    const int N_BATCHES = N_JOBS / BATCH_SIZE;
+    const int N_BATCHES = N_JOBS / EVAL_WINDOW;
 
-    // --- Find data file ---
-    // Look for data/distribution_shift_1/shift_H64_H262144.csv (trial 1)
+    // CLI: <data_file> <B> <mode> <output_dir>
+    //   B     = batch size for framework decision (10, 100, 1000)
+    //   mode  = "all" | "baselines" | "framework"
+    //   output_dir = where to write CSVs
     std::string data_file = "./data/distribution_shift_1/shift_H64_H262144.csv";
+    int B = 100;
+    std::string mode = "all";
+    std::string out_dir = "./algorithm_result/distribution_shift_result";
+
     if (argc > 1) data_file = argv[1];
+    if (argc > 2) B = std::atoi(argv[2]);
+    if (argc > 3) mode = argv[3];
+    if (argc > 4) out_dir = argv[4];
+
+    if (B <= 0) { std::cerr << "ERROR: B must be positive\n"; return 1; }
 
     std::cout << "============================================================\n"
               << "Distribution Shift Experiment\n"
               << "  Data: " << data_file << "\n"
-              << "  N=" << N_JOBS << "  B=" << BATCH_SIZE << "  k=" << K_LOOKBACK << "\n"
+              << "  B=" << B << "  k=" << K_LOOKBACK
+              << "  eval_window=" << EVAL_WINDOW << "  mode=" << mode << "\n"
               << "============================================================\n";
 
     // --- Read jobs ---
@@ -587,7 +625,6 @@ int main(int argc, char* argv[]) {
     }
 
     // --- Output directory ---
-    std::string out_dir = "./algorithm_result/distribution_shift_result";
     create_directories_recursive(out_dir);
 
     // --- Storage for per-batch L2 results ---
@@ -603,79 +640,79 @@ int main(int argc, char* argv[]) {
     // =====================================================================
     // Run baseline algorithms (by-reference: completion_time is set on jobs)
     // =====================================================================
-
-    auto run_baseline = [&](const std::string& name, std::function<void(std::vector<Job>&)> algo_fn) {
-        safe_print("Running " + name + "...\n");
-        std::vector<Job> jc = jobs_orig;
-        algo_fn(jc);
-        auto bl = compute_per_batch_l2(jc, BATCH_SIZE);
-        {
-            std::lock_guard<std::mutex> lock(results_mutex);
-            all_results.push_back({name, bl});
-        }
-        // Compute aggregate for sanity check
-        double agg = 0;
-        for (double v : bl) agg += v*v;
-        safe_print("  " + name + " done. Aggregate L2 = " + std::to_string(std::sqrt(agg)) + "\n");
-    };
-
-    // Run baselines in parallel threads
     std::vector<std::thread> threads;
 
-    threads.emplace_back([&]() { run_baseline("SRPT", [](std::vector<Job>& j) { SRPT_ref(j); }); });
-    threads.emplace_back([&]() { run_baseline("FCFS", [](std::vector<Job>& j) { Fcfs_Optimized(j); }); });
-    threads.emplace_back([&]() {
-        run_baseline("BAL", [&](std::vector<Job>& j) {
-            double thr = std::pow(j.size(), 2.0/3.0);
-            Bal(j, thr);
-        });
-    });
-    threads.emplace_back([&]() { run_baseline("SJF", [](std::vector<Job>& j) { SJF(j); }); });
-    threads.emplace_back([&]() { run_baseline("RR", [](std::vector<Job>& j) { NC_RR(j, 1); }); });
-    threads.emplace_back([&]() { run_baseline("RMLF", [](std::vector<Job>& j) { RMLF_algorithm(j); }); });
-    threads.emplace_back([&]() { run_baseline("MLFQ", [](std::vector<Job>& j) { MLFQ(j, 100); }); });
-    threads.emplace_back([&]() { run_baseline("SETF", [](std::vector<Job>& j) { Setf(j); }); });
+    if (mode == "all" || mode == "baselines") {
+        auto run_baseline = [&](const std::string& name, std::function<void(std::vector<Job>&)> algo_fn) {
+            safe_print("Running " + name + "...\n");
+            std::vector<Job> jc = jobs_orig;
+            algo_fn(jc);
+            auto bl = compute_per_batch_l2(jc, EVAL_WINDOW);
+            {
+                std::lock_guard<std::mutex> lock(results_mutex);
+                all_results.push_back({name, bl});
+            }
+            double agg = 0;
+            for (double v : bl) agg += v*v;
+            safe_print("  " + name + " done. Aggregate L2 = " + std::to_string(std::sqrt(agg)) + "\n");
+        };
 
-    for (auto& t : threads) t.join();
-    threads.clear();
+        threads.emplace_back([&]() { run_baseline("SRPT", [](std::vector<Job>& j) { SRPT_ref(j); }); });
+        threads.emplace_back([&]() { run_baseline("FCFS", [](std::vector<Job>& j) { Fcfs_Optimized(j); }); });
+        threads.emplace_back([&]() {
+            run_baseline("BAL", [&](std::vector<Job>& j) {
+                double thr = std::pow(j.size(), 2.0/3.0);
+                Bal(j, thr);
+            });
+        });
+        threads.emplace_back([&]() { run_baseline("SJF", [](std::vector<Job>& j) { SJF(j); }); });
+        threads.emplace_back([&]() { run_baseline("RR", [](std::vector<Job>& j) { NC_RR(j, 1); }); });
+        threads.emplace_back([&]() { run_baseline("RMLF", [](std::vector<Job>& j) { RMLF_algorithm(j); }); });
+        threads.emplace_back([&]() { run_baseline("MLFQ", [](std::vector<Job>& j) { MLFQ(j, 100); }); });
+        threads.emplace_back([&]() { run_baseline("SETF", [](std::vector<Job>& j) { Setf(j); }); });
+
+        for (auto& t : threads) t.join();
+        threads.clear();
+    }
 
     // =====================================================================
     // Run framework algorithms (Dynamic, Dynamic_BAL, RFDynamic)
     // =====================================================================
     std::vector<std::string> dyn_hist, dbal_hist, rf_hist;
 
-    threads.emplace_back([&]() {
-        safe_print("Running Dynamic (B=100, k=8)...\n");
-        std::vector<Job> jc = jobs_orig;
-        auto res = DYNAMIC(jc, BATCH_SIZE, K_LOOKBACK);
-        dyn_hist = res.algorithm_history;
-        auto bl = compute_per_batch_l2(jc, BATCH_SIZE);
-        { std::lock_guard<std::mutex> lock(results_mutex); all_results.push_back({"Dynamic", bl}); }
-        safe_print("  Dynamic done. Aggregate L2 = " + std::to_string(res.l2_norm_flow_time) + "\n");
-    });
+    if (mode == "all" || mode == "framework") {
+        threads.emplace_back([&]() {
+            safe_print("Running Dynamic (B=" + std::to_string(B) + ", k=" + std::to_string(K_LOOKBACK) + ")...\n");
+            std::vector<Job> jc = jobs_orig;
+            auto res = DYNAMIC(jc, B, K_LOOKBACK);
+            dyn_hist = res.algorithm_history;
+            auto bl = compute_per_batch_l2(jc, EVAL_WINDOW);
+            { std::lock_guard<std::mutex> lock(results_mutex); all_results.push_back({"Dynamic", bl}); }
+            safe_print("  Dynamic done. Aggregate L2 = " + std::to_string(res.l2_norm_flow_time) + "\n");
+        });
 
-    threads.emplace_back([&]() {
-        safe_print("Running Dynamic_BAL (B=100, k=8)...\n");
-        std::vector<Job> jc = jobs_orig;
-        auto res = DYNAMIC_BAL(jc, BATCH_SIZE, K_LOOKBACK);
-        dbal_hist = res.algorithm_history;
-        auto bl = compute_per_batch_l2(jc, BATCH_SIZE);
-        { std::lock_guard<std::mutex> lock(results_mutex); all_results.push_back({"Dynamic_BAL", bl}); }
-        safe_print("  Dynamic_BAL done. Aggregate L2 = " + std::to_string(res.l2_norm_flow_time) + "\n");
-    });
+        threads.emplace_back([&]() {
+            safe_print("Running Dynamic_BAL (B=" + std::to_string(B) + ", k=" + std::to_string(K_LOOKBACK) + ")...\n");
+            std::vector<Job> jc = jobs_orig;
+            auto res = DYNAMIC_BAL(jc, B, K_LOOKBACK);
+            dbal_hist = res.algorithm_history;
+            auto bl = compute_per_batch_l2(jc, EVAL_WINDOW);
+            { std::lock_guard<std::mutex> lock(results_mutex); all_results.push_back({"Dynamic_BAL", bl}); }
+            safe_print("  Dynamic_BAL done. Aggregate L2 = " + std::to_string(res.l2_norm_flow_time) + "\n");
+        });
 
-    threads.emplace_back([&]() {
-        safe_print("Running RFDynamic (B=100, k=8)...\n");
-        std::vector<Job> jc = jobs_orig;
-        auto res = DYNAMIC_RF(jc, BATCH_SIZE, K_LOOKBACK);
-        rf_hist = res.algorithm_history;
-        // DYNAMIC_RF copies completion_time back into jc
-        auto bl = compute_per_batch_l2(jc, BATCH_SIZE);
-        { std::lock_guard<std::mutex> lock(results_mutex); all_results.push_back({"RFDynamic", bl}); }
-        safe_print("  RFDynamic done. Aggregate L2 = " + std::to_string(res.l2_norm_flow_time) + "\n");
-    });
+        threads.emplace_back([&]() {
+            safe_print("Running RFDynamic (B=" + std::to_string(B) + ", k=" + std::to_string(K_LOOKBACK) + ")...\n");
+            std::vector<Job> jc = jobs_orig;
+            auto res = DYNAMIC_RF(jc, B, K_LOOKBACK);
+            rf_hist = res.algorithm_history;
+            auto bl = compute_per_batch_l2(jc, EVAL_WINDOW);
+            { std::lock_guard<std::mutex> lock(results_mutex); all_results.push_back({"RFDynamic", bl}); }
+            safe_print("  RFDynamic done. Aggregate L2 = " + std::to_string(res.l2_norm_flow_time) + "\n");
+        });
 
-    for (auto& t : threads) t.join();
+        for (auto& t : threads) t.join();
+    }
 
     // =====================================================================
     // Write per-batch L2 CSV
@@ -684,14 +721,19 @@ int main(int argc, char* argv[]) {
         std::string csv_path = out_dir + "/per_batch_l2.csv";
         std::ofstream out(csv_path);
 
+        // Column order depends on mode
+        std::vector<std::string> col_order;
+        if (mode == "baselines") {
+            col_order = {"SRPT", "FCFS", "BAL", "SJF", "RR", "RMLF", "MLFQ", "SETF"};
+        } else if (mode == "framework") {
+            col_order = {"Dynamic", "Dynamic_BAL", "RFDynamic"};
+        } else {
+            col_order = {"SRPT", "FCFS", "BAL", "SJF", "RR", "RMLF", "MLFQ", "SETF",
+                         "Dynamic", "Dynamic_BAL", "RFDynamic"};
+        }
+
         // Header
         out << "batch";
-        // Define the column order
-        std::vector<std::string> col_order = {
-            "SRPT", "FCFS", "BAL", "SJF", "RR",
-            "RMLF", "MLFQ", "SETF",
-            "Dynamic", "Dynamic_BAL", "RFDynamic"
-        };
         for (auto& c : col_order) out << "," << c;
         out << "\n";
 
@@ -716,9 +758,9 @@ int main(int argc, char* argv[]) {
     }
 
     // =====================================================================
-    // Write algorithm selection history CSV
+    // Write algorithm selection history CSV (framework mode only)
     // =====================================================================
-    {
+    if (mode == "all" || mode == "framework") {
         std::string csv_path = out_dir + "/algorithm_selection.csv";
         std::ofstream out(csv_path);
         out << "round,Dynamic_choice,Dynamic_BAL_choice,RFDynamic_choice\n";
