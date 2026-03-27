@@ -2069,20 +2069,24 @@ def plot_distribution_shift():
             mean = np.mean(baselines[algo], axis=0)
             x = make_job_index(len(mean))
             ax.plot(x, mean, marker=MARKERS[algo], color=COLORS[algo],
-                    linestyle='-', linewidth=2.5, markersize=9,
-                    markerfacecolor=COLORS[algo], markeredgecolor='black', markeredgewidth=0.8,
-                    label=algo, markevery=max(1, len(mean) // 20))
+                    label=algo, markevery=max(1, len(mean) // 20), zorder=1,
+                    **get_secondary_style())
             has_data = True
 
+    tv_markers = {'Dynamic': '*', 'Dynamic_BAL': MARKERS['Dynamic_BAL']}
+    tv_msizes = {'Dynamic': 18, 'Dynamic_BAL': 12}
     for algo in ['Dynamic', 'Dynamic_BAL']:
         if algo in framework and len(framework[algo]) > 0:
             mean = np.mean(framework[algo], axis=0)
             x = make_job_index(len(mean))
-            color = COLORS[algo]
-            ax.plot(x, mean, marker=MARKERS[algo], color=color,
-                    linestyle='-', linewidth=2.5, markersize=9,
-                    markerfacecolor=color, markeredgecolor='black', markeredgewidth=0.8,
-                    label=algo, markevery=max(1, len(mean) // 20))
+            n = max(1, len(mean) // 20)
+            style = get_our_algo_style(COLORS[algo])
+            style['markersize'] = tv_msizes[algo]
+            # Offset markers so Dynamic stars and Dynamic_BAL squares don't overlap
+            offset = n // 2 if algo == 'Dynamic' else 0
+            ax.plot(x, mean, marker=tv_markers[algo], color=COLORS[algo],
+                    label=algo, markevery=(offset, n), zorder=10 if algo == 'Dynamic_BAL' else 11,
+                    **style)
             has_data = True
 
     if has_data:
@@ -2093,7 +2097,7 @@ def plot_distribution_shift():
         ax.set_title('Clairvoyant Distribution Shift\n'
                      'BP-$H=2^6$ (first 5k) $\\rightarrow$ BP-$H=2^{18}$ (last 5k)',
                      fontweight='bold', fontsize=13)
-        ax.legend(loc='best', framealpha=0.95, fontsize=10, edgecolor='black')
+        ax.legend(loc='best', framealpha=0.95, fontsize=10, edgecolor='black', ncol=2)
         ax.grid(True, alpha=0.3)
         ax.set_yscale('log')
         plt.tight_layout()
@@ -2106,24 +2110,29 @@ def plot_distribution_shift():
     fig, ax = plt.subplots(figsize=(11, 7))
     has_data = False
 
-    for algo in ['MLFQ', 'FCFS', 'SETF', 'RR', 'RMLF']:
+    for algo in ['MLFQ', 'FCFS', 'SETF', 'RR']:
         if algo in baselines and len(baselines[algo]) > 0:
             mean = np.mean(baselines[algo], axis=0)
             x = make_job_index(len(mean))
             ax.plot(x, mean, marker=MARKERS[algo], color=COLORS[algo],
-                    linestyle='-', linewidth=2.5, markersize=9,
-                    markerfacecolor=COLORS[algo], markeredgecolor='black', markeredgewidth=0.8,
-                    label=algo, markevery=max(1, len(mean) // 20))
+                    label=algo, markevery=max(1, len(mean) // 20), zorder=1,
+                    **get_secondary_style())
             has_data = True
+
+    if 'RMLF' in baselines and len(baselines['RMLF']) > 0:
+        mean = np.mean(baselines['RMLF'], axis=0)
+        x = make_job_index(len(mean))
+        ax.plot(x, mean, marker=MARKERS['RMLF'], color=COLORS['RMLF'],
+                label='RMLF', markevery=max(1, len(mean) // 20), zorder=5,
+                **get_primary_style())
+        has_data = True
 
     if 'RFDynamic' in framework and len(framework['RFDynamic']) > 0:
         mean = np.mean(framework['RFDynamic'], axis=0)
         x = make_job_index(len(mean))
-        color = COLORS['RFDynamic']
-        ax.plot(x, mean, marker=MARKERS['RFDynamic'], color=color,
-                linestyle='-', linewidth=2.5, markersize=9,
-                markerfacecolor=color, markeredgecolor='black', markeredgewidth=0.8,
-                label='RFDynamic', markevery=max(1, len(mean) // 20))
+        ax.plot(x, mean, marker=MARKERS['RFDynamic'], color=COLORS['RFDynamic'],
+                label='RFDynamic', markevery=max(1, len(mean) // 20), zorder=10,
+                **get_our_algo_style(COLORS['RFDynamic']))
         has_data = True
 
     if has_data:
@@ -2134,7 +2143,7 @@ def plot_distribution_shift():
         ax.set_title('Non-Clairvoyant Distribution Shift\n'
                      'BP-$H=2^6$ (first 5k) $\\rightarrow$ BP-$H=2^{18}$ (last 5k)',
                      fontweight='bold', fontsize=13)
-        ax.legend(loc='best', framealpha=0.95, fontsize=10, edgecolor='black')
+        ax.legend(loc='best', framealpha=0.95, fontsize=10, edgecolor='black', ncol=2)
         ax.grid(True, alpha=0.3)
         ax.set_yscale('log')
         plt.tight_layout()
