@@ -1904,26 +1904,29 @@ def generate_timevarying_figures(common_k: int, batch_size: int = DEFAULT_BATCH_
     switch_point = 5000  # job index where distribution changes
 
     # --- Clairvoyant figure ---
-    fig, ax = plt.subplots(figsize=(12, 7))
+    fig, ax = plt.subplots(figsize=(11, 7))
     has_data = False
 
-    # Baselines
-    for algo in CLAIRVOYANT_BASELINES:
+    for algo in ['BAL', 'FCFS', 'SJF', 'RR', 'SRPT']:
         df = load_timevarying_baseline(algo)
         if df is not None and len(df) > 0:
             has_data = True
             ax.plot(df['index'], df['L2_norm'], marker=MARKERS[algo],
-                    color=COLORS[algo], label=algo, zorder=1, markevery=max(1, len(df)//20),
-                    **get_secondary_style())
+                    color=COLORS[algo], label=algo,
+                    linestyle='-', linewidth=2.5, markersize=9,
+                    markerfacecolor=COLORS[algo], markeredgecolor='black', markeredgewidth=0.8,
+                    markevery=max(1, len(df)//20))
 
-    # Our algorithms
     for algo in ['Dynamic', 'Dynamic_BAL']:
         df = load_timevarying_dynamic(algo, common_k, batch_size)
         if df is not None and len(df) > 0:
             has_data = True
+            color = COLORS[algo]
             ax.plot(df['index'], df['L2_norm'], marker=MARKERS[algo],
-                    color=COLORS[algo], label=algo, zorder=10, markevery=max(1, len(df)//20),
-                    **get_our_algo_style(COLORS[algo]))
+                    color=color, label=algo,
+                    linestyle='-', linewidth=2.5, markersize=9,
+                    markerfacecolor=color, markeredgecolor='black', markeredgewidth=0.8,
+                    markevery=max(1, len(df)//20))
 
     if has_data:
         ax.axvline(x=switch_point, color='gray', linestyle=':', linewidth=2, alpha=0.7,
@@ -1945,24 +1948,28 @@ def generate_timevarying_figures(common_k: int, batch_size: int = DEFAULT_BATCH_
     plt.close()
 
     # --- Non-clairvoyant figure ---
-    fig, ax = plt.subplots(figsize=(12, 7))
+    fig, ax = plt.subplots(figsize=(11, 7))
     has_data = False
 
-    for algo in NON_CLAIRVOYANT_BASELINES:
+    for algo in ['MLFQ', 'FCFS', 'SETF', 'RR', 'RMLF']:
         df = load_timevarying_baseline(algo)
         if df is not None and len(df) > 0:
             has_data = True
             ax.plot(df['index'], df['L2_norm'], marker=MARKERS[algo],
-                    color=COLORS[algo], label=algo, zorder=1, markevery=max(1, len(df)//20),
-                    **get_secondary_style())
+                    color=COLORS[algo], label=algo,
+                    linestyle='-', linewidth=2.5, markersize=9,
+                    markerfacecolor=COLORS[algo], markeredgecolor='black', markeredgewidth=0.8,
+                    markevery=max(1, len(df)//20))
 
     df = load_timevarying_dynamic('RFDynamic', common_k, batch_size)
     if df is not None and len(df) > 0:
         has_data = True
+        color = COLORS['RFDynamic']
         ax.plot(df['index'], df['L2_norm'], marker=MARKERS['RFDynamic'],
-                color=COLORS['RFDynamic'], label='RFDynamic', zorder=10,
-                markevery=max(1, len(df)//20),
-                **get_our_algo_style(COLORS['RFDynamic']))
+                color=color, label='RFDynamic',
+                linestyle='-', linewidth=2.5, markersize=9,
+                markerfacecolor=color, markeredgecolor='black', markeredgewidth=0.8,
+                markevery=max(1, len(df)//20))
 
     if has_data:
         ax.axvline(x=switch_point, color='gray', linestyle=':', linewidth=2, alpha=0.7,
@@ -2034,7 +2041,7 @@ def plot_distribution_shift():
     """
     §4.6 Distribution Shift: aggregate across 10 seeds, B=100, k=16.
     Produces 2 figures: clairvoyant + non-clairvoyant.
-    Style matches generate_timevarying_figures().
+    Style matches lookback sensitivity figures (uniform solid lines, filled markers).
     """
     setup_plot_style()
 
@@ -2054,41 +2061,28 @@ def plot_distribution_shift():
         return np.arange(1, n_batches + 1) * EVAL_WINDOW - EVAL_WINDOW // 2
 
     # ---- Clairvoyant figure ----
-    fig, ax = plt.subplots(figsize=(12, 7))
+    fig, ax = plt.subplots(figsize=(11, 7))
     has_data = False
 
-    # Secondary baselines
-    for algo in ['BAL', 'FCFS', 'SJF', 'RR']:
+    for algo in ['BAL', 'FCFS', 'SJF', 'RR', 'SRPT']:
         if algo in baselines and len(baselines[algo]) > 0:
             mean = np.mean(baselines[algo], axis=0)
             x = make_job_index(len(mean))
             ax.plot(x, mean, marker=MARKERS[algo], color=COLORS[algo],
-                    label=algo, zorder=1, markevery=max(1, len(mean) // 20),
-                    markeredgecolor=COLORS[algo], **get_secondary_style())
+                    linestyle='-', linewidth=2.5, markersize=9,
+                    markerfacecolor=COLORS[algo], markeredgecolor='black', markeredgewidth=0.8,
+                    label=algo, markevery=max(1, len(mean) // 20))
             has_data = True
 
-    # Primary baseline: SRPT
-    if 'SRPT' in baselines and len(baselines['SRPT']) > 0:
-        mean = np.mean(baselines['SRPT'], axis=0)
-        x = make_job_index(len(mean))
-        ax.plot(x, mean, marker=MARKERS['SRPT'], color=COLORS['SRPT'],
-                label='SRPT', zorder=5, markevery=max(1, len(mean) // 20),
-                markerfacecolor=COLORS['SRPT'], **get_primary_style())
-        has_data = True
-
-    # Our algorithms: Dynamic, Dynamic_BAL
     for algo in ['Dynamic', 'Dynamic_BAL']:
         if algo in framework and len(framework[algo]) > 0:
-            data = framework[algo]
-            mean = np.mean(data, axis=0)
-            std = np.std(data, axis=0)
+            mean = np.mean(framework[algo], axis=0)
             x = make_job_index(len(mean))
             color = COLORS[algo]
             ax.plot(x, mean, marker=MARKERS[algo], color=color,
-                    label=algo, zorder=10, markevery=max(1, len(mean) // 20),
-                    **get_our_algo_style(color))
-            lower = np.maximum(mean - std, mean / 3.0)
-            ax.fill_between(x, lower, mean + std, color=color, alpha=0.12, zorder=5)
+                    linestyle='-', linewidth=2.5, markersize=9,
+                    markerfacecolor=color, markeredgecolor='black', markeredgewidth=0.8,
+                    label=algo, markevery=max(1, len(mean) // 20))
             has_data = True
 
     if has_data:
@@ -2109,40 +2103,27 @@ def plot_distribution_shift():
     plt.close(fig)
 
     # ---- Non-clairvoyant figure ----
-    fig, ax = plt.subplots(figsize=(12, 7))
+    fig, ax = plt.subplots(figsize=(11, 7))
     has_data = False
 
-    # Secondary baselines
-    for algo in ['MLFQ', 'FCFS', 'SETF', 'RR']:
+    for algo in ['MLFQ', 'FCFS', 'SETF', 'RR', 'RMLF']:
         if algo in baselines and len(baselines[algo]) > 0:
             mean = np.mean(baselines[algo], axis=0)
             x = make_job_index(len(mean))
             ax.plot(x, mean, marker=MARKERS[algo], color=COLORS[algo],
-                    label=algo, zorder=1, markevery=max(1, len(mean) // 20),
-                    markeredgecolor=COLORS[algo], **get_secondary_style())
+                    linestyle='-', linewidth=2.5, markersize=9,
+                    markerfacecolor=COLORS[algo], markeredgecolor='black', markeredgewidth=0.8,
+                    label=algo, markevery=max(1, len(mean) // 20))
             has_data = True
 
-    # Primary baseline: RMLF
-    if 'RMLF' in baselines and len(baselines['RMLF']) > 0:
-        mean = np.mean(baselines['RMLF'], axis=0)
-        x = make_job_index(len(mean))
-        ax.plot(x, mean, marker=MARKERS['RMLF'], color=COLORS['RMLF'],
-                label='RMLF', zorder=5, markevery=max(1, len(mean) // 20),
-                markerfacecolor=COLORS['RMLF'], **get_primary_style())
-        has_data = True
-
-    # Our algorithm: RFDynamic
     if 'RFDynamic' in framework and len(framework['RFDynamic']) > 0:
-        data = framework['RFDynamic']
-        mean = np.mean(data, axis=0)
-        std = np.std(data, axis=0)
+        mean = np.mean(framework['RFDynamic'], axis=0)
         x = make_job_index(len(mean))
         color = COLORS['RFDynamic']
         ax.plot(x, mean, marker=MARKERS['RFDynamic'], color=color,
-                label='RFDynamic', zorder=10, markevery=max(1, len(mean) // 20),
-                **get_our_algo_style(color))
-        lower = np.maximum(mean - std, mean / 3.0)
-        ax.fill_between(x, lower, mean + std, color=color, alpha=0.12, zorder=5)
+                linestyle='-', linewidth=2.5, markersize=9,
+                markerfacecolor=color, markeredgecolor='black', markeredgewidth=0.8,
+                label='RFDynamic', markevery=max(1, len(mean) // 20))
         has_data = True
 
     if has_data:
